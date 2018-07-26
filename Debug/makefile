@@ -26,8 +26,11 @@ endif
 # All Target
 all: ControlVehicular.axf
 
+dependents:
+	-cd C:/Users/Fede/Documents/MCUXpressoIDE_10.1.1_606/workspace/lpc_chip_175x_6x/Debug && $(MAKE) all
+
 # Tool invocations
-ControlVehicular.axf: $(OBJS) $(USER_OBJS)
+ControlVehicular.axf: $(OBJS) $(USER_OBJS) C:/Users/Fede/Documents/MCUXpressoIDE_10.1.1_606/workspace/lpc_chip_175x_6x/Debug/liblpc_chip_175x_6x.a
 	@echo 'Building target: $@'
 	@echo 'Invoking: MCU Linker'
 	arm-none-eabi-gcc -nostdlib -L"C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug" -Xlinker -Map="ControlVehicular.map" -Xlinker --gc-sections -Xlinker -print-memory-usage -mcpu=cortex-m3 -mthumb -T "FRTOS_Debug.ld" -o "ControlVehicular.axf" $(OBJS) $(USER_OBJS) $(LIBS)
@@ -47,5 +50,6 @@ post-build:
 
 .PHONY: all clean dependents
 .SECONDARY: post-build
+C:/Users/Fede/Documents/MCUXpressoIDE_10.1.1_606/workspace/lpc_chip_175x_6x/Debug/liblpc_chip_175x_6x.a:
 
 -include ../makefile.targets
