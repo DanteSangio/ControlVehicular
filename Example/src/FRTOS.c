@@ -155,7 +155,7 @@ static void xTaskRTConfig(void *pvParameters)
 	/* Enable RTC (starts increase the tick counter and second counter register) */
 	Chip_RTC_Enable(LPC_RTC, ENABLE);
 
-
+//
 	vTaskDelete(NULL);	//Borra la tarea
 }
 
