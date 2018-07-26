@@ -19,7 +19,6 @@
 
 
 
-#define DEBUGOUT1(...) printf(__VA_ARGS__)
 #define DEBUGOUT(...) printf(__VA_ARGS__)
 #define DEBUGSTR(...) printf(__VA_ARGS__)
 
@@ -47,12 +46,11 @@ SemaphoreHandle_t Semaforo_RTC;
 /* Gets and shows the current time and date */
 static void showTime(RTC_TIME_T *pTime)
 {
-	DEBUGOUT1("Time: %.2d:%.2d:%.2d %.2d/%.2d/%.4d\r\n",
+	DEBUGOUT("Time: %.2d:%.2d %.2d/%.2d/%.4d\r\n",
 			 pTime->time[RTC_TIMETYPE_HOUR],
 			 pTime->time[RTC_TIMETYPE_MINUTE],
-			 pTime->time[RTC_TIMETYPE_SECOND],
-			 pTime->time[RTC_TIMETYPE_MONTH],
 			 pTime->time[RTC_TIMETYPE_DAYOFMONTH],
+			 pTime->time[RTC_TIMETYPE_MONTH],
 			 pTime->time[RTC_TIMETYPE_YEAR]);
 }
 
@@ -126,22 +124,24 @@ static void xTaskRTConfig(void *pvParameters)
 
 	SystemCoreClockUpdate();
 
-	DEBUGOUT1("PRUEBA RTC..\n");	//Imprimo en la consola
+	DEBUGOUT("PRUEBA RTC..\n");	//Imprimo en la consola
 
 	Chip_RTC_Init(LPC_RTC);
 
 	/* Set current time for RTC 2:00:00PM, 2012-10-05 */
+
+	/*
 	FullTime.time[RTC_TIMETYPE_SECOND]  = 0;
-	FullTime.time[RTC_TIMETYPE_MINUTE]  = 0;
-	FullTime.time[RTC_TIMETYPE_HOUR]    = 14;
-	FullTime.time[RTC_TIMETYPE_DAYOFMONTH]  = 5;
-	FullTime.time[RTC_TIMETYPE_DAYOFWEEK]   = 5;
-	FullTime.time[RTC_TIMETYPE_DAYOFYEAR]   = 279;
-	FullTime.time[RTC_TIMETYPE_MONTH]   = 10;
-	FullTime.time[RTC_TIMETYPE_YEAR]    = 2012;
+	FullTime.time[RTC_TIMETYPE_MINUTE]  = 05;
+	FullTime.time[RTC_TIMETYPE_HOUR]    = 19;
+	FullTime.time[RTC_TIMETYPE_DAYOFMONTH]  = 26;
+	FullTime.time[RTC_TIMETYPE_DAYOFWEEK]   = 4;
+	FullTime.time[RTC_TIMETYPE_DAYOFYEAR]   = 207;
+	FullTime.time[RTC_TIMETYPE_MONTH]   = 07;
+	FullTime.time[RTC_TIMETYPE_YEAR]    = 2018;
 
 	Chip_RTC_SetFullTime(LPC_RTC, &FullTime);
-
+	//*/
 
 	/* Set the RTC to generate an interrupt on each second */
 	Chip_RTC_CntIncrIntConfig(LPC_RTC, RTC_AMR_CIIR_IMMIN, ENABLE);
