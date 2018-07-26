@@ -134,7 +134,7 @@ int main(void)
 
 	/* Set the RTC to generate an interrupt on each second */
 	Chip_RTC_CntIncrIntConfig(LPC_RTC, RTC_AMR_CIIR_IMSEC, ENABLE);
-
+//
 	/* Enable matching for alarm for second, minute, hour fields only */
 	Chip_RTC_AlarmIntConfig(LPC_RTC, RTC_AMR_CIIR_IMSEC | RTC_AMR_CIIR_IMMIN | RTC_AMR_CIIR_IMHOUR, ENABLE);
 
