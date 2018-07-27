@@ -25,8 +25,8 @@
 #define INPUT		((uint8_t) 0)
 
 /* Transmit and receive ring buffer sizes */
-#define UART_SRB_SIZE 128	/* Send */
-#define UART_RRB_SIZE 128	/* Receive */
+#define UART_SRB_SIZE 32	/* Send */
+#define UART_RRB_SIZE 1024	/* Receive */
 
 //TX Y RX DE UART 1
 #define 	TXD1	0,15
@@ -170,7 +170,7 @@ static void vTaskLeerAnillo(void *pvParameters)
 		//leo la cola de rercepcion y lo muestro en pantalla
 		if(LeerCola(Cola_RX,&dato,1))
 		{
-			DEBUGOUT("%c", dato);	//Imprimo en la consola
+			//DEBUGOUT("%c", dato);	//Imprimo en la consola
 		}
 
 	}
@@ -231,10 +231,10 @@ int main(void)
 	Cola_TX = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 
 	//Envio 5 datos por TX del string inst1
-	EscribirCola(Cola_TX,inst1,5);
+	//EscribirCola(Cola_TX,inst1,5);
 
 	xTaskCreate(vTaskLeerAnillo, (char *) "vTaskLeerAnillo",
-				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskCargarAnillo, (char *) "vTaskCargarAnillo",
@@ -242,7 +242,7 @@ int main(void)
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(xTaskUART1Config, (char *) "xTaskUART1Config",
-				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
 
 	/* Start the scheduler */
