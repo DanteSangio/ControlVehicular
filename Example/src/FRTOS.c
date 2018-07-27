@@ -35,17 +35,9 @@
 /* Transmit and receive buffers */
 static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];
 
-const char inst1[] = "LPC17xx/40xx UART example using ring buffers\r\n";
-const char inst2[] = "Press a key to echo it back or ESC to quit\r\n";
-
-
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
-
-static volatile bool fIntervalReached;
-static volatile bool fAlarmTimeMatched;
-static volatile bool On0, On1;
 
 /* Transmit and receive ring buffers */
 STATIC RINGBUFF_T txring, rxring;
@@ -67,10 +59,16 @@ QueueHandle_t Cola_TX;
  * Public functions
  ****************************************************************************/
 
+BaseType_t LeerCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad);
+void EscribirCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad);
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* uC_StartUp */
 void uC_StartUp (void)
 {
+	//Inicializacion de los pines de la UART1
 	Chip_GPIO_Init (LPC_GPIO);
 	Chip_GPIO_SetDir (LPC_GPIO, RXD1, INPUT);
 	Chip_IOCON_PinMux (LPC_IOCON, RXD1, IOCON_MODE_INACT, IOCON_FUNC1);
@@ -82,14 +80,6 @@ void uC_StartUp (void)
 void HANDLER_NAME(void)
 {
 	BaseType_t Testigo=pdFALSE;
-
-
-	/* Want to handle any errors? Do it here. */
-
-	/* Use default ring buffer handler. Override this with your own
-	   code if you need more capability. */
-	//Chip_UART_IRQRBHandler(UART_SELECTION, &rxring, &txring);
-
 
 	/* Handle transmit interrupt if enabled */
 	if (UART_SELECTION->IER & UART_IER_THREINT)
@@ -139,8 +129,7 @@ static void xTaskUART1Config(void *pvParameters)
 	/* Enable receive data and line status interrupt */
 	Chip_UART_IntEnable(UART_SELECTION, (UART_IER_RBRINT | UART_IER_RLSINT));
 
-	/* preemption = 1, sub-priority = 1 */
-	//NVIC_SetPriority(IRQ_SELECTION, 1);
+	//Habilito interrupcion UART1
 	NVIC_EnableIRQ(IRQ_SELECTION);
 
 	vTaskDelete(NULL);	//Borra la tarea
@@ -162,11 +151,11 @@ static void vTaskCargarAnillo(void *pvParameters)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskLeerAnillo */
-//
+//Pasa la informacion del anillo a la cola de recepcion
 static void vTaskLeerAnillo(void *pvParameters)
 {
 	uint8_t Receive=0;
-	uint8_t Testigo=0;
+	uint8_t Testigo=0, dato=0;
 
 	while (1)
 	{
@@ -176,18 +165,60 @@ static void vTaskLeerAnillo(void *pvParameters)
 		{
 			xSemaphoreGive(Semaforo_RX);
 			xQueueSendToBack(Cola_RX, &Receive, portMAX_DELAY);
-			DEBUGOUT("%c", Receive);	//Imprimo en la consola
 		}
+
+		//leo la cola de rercepcion y lo muestro en pantalla
+		if(LeerCola(Cola_RX,&dato,1))
+		{
+			DEBUGOUT("%c", dato);	//Imprimo en la consola
+		}
+
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* funcion para escribir la cola */
+//
+void EscribirCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad)
+{
+	uint8_t i=0;
+
+	for(i=0;i<cantidad;i++)
+	{
+		xQueueSendToBack(xQueue, &Dato[i], portMAX_DELAY);
+	}
+
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* funcion para leer la cola */
+//Devuelve 0 si no estan disponibles la cantidad de items pedidos, caso contrario devuelve 1
+BaseType_t LeerCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad)
+{
+	uint8_t i=0;
+	UBaseType_t uxNumberOfItems;
+
+	/* How many items are currently in the queue referenced by the xQueue handle? */
+	uxNumberOfItems = uxQueueMessagesWaiting( xQueue );
+
+	if(uxNumberOfItems < cantidad)
+		return pdFALSE;
+	else
+	{
+		for(i=0;i<cantidad;i++)
+		{
+			xQueueReceive(xQueue, &Dato[i], portMAX_DELAY);
+		}
+		return pdTRUE;
+	}
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 /* main
 */
 int main(void)
 {
 	const char inst1[] = "Hola manco\r\n";
-	uint8_t i=0;
 
 	uC_StartUp();
 
@@ -199,10 +230,8 @@ int main(void)
 
 	Cola_TX = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 
-	for(i=0;i<10;i++)
-	{
-		xQueueSendToBack(Cola_TX, &inst1[i], portMAX_DELAY);
-	}
+	//Envio 5 datos por TX del string inst1
+	EscribirCola(Cola_TX,inst1,5);
 
 	xTaskCreate(vTaskLeerAnillo, (char *) "vTaskLeerAnillo",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
