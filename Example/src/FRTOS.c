@@ -10,19 +10,33 @@
 #include "chip.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 #include "semphr.h"
+#include "string.h"
+#include <cr_section_macros.h>
 
-
-
-
-//#include "RegsLPC1769.h"
-
-
+#define UART_SELECTION 	LPC_UART1
+#define IRQ_SELECTION 	UART1_IRQn
+#define HANDLER_NAME 	UART1_IRQHandler
 
 #define DEBUGOUT(...) printf(__VA_ARGS__)
-#define DEBUGSTR(...) printf(__VA_ARGS__)
 
+#define OUTPUT		((uint8_t) 1)
+#define INPUT		((uint8_t) 0)
 
+/* Transmit and receive ring buffer sizes */
+#define UART_SRB_SIZE 128	/* Send */
+#define UART_RRB_SIZE 128	/* Receive */
+
+//TX Y RX DE UART 1
+#define 	TXD1	0,15
+#define		RXD1	0,16
+
+/* Transmit and receive buffers */
+static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];
+
+const char inst1[] = "LPC17xx/40xx UART example using ring buffers\r\n";
+const char inst2[] = "Press a key to echo it back or ESC to quit\r\n";
 
 
 /*****************************************************************************
@@ -33,26 +47,21 @@ static volatile bool fIntervalReached;
 static volatile bool fAlarmTimeMatched;
 static volatile bool On0, On1;
 
+/* Transmit and receive ring buffers */
+STATIC RINGBUFF_T txring, rxring;
+
 /*****************************************************************************
  * Public types/enumerations/variables
  ****************************************************************************/
 
-SemaphoreHandle_t Semaforo_RTC;
+SemaphoreHandle_t Semaforo_RX;
+
+QueueHandle_t Cola_RX;
+QueueHandle_t Cola_TX;
 
 /*****************************************************************************
  * Private functions
  ****************************************************************************/
-
-/* Gets and shows the current time and date */
-static void showTime(RTC_TIME_T *pTime)
-{
-	DEBUGOUT("Time: %.2d:%.2d %.2d/%.2d/%.4d\r\n",
-			 pTime->time[RTC_TIMETYPE_HOUR],
-			 pTime->time[RTC_TIMETYPE_MINUTE],
-			 pTime->time[RTC_TIMETYPE_DAYOFMONTH],
-			 pTime->time[RTC_TIMETYPE_MONTH],
-			 pTime->time[RTC_TIMETYPE_YEAR]);
-}
 
 /*****************************************************************************
  * Public functions
@@ -62,135 +71,150 @@ static void showTime(RTC_TIME_T *pTime)
 /* uC_StartUp */
 void uC_StartUp (void)
 {
-	/*
 	Chip_GPIO_Init (LPC_GPIO);
-	Chip_GPIO_SetDir (LPC_GPIO, LED_STICK, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, LED_STICK, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, BUZZER, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, BUZZER, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, RGBB, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, RGBB, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, RGBG, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, RGBG, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, RGBR, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, RGBR, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, LED1, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, LED1, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, LED2, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, LED2, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, LED3, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, LED3, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, LED4, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, LED4, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, SW1, INPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, SW1, IOCON_MODE_PULLDOWN, IOCON_FUNC0);
-
-	//Salidas apagadas
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_STICK);
-	Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, RGBR);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, RGBG);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, RGBB);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED1);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED2);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED3);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED4);
-	*/
+	Chip_GPIO_SetDir (LPC_GPIO, RXD1, INPUT);
+	Chip_IOCON_PinMux (LPC_IOCON, RXD1, IOCON_MODE_INACT, IOCON_FUNC1);
+	Chip_GPIO_SetDir (LPC_GPIO, TXD1, OUTPUT);
+	Chip_IOCON_PinMux (LPC_IOCON, TXD1, IOCON_MODE_INACT, IOCON_FUNC1);
 }
 
 
-/**
- * @brief	RTC interrupt handler
- * @return	Nothing
- */
-void RTC_IRQHandler(void)
+void HANDLER_NAME(void)
 {
-
 	BaseType_t Testigo=pdFALSE;
 
-	/* Toggle heart beat LED for each second field change interrupt */
-	if (Chip_RTC_GetIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE)) {
-		/* Clear pending interrupt */
-		Chip_RTC_ClearIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE);
-		xSemaphoreGiveFromISR(Semaforo_RTC, &Testigo);	//Devuelve si una de las tareas bloqueadas tiene mayor prioridad que la actual
-		portYIELD_FROM_ISR(Testigo);					//Si testigo es TRUE -> ejecuta el scheduler
 
+	/* Want to handle any errors? Do it here. */
+
+	/* Use default ring buffer handler. Override this with your own
+	   code if you need more capability. */
+	//Chip_UART_IRQRBHandler(UART_SELECTION, &rxring, &txring);
+
+
+	/* Handle transmit interrupt if enabled */
+	if (UART_SELECTION->IER & UART_IER_THREINT)
+	{
+		Chip_UART_TXIntHandlerRB(UART_SELECTION, &txring);
+
+		/* Disable transmit interrupt if the ring buffer is empty */
+		if (RingBuffer_IsEmpty(&txring)) {
+			Chip_UART_IntDisable(UART_SELECTION, UART_IER_THREINT);
+		}
+	}
+
+	/* Handle receive interrupt */
+	/* New data will be ignored if data not popped in time */
+	if (UART_SELECTION->IIR & UART_IIR_INTID_RDA )
+	{
+		while (Chip_UART_ReadLineStatus(UART_SELECTION) & UART_LSR_RDR)
+		{
+			uint8_t ch = Chip_UART_ReadByte(UART_SELECTION);
+			RingBuffer_Insert(&rxring, &ch);
+			xSemaphoreGiveFromISR(Semaforo_RX, &Testigo);	//Devuelve si una de las tareas bloqueadas tiene mayor prioridad que la actual
+		}
+		portYIELD_FROM_ISR(Testigo);					//Si testigo es TRUE -> ejecuta el scheduler
 	}
 }
 
-static void xTaskRTConfig(void *pvParameters)
+
+static void xTaskUART1Config(void *pvParameters)
 {
-	RTC_TIME_T FullTime;
+	DEBUGOUT("PRUEBA UART..\n");	//Imprimo en la consola
 
-	SystemCoreClockUpdate();
+	/* Setup UART for 9600 */
+	Chip_UART_Init(UART_SELECTION);
+	Chip_UART_SetBaud(UART_SELECTION, 9600);
+	Chip_UART_ConfigData(UART_SELECTION, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
+	Chip_UART_SetupFIFOS(UART_SELECTION, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
+	Chip_UART_TXEnable(UART_SELECTION);
 
-	DEBUGOUT("PRUEBA RTC..\n");	//Imprimo en la consola
+	/* Before using the ring buffers, initialize them using the ring buffer init function */
+	RingBuffer_Init(&rxring, rxbuff, 1, UART_RRB_SIZE);
+	RingBuffer_Init(&txring, txbuff, 1, UART_SRB_SIZE);
 
-	Chip_RTC_Init(LPC_RTC);
+	/* Reset and enable FIFOs, FIFO trigger level 3 (14 chars) */
+	Chip_UART_SetupFIFOS(UART_SELECTION, (UART_FCR_FIFO_EN | UART_FCR_RX_RS |
+							UART_FCR_TX_RS | UART_FCR_TRG_LEV3));
 
-	/* Set current time for RTC 2:00:00PM, 2012-10-05 */
+	/* Enable receive data and line status interrupt */
+	Chip_UART_IntEnable(UART_SELECTION, (UART_IER_RBRINT | UART_IER_RLSINT));
 
-	/*
-	FullTime.time[RTC_TIMETYPE_SECOND]  = 0;
-	FullTime.time[RTC_TIMETYPE_MINUTE]  = 05;
-	FullTime.time[RTC_TIMETYPE_HOUR]    = 19;
-	FullTime.time[RTC_TIMETYPE_DAYOFMONTH]  = 26;
-	FullTime.time[RTC_TIMETYPE_DAYOFWEEK]   = 4;
-	FullTime.time[RTC_TIMETYPE_DAYOFYEAR]   = 207;
-	FullTime.time[RTC_TIMETYPE_MONTH]   = 07;
-	FullTime.time[RTC_TIMETYPE_YEAR]    = 2018;
+	/* preemption = 1, sub-priority = 1 */
+	//NVIC_SetPriority(IRQ_SELECTION, 1);
+	NVIC_EnableIRQ(IRQ_SELECTION);
 
-	Chip_RTC_SetFullTime(LPC_RTC, &FullTime);
-	//*/
-
-	/* Set the RTC to generate an interrupt on each second */
-	Chip_RTC_CntIncrIntConfig(LPC_RTC, RTC_AMR_CIIR_IMMIN, ENABLE);
-
-	/* Clear interrupt pending */
-	Chip_RTC_ClearIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE);
-
-	/* Enable RTC interrupt in NVIC */
-	NVIC_EnableIRQ((IRQn_Type) RTC_IRQn);
-
-	/* Enable RTC (starts increase the tick counter and second counter register) */
-	Chip_RTC_Enable(LPC_RTC, ENABLE);
-
-//
 	vTaskDelete(NULL);	//Borra la tarea
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskInicTimer */
-static void vTaskRTC(void *pvParameters)
+/* vTaskCargarAnillo */
+//Encargada de cargar el anillo a partir de la cola
+static void vTaskCargarAnillo(void *pvParameters)
 {
-	RTC_TIME_T FullTime;
+	uint8_t Receive=0;
 	while (1)
 	{
-		xSemaphoreTake(Semaforo_RTC, portMAX_DELAY);
-		Chip_RTC_GetFullTime(LPC_RTC, &FullTime);
-		showTime(&FullTime);
+		xQueueReceive(Cola_TX, &Receive, portMAX_DELAY);
+		Chip_UART_SendRB(UART_SELECTION, &txring, &Receive , 1);
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* vTaskLeerAnillo */
+//
+static void vTaskLeerAnillo(void *pvParameters)
+{
+	uint8_t Receive=0;
+	uint8_t Testigo=0;
+
+	while (1)
+	{
+		xSemaphoreTake(Semaforo_RX, portMAX_DELAY);
+		Testigo = RingBuffer_Pop(&rxring, &Receive);
+		if(Testigo)
+		{
+			xSemaphoreGive(Semaforo_RX);
+			xQueueSendToBack(Cola_RX, &Receive, portMAX_DELAY);
+			DEBUGOUT("%c", Receive);	//Imprimo en la consola
+		}
+	}
+	vTaskDelete(NULL);	//Borra la tarea si sale del while
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* main
 */
 int main(void)
 {
-	uC_StartUp ();
+	const char inst1[] = "Hola manco\r\n";
+	uint8_t i=0;
+
+	uC_StartUp();
 
 	SystemCoreClockUpdate();
 
-	vSemaphoreCreateBinary(Semaforo_RTC);			//Creamos el semaforo
+	vSemaphoreCreateBinary(Semaforo_RX);			//Creamos el semaforo
 
-	xTaskCreate(vTaskRTC, (char *) "vTaskRTC",
+	Cola_RX = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
+
+	Cola_TX = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
+
+	for(i=0;i<10;i++)
+	{
+		xQueueSendToBack(Cola_TX, &inst1[i], portMAX_DELAY);
+	}
+
+	xTaskCreate(vTaskLeerAnillo, (char *) "vTaskLeerAnillo",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-	xTaskCreate(xTaskRTConfig, (char *) "xTaskRTConfig",
-				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
+
+	xTaskCreate(vTaskCargarAnillo, (char *) "vTaskCargarAnillo",
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 
+	xTaskCreate(xTaskUART1Config, (char *) "xTaskUART1Config",
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
+				(xTaskHandle *) NULL);
 
 	/* Start the scheduler */
 	vTaskStartScheduler();
