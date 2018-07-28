@@ -7,6 +7,11 @@
  Description : main definition
 ===============================================================================
 */
+
+/*****************************************************************************
+ * Includes
+ ****************************************************************************/
+
 #include "chip.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -15,53 +20,40 @@
 #include "string.h"
 #include <cr_section_macros.h>
 
-#define UART_SELECTION 	LPC_UART1
-#define IRQ_SELECTION 	UART1_IRQn
-#define HANDLER_NAME 	UART1_IRQHandler
-
-#define DEBUGOUT(...) printf(__VA_ARGS__)
+/*****************************************************************************
+ * Defines
+ ****************************************************************************/
 
 #define OUTPUT		((uint8_t) 1)
 #define INPUT		((uint8_t) 0)
+#define DEBUGOUT(...) printf(__VA_ARGS__)
 
-/* Transmit and receive ring buffer sizes */
-#define UART_SRB_SIZE 32	/* Send */
-#define UART_RRB_SIZE 1024	/* Receive */
+//UART
+#define UART_SELECTION 	LPC_UART1
+#define IRQ_SELECTION 	UART1_IRQn
+#define HANDLER_NAME 	UART1_IRQHandler
+#define 	TXD1	0,15	//TX UART1
+#define		RXD1	0,16	//RX UART1
 
-//TX Y RX DE UART 1
-#define 	TXD1	0,15
-#define		RXD1	0,16
+#define UART_SRB_SIZE 32	//S:Send - Transmit ring buffer size
+#define UART_RRB_SIZE 1024	//R:Receive - Receive ring buffer size
 
-/* Transmit and receive buffers */
-static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];
-
-/*****************************************************************************
- * Private types/enumerations/variables
- ****************************************************************************/
-
-/* Transmit and receive ring buffers */
-STATIC RINGBUFF_T txring, rxring;
 
 /*****************************************************************************
- * Public types/enumerations/variables
+ * Types/enumerations/variables
  ****************************************************************************/
-
 SemaphoreHandle_t Semaforo_RX;
-
 QueueHandle_t Cola_RX;
 QueueHandle_t Cola_TX;
 
-/*****************************************************************************
- * Private functions
- ****************************************************************************/
+STATIC RINGBUFF_T txring, rxring;	//Transmit and receive ring buffers
+static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];	//Transmit and receive buffers
 
 /*****************************************************************************
- * Public functions
+ * Functions
  ****************************************************************************/
-
 BaseType_t LeerCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad);
 void EscribirCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad);
-
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -218,7 +210,7 @@ BaseType_t LeerCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad)
 */
 int main(void)
 {
-	const char inst1[] = "Hola manco\r\n";
+	//const char inst1[] = "Hola manco\r\n";
 
 	uC_StartUp();
 
@@ -230,8 +222,7 @@ int main(void)
 
 	Cola_TX = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 
-	//Envio 5 datos por TX del string inst1
-	//EscribirCola(Cola_TX,inst1,5);
+	//EscribirCola(Cola_TX,inst1,5);	//Envio 5 datos por TX del string inst1
 
 	xTaskCreate(vTaskLeerAnillo, (char *) "vTaskLeerAnillo",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
