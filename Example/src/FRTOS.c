@@ -101,6 +101,7 @@ STATIC RINGBUFF_T txring, rxring;	//Transmit and receive ring buffers
 static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];	//Transmit and receive buffers
 
 volatile int HourGPS, MinuteGPS, DayGPS, MonthGPS, YearGPS;
+volatile float Lat1GPS, Lat2GPS, Long1GPS, Long2GPS;
 
 /*****************************************************************************
  * Functions
@@ -297,14 +298,18 @@ BaseType_t LeerCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad)
 void AnalizarTramaGPS (uint8_t dato)
 {
 	static int i=0;
-	static int c=0;
 	static int EstadoTrama=0;
 	static char Trama[100];
-	static bool DatoCorrecto=OFF;
 	static char HourMinute[4];
 	static char Date[6];
-	static char Lat[10];
-	static char Long[10];
+	static char Lat1[4];
+	static char Lat2[5];
+	static char Long1[4];
+	static char Long2[5];
+
+	int Aux;
+	float Aux1;
+	float Aux2;
 
 	if(dato=='$')		//Inicio de la trama
 	{
@@ -341,35 +346,79 @@ void AnalizarTramaGPS (uint8_t dato)
 		break;
 
 		case 4:		//HORA Y FECHA
+			//Hora
 			for(i=6;i<=9;i++)
 			{
 				HourMinute[i-6]=Trama[i];
 			}
 			HourMinute[4]='\0';
-			DEBUGOUT("%s\t",HourMinute);
+			HourGPS=atoi(HourMinute);
+			MinuteGPS=HourGPS%100;
+			HourGPS=HourGPS/100;
+			if(HourGPS>=0 && HourGPS<=2)
+			{
+				HourGPS=HourGPS+21;
+			}
+			else
+			{
+				HourGPS=HourGPS-3;
+			}
+			DEBUGOUT("%.2d:%.2d\t",HourGPS,MinuteGPS);
+
+			//Fecha
 			for(i=52;i<=57;i++)
 			{
 				Date[i-52]=Trama[i];
 			}
 			Date[6]='\0';
-			DEBUGOUT("%s\n",Date);
+			DayGPS=atoi(Date);
+			YearGPS=DayGPS%100;
+			MonthGPS=(DayGPS/100)%100;
+			DayGPS=DayGPS/10000;
+			DEBUGOUT("%.2d/%.2d/%.2d\n",DayGPS,MonthGPS,YearGPS);
 			EstadoTrama=5;
 		break;
 
-		case 5: 	//LATITUD Y LONGITUD
-			for(i=18;i<=27;i++)
+		case 5: 	//LATITUD Y LONGITUD -> DD = d + (min/60) + (sec/3600)
+			//Latitud
+			for(i=18;i<=21;i++)
 			{
-				Lat[i-18]=Trama[i];
+				Lat1[i-18]=Trama[i];
 			}
-			Lat[10]='\0';
-			DEBUGOUT("%s\t",Lat);
-			for(i=32;i<=41;i++)
+			Lat1[4]='\0';
+			for(i=23;i<=27;i++)
 			{
-				Long[i-32]=Trama[i];
+				Lat2[i-23]=Trama[i];
 			}
-			Long[10]='\0';
-			DEBUGOUT("%s",Long);
-			DEBUGOUT("\n");
+			Lat2[5]='\0';
+			Aux=atoi(Lat1);
+			Lat1GPS=Aux/10000000;
+			Lat2GPS=(Aux/100000)%100;
+			Aux1=(Aux%100000);
+			Aux2=(Aux1/100000);
+			Lat2GPS=Lat2GPS+Aux2;
+			Lat1GPS=Lat1GPS+(Lat2GPS/60);
+			//DEBUGOUT("%f\t",Lat1GPS);  	-> Tira HardFault si descomento esta linea
+
+			//Longitud
+			for(i=32;i<=35;i++)
+			{
+				Long1[i-32]=Trama[i];
+			}
+			Long1[4]='\0';
+			for(i=37;i<=41;i++)
+			{
+				Long2[i-37]=Trama[i];
+			}
+			Long2[5]='\0';
+			Aux=atoi(Long1);
+			Long1GPS=Aux/10000000;
+			Long2GPS=(Aux/100000)%100;
+			Aux1=(Aux%100000);
+			Aux2=(Aux1/100000);
+			Long2GPS=Long2GPS+Aux2;
+			Long1GPS=Long1GPS+(Long2GPS/60);
+			//DEBUGOUT("%f\n",Long1GPS);	-> Tira HardFault si descomento esta linea
 
 			EstadoTrama=6;
 		break;
@@ -388,8 +437,6 @@ void AnalizarTramaGPS (uint8_t dato)
 */
 int main(void)
 {
-	//const char inst1[] = "Hola manco\r\n";
-
 	uC_StartUp();
 
 	SystemCoreClockUpdate();
@@ -399,8 +446,6 @@ int main(void)
 	Cola_RX = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 
 	Cola_TX = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
-
-	//EscribirCola(Cola_TX,inst1,5);	//Envio 5 datos por TX del string inst1
 
 	xTaskCreate(vTaskLeerAnillo, (char *) "vTaskLeerAnillo",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
