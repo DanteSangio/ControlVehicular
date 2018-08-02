@@ -6,6 +6,10 @@
 
 #include "MFRC522.h"
 
+#define DEBUGOUT(...) printf(__VA_ARGS__)
+#define DEBUGSTR(...) printf(__VA_ARGS__)
+
+
 // ADT object allocation counter
 static int MFRC_Instance_Counter = 0;
 
@@ -16,7 +20,7 @@ void SSP_Init_PINES(LPC_SSP_T *pSSP)
 	if (pSSP == LPC_SSP1) {
 		/* Set up clock and muxing for SSP1 interface */
 		/*
-		 * Initialize SSP0 pins connect
+		 * Initialize SSP1 pins connect
 		 * P0.7: SCK
 		 * P0.6: SSEL
 		 * P0.8: MISO

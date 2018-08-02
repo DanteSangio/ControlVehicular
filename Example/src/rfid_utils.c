@@ -5,6 +5,10 @@
 */
 #include "rfid_utils.h"
 
+#define DEBUGOUT(...) printf(__VA_ARGS__)
+#define DEBUGSTR(...) printf(__VA_ARGS__)
+
+
 /****************************************
  * Private variables
  ****************************************/

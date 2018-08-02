@@ -46,7 +46,7 @@ unsigned int last_user_ID;
  * Public types/enumerations/variables
  ****************************************************************************/
 
-SemaphoreHandle_t Semaforo_RTC;
+SemaphoreHandle_t Semaforo_RFID;
 
 /*****************************************************************************
  * Private functions
@@ -106,6 +106,8 @@ static void xTaskRFIDConfig(void *pvParameters)
 
 	setupRFID(&mfrcInstance);
 
+	xSemaphoreGive(Semaforo_RFID);//Doy el semaforo para que se inicie la lectura
+
 	vTaskDelete(NULL);	//Borra la tarea
 }
 
@@ -113,6 +115,7 @@ static void xTaskRFIDConfig(void *pvParameters)
 /* vTaskInicTimer */
 static void vTaskRFID(void *pvParameters)
 {
+	xSemaphoreTake(Semaforo_RFID, portMAX_DELAY); //semaforo de inicializacion de rfid
 	while (1)
 	{
 
@@ -140,6 +143,9 @@ int main(void)
 
 	/* Initializes GPIO */
 	Chip_GPIO_Init(LPC_GPIO);
+
+	vSemaphoreCreateBinary(Semaforo_RFID);
+	xSemaphoreTake(Semaforo_RFID, portMAX_DELAY); //semaforo de inicializacion de rfid
 
 	xTaskCreate(vTaskRFID, (char *) "vTaskRFID",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
