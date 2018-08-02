@@ -1,4 +1,4 @@
-Example/src/RFID.o Example/src/RFID.d: ../Example/src/RFID.c \
+Example/src/FRTOS.o Example/src/FRTOS.d: ../Example/src/FRTOS.c \
  D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/chip.h \
  D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/lpc_types.h \
  D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/sys_config.h \
@@ -36,7 +36,6 @@ Example/src/RFID.o Example/src/RFID.d: ../Example/src/RFID.c \
  D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/romapi_17xx_40xx.h \
  D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/iap.h \
  D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/error.h \
- C:\Users\kevin\git\ControlVehicular\Example\inc/delay.h \
  C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/FreeRTOS.h \
  C:\Users\kevin\git\ControlVehicular\Example\inc/FreeRTOSConfig.h \
  C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/projdefs.h \
@@ -48,6 +47,7 @@ Example/src/RFID.o Example/src/RFID.d: ../Example/src/RFID.c \
  C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/list.h \
  C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/semphr.h \
  C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/queue.h \
+ C:\Users\kevin\git\ControlVehicular\Example\inc/delay.h \
  C:\Users\kevin\git\ControlVehicular\Example\inc/MFRC522.h \
  C:\Users\kevin\git\ControlVehicular\Example\inc/delay.h \
  C:\Users\kevin\git\ControlVehicular\Example\inc/rfid_utils.h \
@@ -127,8 +127,6 @@ D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/iap.h:
 
 D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/error.h:
 
-C:\Users\kevin\git\ControlVehicular\Example\inc/delay.h:
-
 C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/FreeRTOS.h:
 
 C:\Users\kevin\git\ControlVehicular\Example\inc/FreeRTOSConfig.h:
@@ -150,6 +148,8 @@ C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/list.h:
 C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/semphr.h:
 
 C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/queue.h:
+
+C:\Users\kevin\git\ControlVehicular\Example\inc/delay.h:
 
 C:\Users\kevin\git\ControlVehicular\Example\inc/MFRC522.h:
 

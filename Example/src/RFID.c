@@ -14,9 +14,15 @@
 #include "delay.h"
 #include "MFRC522.h"
 #include "rfid_utils.h"
-#include "MFRC522.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
 
 #define MIN_BALANCE 300
+
+#define DEBUGOUT(...) printf(__VA_ARGS__)
+#define DEBUGSTR(...) printf(__VA_ARGS__)
+
 /*******************************************************************************
  *  Extra functions defined in the main.c file
  ******************************************************************************/
@@ -45,7 +51,7 @@ int main(void) {
 	SystemCoreClockUpdate();
 
 	/* Sets up DEBUG UART */
-	DEBUGINIT();
+//	DEBUGINIT();
 
 	/* Initializes GPIO */
 	Chip_GPIO_Init(LPC_GPIO);

@@ -407,9 +407,14 @@ void PCD_Init(MFRC522Ptr_t mfrc, LPC_SSP_T *pSSP) {
 			(bool)true); // Exit power down mode. This triggers a hard reset.
 		// Section 8.8.2 in the datasheet says the oscillator start-up time is
 		// the start up time of the crystal + 37,74�s. Let us be generous: 50ms.
+
+		vTaskDelay( 50 / portTICK_PERIOD_MS );//Delay de 50 mseg
+
+		/*
 		SysTick_Init();
 		delay_ms(50);
-		//Board_LED_Toggle(0);
+		Board_LED_Toggle(0);*/
+
 	} else { // Perform a soft reset
 		PCD_Reset(mfrc);
 	}
@@ -456,9 +461,14 @@ void PCD_Reset(MFRC522Ptr_t mfrc) {
 	// 4 of CommandReg)
 	// Section 8.8.2 in the datasheet says the oscillator start-up time is the
 	// start up time of the crystal + 37,74�s. Let us be generous: 50ms.
+
+	vTaskDelay( 50 / portTICK_PERIOD_MS );//Delay de 50 mseg
+	/*
 	SysTick_Init();
 	delay_ms(50);
 	//Board_LED_Toggle(0);
+	*/
+
 	// Wait for the PowerDown bit in CommandReg to be cleared
 	while (PCD_ReadRegister(mfrc, CommandReg) & (1 << 4)) {
 		// PCD still restarting - unlikely after waiting 50ms, but better safe
