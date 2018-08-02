@@ -1,4 +1,8 @@
-Example/src/FRTOS.o Example/src/FRTOS.d: ../Example/src/FRTOS.c \
+Example/src/rfid_utils.o Example/src/rfid_utils.d: \
+ ../Example/src/rfid_utils.c \
+ C:\Users\kevin\git\ControlVehicular\Example\inc/rfid_utils.h \
+ C:\Users\kevin\git\ControlVehicular\Example\inc/MFRC522.h \
+ C:\Users\kevin\git\ControlVehicular\Example\inc/delay.h \
  D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/chip.h \
  D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/lpc_types.h \
  D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/sys_config.h \
@@ -47,6 +51,12 @@ Example/src/FRTOS.o Example/src/FRTOS.d: ../Example/src/FRTOS.c \
  C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/list.h \
  C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/semphr.h \
  C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/queue.h
+
+C:\Users\kevin\git\ControlVehicular\Example\inc/rfid_utils.h:
+
+C:\Users\kevin\git\ControlVehicular\Example\inc/MFRC522.h:
+
+C:\Users\kevin\git\ControlVehicular\Example\inc/delay.h:
 
 D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/chip.h:
 
