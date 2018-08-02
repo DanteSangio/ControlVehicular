@@ -13,7 +13,6 @@
 #ifndef INC_RFID_UTILS_H
 #define INC_RFID_UTILS_H
 
-//#include "board.h"
 #include "MFRC522.h"
 #include "chip.h"
 #include "FreeRTOS.h"
@@ -47,5 +46,9 @@ int readCardBalance(MFRC522Ptr_t mfrc522);
  * @return            0 if no errors
  */
 int writeCardBalance(MFRC522Ptr_t mfrc522, int newBalance);
+
+/* Compara dos numeros binarios*/
+void Comparar(unsigned int tarjeta);
+
 
 #endif

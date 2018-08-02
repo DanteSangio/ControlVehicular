@@ -1,6 +1,5 @@
 Example/src/MFRC522.o Example/src/MFRC522.d: ../Example/src/MFRC522.c \
  C:\Users\kevin\git\ControlVehicular\Example\inc/MFRC522.h \
- C:\Users\kevin\git\ControlVehicular\Example\inc/delay.h \
  D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/chip.h \
  D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/lpc_types.h \
  D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/sys_config.h \
@@ -51,8 +50,6 @@ Example/src/MFRC522.o Example/src/MFRC522.d: ../Example/src/MFRC522.c \
  C:\Users\kevin\git\ControlVehicular\freeRTOS\inc/queue.h
 
 C:\Users\kevin\git\ControlVehicular\Example\inc/MFRC522.h:
-
-C:\Users\kevin\git\ControlVehicular\Example\inc/delay.h:
 
 D:\Facultad\Digitales\ II\Repositorio\ MCU\lpc_chip_175x_6x\inc/chip.h:
 

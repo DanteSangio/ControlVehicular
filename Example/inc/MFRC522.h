@@ -23,7 +23,6 @@
 //#include "board.h"
 #include <stdint.h>
 #include <string.h> //some functions need NULL to be defined
-#include "delay.h"
 #include "chip.h"
 #include "FreeRTOS.h"
 #include "task.h"

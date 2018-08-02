@@ -191,3 +191,20 @@ int writeCardBalance(MFRC522Ptr_t mfrc522, int newBalance) {
 
 	return writeStatus;
 }
+
+
+void Comparar(unsigned int tarjeta)
+{
+	unsigned int base = 4266702969;
+
+	if(tarjeta == base)
+	{
+		DEBUGOUT("Tarjeta igual\n\r");
+	}
+	else
+	{
+		DEBUGOUT("Tarjeta distinta\n\r");
+	}
+
+	return ;
+}
