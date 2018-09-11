@@ -94,7 +94,7 @@ static void xTaskRFIDConfig(void *pvParameters)
 {
 	SystemCoreClockUpdate();
 
-	DEBUGOUT1("PRUEBA RFID..\n");	//Imprimo en la consola
+	DEBUGOUT1("PRUEBA SD..\n");	//Imprimo en la consola
 
 	setupRFID(&mfrcInstance);
 
