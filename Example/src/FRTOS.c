@@ -37,8 +37,8 @@
 #define UART_SELECTION 	LPC_UART1
 #define IRQ_SELECTION 	UART1_IRQn
 #define HANDLER_NAME 	UART1_IRQHandler
-#define TXD1	0,15	//TX UART1
-#define	RXD1	0,16	//RX UART1
+#define TXD1	0,15	//TX UART1	(Pin 13 LPC1769)
+#define	RXD1	0,16	//RX UART1	(Pin 14 LPC1769)
 
 #define UART_SRB_SIZE 32	//S:Send - Transmit ring buffer size
 #define UART_RRB_SIZE 1024	//R:Receive - Receive ring buffer size
@@ -305,7 +305,7 @@ BaseType_t LeerCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* funcion para analizar la trama GPS */
-//
+//Analiza la trama GPS y guarda los datos deseados en las variables globales de GPS
 void AnalizarTramaGPS (uint8_t dato)
 {
 	static int i=0;
@@ -321,6 +321,7 @@ void AnalizarTramaGPS (uint8_t dato)
 	int Aux;
 	float Aux1;
 	float Aux2;
+	bool flagFecha=OFF;
 
 	if(dato=='$')		//Inicio de la trama
 	{
@@ -369,10 +370,12 @@ void AnalizarTramaGPS (uint8_t dato)
 			if(HourGPS>=0 && HourGPS<=2)
 			{
 				HourGPS=HourGPS+21;
+				flagFecha=ON;		//flag correccion de fecha
 			}
 			else
 			{
 				HourGPS=HourGPS-3;
+				flagFecha=OFF;
 			}
 			DEBUGOUT("%.2d:%.2d\t",HourGPS,MinuteGPS);
 
@@ -382,7 +385,15 @@ void AnalizarTramaGPS (uint8_t dato)
 				Date[i-52]=Trama[i];
 			}
 			Date[6]='\0';
-			DayGPS=atoi(Date);
+			if(flagFecha==ON)
+			{
+				flagFecha=OFF;
+				DayGPS=atoi(Date-1);
+			}
+			else
+			{
+				DayGPS=atoi(Date);
+			}
 			YearGPS=DayGPS%100;
 			MonthGPS=(DayGPS/100)%100;
 			DayGPS=DayGPS/10000;
