@@ -12,6 +12,7 @@
  * Includes
  ****************************************************************************/
 
+#include "stdlib.h"
 #include "chip.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -41,6 +42,14 @@
 
 #define UART_SRB_SIZE 32	//S:Send - Transmit ring buffer size
 #define UART_RRB_SIZE 1024	//R:Receive - Receive ring buffer size
+
+//GPS
+#define	INICIO_TRAMA	0
+#define CHEQUEO_FIN		1
+#define CHEQUEO_TRAMA	2
+#define TRAMA_CORRECTA	3
+#define HORA_FECHA		4
+#define LAT_LONG		5
 
 //Placa Infotronic
 #define LED_STICK	PORT(0),PIN(22)
@@ -97,11 +106,12 @@ SemaphoreHandle_t Semaforo_RX;
 QueueHandle_t Cola_RX;
 QueueHandle_t Cola_TX;
 
-STATIC RINGBUFF_T txring, rxring;	//Transmit and receive ring buffers
+STATIC RINGBUFF_T txring, rxring;								//Transmit and receive ring buffers
 static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];	//Transmit and receive buffers
 
-volatile int HourGPS, MinuteGPS, DayGPS, MonthGPS, YearGPS;
-volatile float Lat1GPS, Lat2GPS, Long1GPS, Long2GPS;
+volatile int HourGPS, MinuteGPS, DayGPS, MonthGPS, YearGPS;		//GPS: Variables que guardan informacion
+volatile float LatGPS, LongGPS, Lat1GPS;						//GPS: Variables que guardan informacion
+volatile float Lat1GPS, Lat2GPS, Long1GPS, Long2GPS;			//GPS: Variables auxiliares
 
 /*****************************************************************************
  * Functions
@@ -114,6 +124,7 @@ void AnalizarTramaGPS (uint8_t dato);
 /* uC_StartUp */
 void uC_StartUp (void)
 {
+	DEBUGOUT("Configurando pines I/O..\n");	//Imprimo en la consola
 	Chip_GPIO_Init (LPC_GPIO);
 	//Inicializacion de los pines de la UART1
 	Chip_GPIO_SetDir (LPC_GPIO, RXD1, INPUT);
@@ -155,29 +166,29 @@ void uC_StartUp (void)
 }
 
 
-void HANDLER_NAME(void)
+void UART1_IRQHandler(void)
 {
 	BaseType_t Testigo=pdFALSE;
 
 	/* Handle transmit interrupt if enabled */
-	if (UART_SELECTION->IER & UART_IER_THREINT)
+	if (LPC_UART1->IER & UART_IER_THREINT)
 	{
-		Chip_UART_TXIntHandlerRB(UART_SELECTION, &txring);
+		Chip_UART_TXIntHandlerRB(LPC_UART1, &txring);
 
 		/* Disable transmit interrupt if the ring buffer is empty */
 		if (RingBuffer_IsEmpty(&txring))
 		{
-			Chip_UART_IntDisable(UART_SELECTION, UART_IER_THREINT);
+			Chip_UART_IntDisable(LPC_UART1, UART_IER_THREINT);
 		}
 	}
 
 	/* Handle receive interrupt */
 	/* New data will be ignored if data not popped in time */
-	if (UART_SELECTION->IIR & UART_IIR_INTID_RDA )
+	if (LPC_UART1->IIR & UART_IIR_INTID_RDA )
 	{
-		while (Chip_UART_ReadLineStatus(UART_SELECTION) & UART_LSR_RDR)
+		while (Chip_UART_ReadLineStatus(LPC_UART1) & UART_LSR_RDR)
 		{
-			uint8_t ch = Chip_UART_ReadByte(UART_SELECTION);
+			uint8_t ch = Chip_UART_ReadByte(LPC_UART1);
 			RingBuffer_Insert(&rxring, &ch);
 			xSemaphoreGiveFromISR(Semaforo_RX, &Testigo);	//Devuelve si una de las tareas bloqueadas tiene mayor prioridad que la actual
 		}
@@ -188,25 +199,25 @@ void HANDLER_NAME(void)
 
 static void xTaskUART1Config(void *pvParameters)
 {
-	DEBUGOUT("PRUEBA UART..\n");	//Imprimo en la consola
+	DEBUGOUT("Configurando la UART1..\n");	//Imprimo en la consola
 
 	/* Setup UART for 9600 */
-	Chip_UART_Init(UART_SELECTION);
-	Chip_UART_SetBaud(UART_SELECTION, 9600);
-	Chip_UART_ConfigData(UART_SELECTION, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
-	Chip_UART_SetupFIFOS(UART_SELECTION, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
-	Chip_UART_TXEnable(UART_SELECTION);
+	Chip_UART_Init(LPC_UART1);
+	Chip_UART_SetBaud(LPC_UART1, 9600);
+	Chip_UART_ConfigData(LPC_UART1, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
+	Chip_UART_SetupFIFOS(LPC_UART1, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
+	Chip_UART_TXEnable(LPC_UART1);
 
 	/* Before using the ring buffers, initialize them using the ring buffer init function */
 	RingBuffer_Init(&rxring, rxbuff, 1, UART_RRB_SIZE);
 	RingBuffer_Init(&txring, txbuff, 1, UART_SRB_SIZE);
 
 	/* Reset and enable FIFOs, FIFO trigger level 3 (14 chars) */
-	Chip_UART_SetupFIFOS(UART_SELECTION, (UART_FCR_FIFO_EN | UART_FCR_RX_RS |
+	Chip_UART_SetupFIFOS(LPC_UART1, (UART_FCR_FIFO_EN | UART_FCR_RX_RS |
 							UART_FCR_TX_RS | UART_FCR_TRG_LEV3));
 
 	/* Enable receive data and line status interrupt */
-	Chip_UART_IntEnable(UART_SELECTION, (UART_IER_RBRINT | UART_IER_RLSINT));
+	Chip_UART_IntEnable(LPC_UART1, (UART_IER_RBRINT | UART_IER_RLSINT));
 
 	//Habilito interrupcion UART1
 	NVIC_EnableIRQ(IRQ_SELECTION);
@@ -223,7 +234,7 @@ static void vTaskCargarAnillo(void *pvParameters)
 	while (1)
 	{
 		xQueueReceive(Cola_TX, &Receive, portMAX_DELAY);
-		Chip_UART_SendRB(UART_SELECTION, &txring, &Receive , 1);
+		Chip_UART_SendRB(LPC_UART1, &txring, &Receive , 1);
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
@@ -317,13 +328,13 @@ void AnalizarTramaGPS (uint8_t dato)
 	}
 	switch(EstadoTrama)
 	{
-		case 0:		//INICIO_TRAMA
+		case INICIO_TRAMA:		//INICIO_TRAMA
 			EstadoTrama=1;
 			memset(Trama,0,100);
 			i=0;
 		break;
 
-		case 1:		//CHEQUEO_FIN
+		case CHEQUEO_FIN:		//CHEQUEO_FIN
 			Trama[i]=dato;
 			i++;
 			if(dato=='*')
@@ -332,20 +343,20 @@ void AnalizarTramaGPS (uint8_t dato)
 			}
 		break;
 
-		case 2:		//CHEQUEO_TRAMA
+		case CHEQUEO_TRAMA:		//CHEQUEO_TRAMA
 			if(Trama[16]=='A' && Trama[29]=='S' && Trama[43]=='W')
 			{
 				EstadoTrama=3;	//Trama correcta
 			}
 		break;
 
-		case 3:		//TRAMA_CORRECTA
+		case TRAMA_CORRECTA:		//TRAMA_CORRECTA
 			DEBUGOUT("%s",Trama);
 			DEBUGOUT("\n");
 			EstadoTrama=4;
 		break;
 
-		case 4:		//HORA Y FECHA
+		case HORA_FECHA:		//HORA Y FECHA
 			//Hora
 			for(i=6;i<=9;i++)
 			{
@@ -379,7 +390,7 @@ void AnalizarTramaGPS (uint8_t dato)
 			EstadoTrama=5;
 		break;
 
-		case 5: 	//LATITUD Y LONGITUD -> DD = d + (min/60) + (sec/3600)
+		case LAT_LONG: 	//LATITUD Y LONGITUD -> DD = d + (min/60) + (sec/3600)
 			//Latitud
 			for(i=18;i<=21;i++)
 			{
@@ -398,7 +409,8 @@ void AnalizarTramaGPS (uint8_t dato)
 			Aux2=(Aux1/100000);
 			Lat2GPS=Lat2GPS+Aux2;
 			Lat1GPS=Lat1GPS+(Lat2GPS/60);
-			//DEBUGOUT("%f\t",Lat1GPS);  	-> Tira HardFault si descomento esta linea
+			LatGPS=-Lat1GPS;
+			//DEBUGOUT("%f\t",LatGPS);  	//-> Tira HardFault si descomento esta linea
 
 			//Longitud
 			for(i=32;i<=35;i++)
@@ -418,7 +430,8 @@ void AnalizarTramaGPS (uint8_t dato)
 			Aux2=(Aux1/100000);
 			Long2GPS=Long2GPS+Aux2;
 			Long1GPS=Long1GPS+(Long2GPS/60);
-			//DEBUGOUT("%f\n",Long1GPS);	-> Tira HardFault si descomento esta linea
+			LongGPS=-Long1GPS;
+			//DEBUGOUT("%f\n",LongGPS);	//-> Tira HardFault si descomento esta linea
 
 			EstadoTrama=6;
 		break;
@@ -437,6 +450,8 @@ void AnalizarTramaGPS (uint8_t dato)
 */
 int main(void)
 {
+	DEBUGOUT("Inicializando prueba GPS..\n");	//Imprimo en la consola
+
 	uC_StartUp();
 
 	SystemCoreClockUpdate();
