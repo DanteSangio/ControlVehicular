@@ -38,6 +38,8 @@
 #define HANDLER_NAME 	UART1_IRQHandler
 #define TXD1	0,15	//TX UART1
 #define	RXD1	0,16	//RX UART1
+#define TXD0	0,2		//TX UART0
+#define RXD0	0,3		//RX UART0
 
 #define UART_SRB_SIZE 32	//S:Send - Transmit ring buffer size
 #define UART_RRB_SIZE 1024	//R:Receive - Receive ring buffer size
@@ -155,7 +157,7 @@ void uC_StartUp (void)
 }
 
 
-void HANDLER_NAME(void)
+void UART1_IRQHandler(void)
 {
 	BaseType_t Testigo=pdFALSE;
 
