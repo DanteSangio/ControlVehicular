@@ -86,8 +86,8 @@
 #define EXPANSION15	PORT(1),PIN(18)
 #define EXPANSION16	PORT(2),PIN(8)
 #define EXPANSION17	PORT(2),PIN(12)
-#define EXPANSION18	PORT(0),PIN(16) //RX1 No se puede usar
-#define EXPANSION19	PORT(0),PIN(15) //TX1 No se puede usar
+#define EXPANSION18	PORT(0),PIN(16)
+#define EXPANSION19	PORT(0),PIN(15)
 #define EXPANSION20	PORT(0),PIN(22) //RTS1
 #define EXPANSION21	PORT(0),PIN(17) //CTS1
 //#define EXPANSION22		PORT
@@ -222,7 +222,7 @@ static void xTaskUART1Config(void *pvParameters)
 	Chip_UART_IntEnable(LPC_UART1, (UART_IER_RBRINT | UART_IER_RLSINT));
 
 	//Habilito interrupcion UART1
-	NVIC_EnableIRQ(IRQ_SELECTION);
+	NVIC_EnableIRQ(UART1_IRQn);
 
 	vTaskDelete(NULL);	//Borra la tarea
 }
