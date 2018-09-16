@@ -220,7 +220,7 @@ static void xTaskUART1Config(void *pvParameters)
 	Chip_UART_IntEnable(LPC_UART1, (UART_IER_RBRINT | UART_IER_RLSINT));
 
 	//Habilito interrupcion UART1
-	NVIC_EnableIRQ(IRQ_SELECTION);
+	NVIC_EnableIRQ(UART1_IRQn);
 
 	vTaskDelete(NULL);	//Borra la tarea
 }
