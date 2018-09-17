@@ -114,16 +114,13 @@ QueueHandle_t Cola_TX;
 STATIC RINGBUFF_T txring, rxring;								//Transmit and receive ring buffers
 static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];	//Transmit and receive buffers
 
-volatile int HourGPS, MinuteGPS, DayGPS, MonthGPS, YearGPS;		//GPS: Variables que guardan informacion
-volatile float LatGPS, LongGPS;									//GPS: Variables que guardan informacion
-volatile float Lat1GPS, Lat2GPS, Long1GPS, Long2GPS;			//GPS: Variables auxiliares
 
 /*****************************************************************************
  * Functions
  ****************************************************************************/
 BaseType_t LeerCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad);
 void EscribirCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad);
-void AnalizarTramaGPS (uint8_t dato);
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* uC_StartUp */

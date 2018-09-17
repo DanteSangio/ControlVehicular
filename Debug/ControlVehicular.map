@@ -606,18 +606,6 @@ Discarded input sections
  .text          0x00000000        0x0 ./Example/src/FRTOS.o
  .data          0x00000000        0x0 ./Example/src/FRTOS.o
  .bss           0x00000000        0x0 ./Example/src/FRTOS.o
- .bss.HourGPS   0x00000000        0x4 ./Example/src/FRTOS.o
- .bss.MinuteGPS
-                0x00000000        0x4 ./Example/src/FRTOS.o
- .bss.DayGPS    0x00000000        0x4 ./Example/src/FRTOS.o
- .bss.MonthGPS  0x00000000        0x4 ./Example/src/FRTOS.o
- .bss.YearGPS   0x00000000        0x4 ./Example/src/FRTOS.o
- .bss.LatGPS    0x00000000        0x4 ./Example/src/FRTOS.o
- .bss.LongGPS   0x00000000        0x4 ./Example/src/FRTOS.o
- .bss.Lat1GPS   0x00000000        0x4 ./Example/src/FRTOS.o
- .bss.Lat2GPS   0x00000000        0x4 ./Example/src/FRTOS.o
- .bss.Long1GPS  0x00000000        0x4 ./Example/src/FRTOS.o
- .bss.Long2GPS  0x00000000        0x4 ./Example/src/FRTOS.o
  .text.EscribirCola
                 0x00000000       0x40 ./Example/src/FRTOS.o
  .debug_macro   0x00000000      0x8d4 ./Example/src/FRTOS.o
@@ -2220,22 +2208,22 @@ END GROUP
                 0x00005868                _image_size = (_image_end - _image_start)
 OUTPUT(ControlVehicular.axf elf32-littlearm)
 
-.debug_info     0x00000000     0x722b
+.debug_info     0x00000000     0x715f
  .debug_info    0x00000000      0x25e ./freeRTOS/src/FreeRTOSCommonHooks.o
  .debug_info    0x0000025e      0x132 ./freeRTOS/src/heap_3.o
  .debug_info    0x00000390      0x2d6 ./freeRTOS/src/list.o
  .debug_info    0x00000666      0x3e7 ./freeRTOS/src/port.o
  .debug_info    0x00000a4d      0xf58 ./freeRTOS/src/queue.o
  .debug_info    0x000019a5     0x19ae ./freeRTOS/src/tasks.o
- .debug_info    0x00003353      0xf4c ./Example/src/FRTOS.o
- .debug_info    0x0000429f      0x25c ./Example/src/cr_startup_lpc175x_6x.o
- .debug_info    0x000044fb      0x200 ./Example/src/sysinit.o
- .debug_info    0x000046fb      0x55a C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(chip_17xx_40xx.o)
- .debug_info    0x00004c55      0xba2 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(clock_17xx_40xx.o)
- .debug_info    0x000057f7      0x325 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(iocon_17xx_40xx.o)
- .debug_info    0x00005b1c      0x380 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(ring_buffer.o)
- .debug_info    0x00005e9c      0x479 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(sysinit_17xx_40xx.o)
- .debug_info    0x00006315      0xf16 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(uart_17xx_40xx.o)
+ .debug_info    0x00003353      0xe80 ./Example/src/FRTOS.o
+ .debug_info    0x000041d3      0x25c ./Example/src/cr_startup_lpc175x_6x.o
+ .debug_info    0x0000442f      0x200 ./Example/src/sysinit.o
+ .debug_info    0x0000462f      0x55a C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(chip_17xx_40xx.o)
+ .debug_info    0x00004b89      0xba2 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(clock_17xx_40xx.o)
+ .debug_info    0x0000572b      0x325 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(iocon_17xx_40xx.o)
+ .debug_info    0x00005a50      0x380 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(ring_buffer.o)
+ .debug_info    0x00005dd0      0x479 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(sysinit_17xx_40xx.o)
+ .debug_info    0x00006249      0xf16 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(uart_17xx_40xx.o)
 
 .debug_abbrev   0x00000000     0x1b74
  .debug_abbrev  0x00000000      0x17b ./freeRTOS/src/FreeRTOSCommonHooks.o
@@ -2390,7 +2378,7 @@ OUTPUT(ControlVehicular.axf elf32-littlearm)
  .debug_line    0x00003e4b      0x4cc C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(sysinit_17xx_40xx.o)
  .debug_line    0x00004317      0x77e C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(uart_17xx_40xx.o)
 
-.debug_str      0x00000000    0x19ce5
+.debug_str      0x00000000    0x19c8a
  .debug_str     0x00000000    0x13a96 ./freeRTOS/src/FreeRTOSCommonHooks.o
                               0x13b95 (size before relaxing)
  .debug_str     0x00013a96      0x103 ./freeRTOS/src/heap_3.o
@@ -2403,23 +2391,23 @@ OUTPUT(ControlVehicular.axf elf32-littlearm)
                                0x831b (size before relaxing)
  .debug_str     0x000153a1     0x1b51 ./freeRTOS/src/tasks.o
                                0x9079 (size before relaxing)
- .debug_str     0x00016ef2     0x1b77 ./Example/src/FRTOS.o
-                              0x15f3a (size before relaxing)
- .debug_str     0x00018a69      0x1b3 ./Example/src/cr_startup_lpc175x_6x.o
+ .debug_str     0x00016ef2     0x1b1c ./Example/src/FRTOS.o
+                              0x15ed9 (size before relaxing)
+ .debug_str     0x00018a0e      0x1b3 ./Example/src/cr_startup_lpc175x_6x.o
                                0x2763 (size before relaxing)
- .debug_str     0x00018c1c       0x35 ./Example/src/sysinit.o
+ .debug_str     0x00018bc1       0x35 ./Example/src/sysinit.o
                               0x10785 (size before relaxing)
- .debug_str     0x00018c51      0x26a C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(chip_17xx_40xx.o)
+ .debug_str     0x00018bf6      0x26a C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(chip_17xx_40xx.o)
                               0x10ba2 (size before relaxing)
- .debug_str     0x00018ebb      0x857 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(clock_17xx_40xx.o)
+ .debug_str     0x00018e60      0x857 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(clock_17xx_40xx.o)
                               0x11220 (size before relaxing)
- .debug_str     0x00019712       0xa4 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(iocon_17xx_40xx.o)
+ .debug_str     0x000196b7       0xa4 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(iocon_17xx_40xx.o)
                               0x1069d (size before relaxing)
- .debug_str     0x000197b6      0x11c C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(ring_buffer.o)
+ .debug_str     0x0001975b      0x11c C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(ring_buffer.o)
                                0x4089 (size before relaxing)
- .debug_str     0x000198d2       0xc4 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(sysinit_17xx_40xx.o)
+ .debug_str     0x00019877       0xc4 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(sysinit_17xx_40xx.o)
                               0x10885 (size before relaxing)
- .debug_str     0x00019996      0x34f C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(uart_17xx_40xx.o)
+ .debug_str     0x0001993b      0x34f C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\Debug\liblpc_chip_175x_6x.a(uart_17xx_40xx.o)
                               0x110f5 (size before relaxing)
 
 .comment        0x00000000       0x7f

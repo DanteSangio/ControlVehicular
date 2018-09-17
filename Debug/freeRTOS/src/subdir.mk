@@ -41,7 +41,7 @@ C_DEPS += \
 freeRTOS/src/%.o: ../freeRTOS/src/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU C Compiler'
-	arm-none-eabi-gcc -DDEBUG -D__CODE_RED -DCORE_M3 -D__USE_LPCOPEN -DNO_BOARD_LIB -D__LPC17XX__ -D__REDLIB__ -I"C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x" -I"C:\Users\Fede\git\ControlVehicular\Example\inc" -I"C:\Users\Fede\git\ControlVehicular\freeRTOS\inc" -I"C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\FRTOS\Example\inc" -I"C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\inc" -I"C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\FRTOS\freeRTOS\inc" -O0 -fno-common -g3 -Wall -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -mcpu=cortex-m3 -mthumb -D__REDLIB__ -specs=redlib.specs -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	arm-none-eabi-gcc -DDEBUG -D__CODE_RED -DCORE_M3 -D__USE_LPCOPEN -DNO_BOARD_LIB -D__LPC17XX__ -D__REDLIB__ -I"C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x" -I"C:\Users\Fede\git\ControlVehicular\Example\inc" -I"C:\Users\Fede\git\ControlVehicular\freeRTOS\inc" -I"C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\inc" -O0 -fno-common -g3 -Wall -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -mcpu=cortex-m3 -mthumb -D__REDLIB__ -specs=redlib.specs -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
