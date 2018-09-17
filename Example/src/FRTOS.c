@@ -247,9 +247,9 @@ static void vTaskGSMConfig(void *pvParameters)
 		Chip_GPIO_SetPinOutHigh(LPC_GPIO, RST_GSM);
 		vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5 segundos para que reinicie
 
-		//EnviarString("AT");
+		Chip_UART_SendRB(UART_SELECTION, &txring, "AT", sizeof("AT") - 1); //Enviamos "AT"
 		vTaskDelay(4000/portTICK_RATE_MS);	//Espero 4 segundos
-		//Aca deberia devolver 'OK'
+		//Aca deberia devolver "OK"
 
 		//Seguir ejemplo de https://www.teachmemicro.com/send-data-sim800-gprs-thingspeak/
 		//Utilizando libreria Adafruit_FONA
