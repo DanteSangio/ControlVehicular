@@ -110,7 +110,7 @@ STATIC RINGBUFF_T txring, rxring;								//Transmit and receive ring buffers
 static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];	//Transmit and receive buffers
 
 volatile int HourGPS, MinuteGPS, DayGPS, MonthGPS, YearGPS;		//GPS: Variables que guardan informacion
-volatile float LatGPS, LongGPS, Lat1GPS;						//GPS: Variables que guardan informacion
+volatile float LatGPS, LongGPS;									//GPS: Variables que guardan informacion
 volatile float Lat1GPS, Lat2GPS, Long1GPS, Long2GPS;			//GPS: Variables auxiliares
 
 /*****************************************************************************

@@ -2349,24 +2349,24 @@ END GROUP
                 0x1000058c                Long1GPS
  .bss.Long2GPS  0x10000590        0x4 ./Example/src/FRTOS.o
                 0x10000590                Long2GPS
- .bss.EstadoTrama.7760
+ .bss.EstadoTrama.7759
                 0x10000594        0x4 ./Example/src/FRTOS.o
- .bss.Trama.7761
+ .bss.Trama.7760
                 0x10000598       0x64 ./Example/src/FRTOS.o
- .bss.i.7759    0x100005fc        0x4 ./Example/src/FRTOS.o
- .bss.HourMinute.7762
+ .bss.i.7758    0x100005fc        0x4 ./Example/src/FRTOS.o
+ .bss.HourMinute.7761
                 0x10000600        0x4 ./Example/src/FRTOS.o
- .bss.Date.7763
+ .bss.Date.7762
                 0x10000604        0x6 ./Example/src/FRTOS.o
  *fill*         0x1000060a        0x2 
- .bss.Lat1.7764
+ .bss.Lat1.7763
                 0x1000060c        0x4 ./Example/src/FRTOS.o
- .bss.Lat2.7765
+ .bss.Lat2.7764
                 0x10000610        0x5 ./Example/src/FRTOS.o
  *fill*         0x10000615        0x3 
- .bss.Long1.7766
+ .bss.Long1.7765
                 0x10000618        0x4 ./Example/src/FRTOS.o
- .bss.Long2.7767
+ .bss.Long2.7766
                 0x1000061c        0x5 ./Example/src/FRTOS.o
  *fill*         0x10000621        0x3 
  .bss.__end_of_heap
