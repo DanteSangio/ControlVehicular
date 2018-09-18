@@ -90,7 +90,7 @@ void userTapIn()
  ****************************************************************************/
 
 
-void setupSD(int puertoSS, int pinSS)
+void vTaskSetupSD(int puertoSS, int pinSS)
 {
 // Define the pins to use as CS(SS or SSEL) and RST
 // // Set pins as GPIO
@@ -159,7 +159,7 @@ int main(void)
 	vSemaphoreCreateBinary(Semaforo_RFID);
 	xSemaphoreTake(Semaforo_RFID, portMAX_DELAY); //semaforo de inicializacion de rfid
 
-	xTaskCreate(vTaskRFID, (char *) "vTaskRFID",
+	xTaskCreate(vTaskSetupSD, (char *) "vTaskSetupSD",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 	xTaskCreate(xTaskSDConfig, (char *) "xTaskSDConfig",

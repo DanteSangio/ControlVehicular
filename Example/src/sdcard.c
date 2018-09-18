@@ -214,7 +214,7 @@ unsigned char SD_readSingleBlock(char *inputbuffer,uint32_t startBlock)
 {
     unsigned char response;
     uint16_t i, retry=0;
-    uintu_t	aux;
+    uint8_t	aux;
 
     response = SD_sendCommand(READ_SINGLE_BLOCK, startBlock); //read a Block command
 
@@ -258,6 +258,7 @@ unsigned char SD_writeSingleBlock(char *inputbuffer,uint32_t startBlock)
 {
     unsigned char response;
     uint16_t i, retry=0;
+    uint8_t aux;
 
     response = SD_sendCommand(WRITE_SINGLE_BLOCK, startBlock); //write a Block command
 
