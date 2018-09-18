@@ -37,8 +37,8 @@
 #define UART_SELECTION 	LPC_UART1
 #define IRQ_SELECTION 	UART1_IRQn
 #define HANDLER_NAME 	UART1_IRQHandler
-#define TXD1	0,15	//TX UART1	(Pin 13 LPC1769)
-#define	RXD1	0,16	//RX UART1	(Pin 14 LPC1769)
+#define TXD1	0,15	//RX UART1	(Pin 14 LPC1769)
+#define	RXD1	0,16	//TX UART1	(Pin 13 LPC1769)
 
 #define UART_SRB_SIZE 32	//S:Send - Transmit ring buffer size
 #define UART_RRB_SIZE 1024	//R:Receive - Receive ring buffer size
