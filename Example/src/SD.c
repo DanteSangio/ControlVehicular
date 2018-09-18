@@ -13,7 +13,7 @@
 #include "semphr.h"
 #include "MFRC522.h"
 #include "rfid_utils.h"
-
+#include "sdcard.h"
 
 
 //#include "RegsLPC1769.h"
@@ -90,13 +90,55 @@ void userTapIn()
  ****************************************************************************/
 
 
-static void xTaskRFIDConfig(void *pvParameters)
+void setupSD(int puertoSS, int pinSS)
 {
+// Define the pins to use as CS(SS or SSEL) and RST
+// // Set pins as GPIO
+	SSP_Init_PINES(LPC_SSP1);
+	Chip_SSP_Init(LPC_SSP1);
+	Chip_SSP_Set_Mode(LPC_SSP1, SSP_MODE_MASTER);
+	Chip_SSP_SetFormat(LPC_SSP1, SSP_BITS_8, SSP_FRAMEFORMAT_SPI,SSP_CLOCK_CPHA0_CPOL0);
+	Chip_SSP_SetBitRate(LPC_SSP1, MFRC522_BIT_RATE);//misma velocidad que la SD
+	Chip_SSP_Enable(LPC_SSP1);
+
+	// Set the chipSelectPin as digital output, do not select the slave yet
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, puertoSS,pinSS);
+	Chip_GPIO_SetPinState(LPC_GPIO, puertoSS, pinSS, (bool)true);
+
+	//vTaskDelay( 50 / portTICK_PERIOD_MS );//Delay de 50 mseg
+
+
+}
+static void xTaskSDConfig(void *pvParameters)
+{
+
+	uint8_t returnStatus,sdcardType,option,i=0;
+
 	SystemCoreClockUpdate();
 
 	DEBUGOUT1("PRUEBA SD..\n");	//Imprimo en la consola
 
-	setupRFID(&mfrcInstance);
+	///////////////////////////////////////////////////////////////////
+	/* PARA COMPROBAR SI LA SD ESTA CONECTADA */
+
+    do //if(returnStatus)
+    {
+        returnStatus = SD_Init(&sdcardType);
+        if(returnStatus == SDCARD_NOT_DETECTED)
+        {
+        	DEBUGOUT("\n\r SD card not detected..");
+        }
+        else if(returnStatus == SDCARD_INIT_FAILED)
+        {
+        	DEBUGOUT("\n\r Card Initialization failed..");
+        }
+        else if(returnStatus == SDCARD_FAT_INVALID)
+        {
+        	DEBUGOUT("\n\r Invalid Fat filesystem");
+        }
+    }while(returnStatus!=0);
+
+    DEBUGOUT("\n\rSD Card Detected!");
 
 	xSemaphoreGive(Semaforo_RFID);//Doy el semaforo para que se inicie la lectura
 

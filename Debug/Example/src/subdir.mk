@@ -5,26 +5,32 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Example/src/MFRC522.c \
-../Example/src/RFID.c \
+../Example/src/SD.c \
 ../Example/src/cr_startup_lpc175x_6x.c \
 ../Example/src/crp.c \
+../Example/src/fat32.c \
 ../Example/src/rfid_utils.c \
+../Example/src/sdcard.c \
 ../Example/src/sysinit.c 
 
 OBJS += \
 ./Example/src/MFRC522.o \
-./Example/src/RFID.o \
+./Example/src/SD.o \
 ./Example/src/cr_startup_lpc175x_6x.o \
 ./Example/src/crp.o \
+./Example/src/fat32.o \
 ./Example/src/rfid_utils.o \
+./Example/src/sdcard.o \
 ./Example/src/sysinit.o 
 
 C_DEPS += \
 ./Example/src/MFRC522.d \
-./Example/src/RFID.d \
+./Example/src/SD.d \
 ./Example/src/cr_startup_lpc175x_6x.d \
 ./Example/src/crp.d \
+./Example/src/fat32.d \
 ./Example/src/rfid_utils.d \
+./Example/src/sdcard.d \
 ./Example/src/sysinit.d 
 
 
