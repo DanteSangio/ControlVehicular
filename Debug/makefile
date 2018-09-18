@@ -9,7 +9,6 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include freeRTOS/src/subdir.mk
--include Example/src/subdir.mk
 -include subdir.mk
 -include objects.mk
 
@@ -27,14 +26,14 @@ endif
 all: ControlVehicular.axf
 
 dependents:
-	-cd D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug && $(MAKE) all
-	-cd D:/Facultad/Digitales\ II/Repositorio\ MCU/FRTOS/Debug && $(MAKE) all
+	-cd D:/Facultad/Digitales\ II/Repositorio\ MCU/FRTOS/Debug && $(MAKE) clean all
+	-cd D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug && $(MAKE) clean all
 
 # Tool invocations
-ControlVehicular.axf: $(OBJS) $(USER_OBJS) D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug/liblpc_chip_175x_6x.a D:/Facultad/Digitales\ II/Repositorio\ MCU/FRTOS/Debug/FRTOS.axf
+ControlVehicular.axf: $(OBJS) $(USER_OBJS) D:/Facultad/Digitales\ II/Repositorio\ MCU/FRTOS/Debug/FRTOS.axf D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug/liblpc_chip_175x_6x.a
 	@echo 'Building target: $@'
 	@echo 'Invoking: MCU Linker'
-	arm-none-eabi-gcc -nostdlib -L"D:\Facultad\Digitales II\Repositorio MCU\lpc_chip_175x_6x\Debug" -Xlinker -Map="ControlVehicular.map" -Xlinker --gc-sections -Xlinker -print-memory-usage -mcpu=cortex-m3 -mthumb -T "FRTOS_Debug.ld" -o "ControlVehicular.axf" $(OBJS) $(USER_OBJS) $(LIBS)
+	arm-none-eabi-gcc -nostdlib -L"D:\Facultad\Digitales II\Repositorio MCU\lpc_chip_175x_6x\Debug" -L"D:\Facultad\Digitales II\Repositorio MCU\lpc_chip_175x_6x\libs" -Xlinker -Map="ControlVehicular.map" -Xlinker --gc-sections -Xlinker -print-memory-usage -mcpu=cortex-m3 -mthumb -T "FRTOS_Debug.ld" -o "ControlVehicular.axf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 	$(MAKE) --no-print-directory post-build
@@ -51,7 +50,7 @@ post-build:
 
 .PHONY: all clean dependents
 .SECONDARY: post-build
-D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug/liblpc_chip_175x_6x.a:
 D:/Facultad/Digitales\ II/Repositorio\ MCU/FRTOS/Debug/FRTOS.axf:
+D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug/liblpc_chip_175x_6x.a:
 
 -include ../makefile.targets

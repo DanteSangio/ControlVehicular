@@ -32,6 +32,7 @@ http://www.tavi.co.uk/phobos/fat.html
 #define LPC_SSP                             LPC_SSP1
 #define SDCS								0,6
 
+
 uint8_t V_SdHighcapacityFlag_u8 = 0;
 uint8_t init_SdCard(uint8_t *cardType);
 
@@ -336,7 +337,7 @@ uint8_t init_SdCard(uint8_t *cardType)
 
     } while(response != 0x01);
 
-    SPI_DisableChipSelect();
+    SSP_EnableChipSelect(SDCS);
     Chip_SSP_WriteFrames_Blocking (0xff);
     Chip_SSP_WriteFrames_Blocking (0xff);
 

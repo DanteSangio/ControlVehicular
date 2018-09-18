@@ -3,8 +3,8 @@
 	<name>ControlVehicular</name>
 	<comment></comment>
 	<projects>
-		<project>lpc_chip_175x_6x</project>
 		<project>FRTOS</project>
+		<project>lpc_chip_175x_6x</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
