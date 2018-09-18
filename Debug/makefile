@@ -27,10 +27,11 @@ endif
 all: ControlVehicular.axf
 
 dependents:
-	-cd D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug && $(MAKE) all
+	-cd D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug && $(MAKE) clean all
+	-cd D:/Facultad/Digitales\ II/Repositorio\ MCU/FRTOS/Debug && $(MAKE) clean all
 
 # Tool invocations
-ControlVehicular.axf: $(OBJS) $(USER_OBJS) D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug/liblpc_chip_175x_6x.a
+ControlVehicular.axf: $(OBJS) $(USER_OBJS) D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug/liblpc_chip_175x_6x.a D:/Facultad/Digitales\ II/Repositorio\ MCU/FRTOS/Debug/FRTOS.axf
 	@echo 'Building target: $@'
 	@echo 'Invoking: MCU Linker'
 	arm-none-eabi-gcc -nostdlib -L"D:\Facultad\Digitales II\Repositorio MCU\lpc_chip_175x_6x\Debug" -Xlinker -Map="ControlVehicular.map" -Xlinker --gc-sections -Xlinker -print-memory-usage -mcpu=cortex-m3 -mthumb -T "FRTOS_Debug.ld" -o "ControlVehicular.axf" $(OBJS) $(USER_OBJS) $(LIBS)
@@ -51,5 +52,6 @@ post-build:
 .PHONY: all clean dependents
 .SECONDARY: post-build
 D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug/liblpc_chip_175x_6x.a:
+D:/Facultad/Digitales\ II/Repositorio\ MCU/FRTOS/Debug/FRTOS.axf:
 
 -include ../makefile.targets
