@@ -25,6 +25,7 @@
 #define DEBUGSTR(...) printf(__VA_ARGS__)
 
 #define MIN_BALANCE 300
+#define SDCS								0,6
 
 
 /*****************************************************************************
@@ -90,7 +91,7 @@ void userTapIn()
  ****************************************************************************/
 
 
-void vTaskSetupSD(int puertoSS, int pinSS)
+void vTaskSetupSD(void *pvParameters)
 {
 // Define the pins to use as CS(SS or SSEL) and RST
 // // Set pins as GPIO
@@ -102,8 +103,8 @@ void vTaskSetupSD(int puertoSS, int pinSS)
 	Chip_SSP_Enable(LPC_SSP1);
 
 	// Set the chipSelectPin as digital output, do not select the slave yet
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, puertoSS,pinSS);
-	Chip_GPIO_SetPinState(LPC_GPIO, puertoSS, pinSS, (bool)true);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, SDCS);
+	Chip_GPIO_SetPinState(LPC_GPIO, SDCS, (bool)true);
 
 	//vTaskDelay( 50 / portTICK_PERIOD_MS );//Delay de 50 mseg
 

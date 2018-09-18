@@ -308,7 +308,7 @@ unsigned char SD_writeSingleBlock(char *inputbuffer,uint32_t startBlock)
         Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
     }
 
-    SPI_DisableChipSelect();
+    SSP_DisableChipSelect(SDCS);
 
 
     return 0;
