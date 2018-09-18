@@ -149,12 +149,16 @@ unsigned char SD_sendCommand(unsigned char cmd, uint32_t arg)
     	Chip_SSP_WriteFrames_Blocking(LPC_SSP1, &aux, 1);
     }
 
-    while((response = SPI_Read()) == 0xff) //wait response
+    Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &response, 1);
+    while(response == 0xff) //wait response
+    {
         if(retry++ > 0xfe) break; //time out error
-
+        Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &response, 1);
+    }
     if(response == 0x00 && cmd == 58)  //checking response of CMD58
     {
-        status = SPI_Read() & 0x40;     //first byte of the OCR register (bit 31:24)
+    	Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &status, 1);
+        status = status & 0x40;     //first byte of the OCR register (bit 31:24)
         if(status == 0x40)
         {
             V_SdHighcapacityFlag_u8 = 1;  //we need it to verify SDHC card
@@ -164,12 +168,12 @@ unsigned char SD_sendCommand(unsigned char cmd, uint32_t arg)
             V_SdHighcapacityFlag_u8 = 0;
         }
 
-        SPI_Read(); //remaining 3 bytes of the OCR register are ignored here
-        SPI_Read(); //one can use these bytes to check power supply limits of SD
-        SPI_Read();
+        Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1); //remaining 3 bytes of the OCR register are ignored here
+        Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);//one can use these bytes to check power supply limits of SD
+        Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
     }
 
-    SPI_Read(); //extra 8 CLK
+    Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);//extra 8 CLK
     SSP_DisableChipSelect(SDCS);
 
     return response; //return state
@@ -210,6 +214,7 @@ unsigned char SD_readSingleBlock(char *inputbuffer,uint32_t startBlock)
 {
     unsigned char response;
     uint16_t i, retry=0;
+    uintu_t	aux;
 
     response = SD_sendCommand(READ_SINGLE_BLOCK, startBlock); //read a Block command
 
@@ -221,22 +226,23 @@ unsigned char SD_readSingleBlock(char *inputbuffer,uint32_t startBlock)
     SSP_EnableChipSelect(SDCS);
 
     retry = 0;
-    while(SPI_Read() != 0xfe) //wait for start block token 0xfe (0x11111110)
+    Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
+    while(aux != 0xfe) //wait for start block token 0xfe (0x11111110)
     {
         if(retry++ > 0xfffe)
         {
           SSP_DisableChipSelect(SDCS);
             return 1; //return if time-out
         }
+        Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
     }
 
     for(i=0; i<512; i++) //read 512 bytes
-        inputbuffer[i] = SPI_Read();
+        Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &inputbuffer[i], 1);
 
-    SPI_Read(); //receive incoming CRC (16-bit), CRC is ignored here
-    SPI_Read();
-
-    SPI_Read(); //extra 8 clock pulses
+    Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1); //receive incoming CRC (16-bit), CRC is ignored here
+    Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
+    Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1); //extra 8 clock pulses
     SSP_DisableChipSelect(SDCS);
 
     return 0;
@@ -267,7 +273,7 @@ unsigned char SD_writeSingleBlock(char *inputbuffer,uint32_t startBlock)
     Chip_SSP_WriteFrames_Blocking(0xff);     //transmit dummy CRC (16-bit), CRC is ignored here
     Chip_SSP_WriteFrames_Blocking(0xff);
 
-    response = SPI_Read();
+    Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &response, 1);
 
     if( (response & 0x1f) != 0x05) //response= 0xXXX0AAA1 ; AAA='010' - data accepted
     {                              //AAA='101'-data rejected due to CRC error
@@ -275,27 +281,32 @@ unsigned char SD_writeSingleBlock(char *inputbuffer,uint32_t startBlock)
         return response;
     }
 
-    while(!SPI_Read()) //wait for SD card to complete writing and get idle
+    Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
+    while(!aux) //wait for SD card to complete writing and get idle
     {
         if(retry++ > 0xfffe)
         {
           SSP_DisableChipSelect(SDCS);
             return 1;
         }
+        Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
     }
 
-    SPI_DisableChipSelect();
+    SSP_DisableChipSelect(SDCS);
     Chip_SSP_WriteFrames_Blocking(0xff);   //just spend 8 clock cycle delay before reasserting the CS line
     SSP_EnableChipSelect(SDCS);         //re-asserting the CS line to verify if card is still busy
 
-    while(!SPI_Read()) //wait for SD card to complete writing and get idle
+    Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
+    while(!aux) //wait for SD card to complete writing and get idle
     {
         if(retry++ > 0xfffe)
         {
           SSP_DisableChipSelect(SDCS);
             return 1;
         }
+        Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
     }
+
     SPI_DisableChipSelect();
 
 

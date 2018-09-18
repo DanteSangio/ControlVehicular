@@ -145,29 +145,6 @@ static void xTaskSDConfig(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskInicTimer */
-static void vTaskRFID(void *pvParameters)
-{
-	xSemaphoreTake(Semaforo_RFID, portMAX_DELAY); //semaforo de inicializacion de rfid
-	while (1)
-	{
-
-		// Look for new cards in RFID2
-		if (PICC_IsNewCardPresent(mfrcInstance))
-		{
-			// Select one of the cards
-			if (PICC_ReadCardSerial(mfrcInstance))
-			{
-//				int status = writeCardBalance(mfrcInstance, 100000); // used to recharge the card
-				 userTapIn();
-			}
-		}
-		vTaskDelay( 1000 / portTICK_PERIOD_MS );//Muestreo cada 1 seg
-	}
-
-	vTaskDelete(NULL);	//Borra la tarea si sale del while
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* main
@@ -185,7 +162,7 @@ int main(void)
 	xTaskCreate(vTaskRFID, (char *) "vTaskRFID",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-	xTaskCreate(xTaskRFIDConfig, (char *) "xTaskRFIDConfig",
+	xTaskCreate(xTaskSDConfig, (char *) "xTaskSDConfig",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 

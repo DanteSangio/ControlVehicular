@@ -312,6 +312,8 @@ typedef struct MFRC522_T *MFRC522Ptr_t;
  */
 MFRC522Ptr_t MFRC522_Init();
 
+void SSP_Init_PINES(LPC_SSP_T *pSSP);
+
 /*******************************************************************************
 * Basic interface functions for communicating with the MFRC522
 *******************************************************************************/
