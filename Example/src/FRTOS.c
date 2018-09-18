@@ -37,16 +37,16 @@
 #define UART_SELECTION 	LPC_UART1
 #define IRQ_SELECTION 	UART1_IRQn
 #define HANDLER_NAME 	UART1_IRQHandler
-#define TXD1	0,15	//TX UART1	(Pin 13 LPC1769)
-#define	RXD1	0,16	//RX UART1	(Pin 14 LPC1769)
-#define TXD2	0,10	//TX UART2	(Pin 40 LPC1769)
-#define RXD2	0,11	//RX UART2	(Pin 41 LPC1769)
+#define TXD1	0,15	//RX UART1	(Pin 13 LPC1769) (EXP 18)
+#define	RXD1	0,16	//TX UART1	(Pin 14 LPC1769) (EXP 19)
+#define TXD2	0,10	//RX UART2	(Pin 40 LPC1769)
+#define RXD2	0,11	//TX UART2	(Pin 41 LPC1769)
 
 #define UART_SRB_SIZE 32	//S:Send - Transmit ring buffer size
 #define UART_RRB_SIZE 1024	//R:Receive - Receive ring buffer size
 
 //GSM
-#define RST_GSM	0,19	//Expansion 5
+#define RST_GSM	1,18	//Expansion 15
 
 //GPS
 #define	INICIO_TRAMA	0
@@ -207,9 +207,9 @@ static void xTaskUART1Config(void *pvParameters)
 {
 	DEBUGOUT("Configurando la UART1..\n");	//Imprimo en la consola
 
-	/* Setup UART for 9600 */
+	/* Setup UART for 4800 */
 	Chip_UART_Init(LPC_UART1);
-	Chip_UART_SetBaud(LPC_UART1, 9600);
+	Chip_UART_SetBaud(LPC_UART1, 4800);
 	Chip_UART_ConfigData(LPC_UART1, (UART_LCR_WLEN8 | UART_LCR_SBS_1BIT));
 	Chip_UART_SetupFIFOS(LPC_UART1, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
 	Chip_UART_TXEnable(LPC_UART1);
@@ -235,37 +235,41 @@ static void xTaskUART1Config(void *pvParameters)
 /* vTaskGSMConfig */
 static void vTaskGSMConfig(void *pvParameters)
 {
-	while(1)
-	{
-		Chip_GPIO_SetPinOutHigh(LPC_GPIO, RST_GSM);
-		vTaskDelay(10/portTICK_RATE_MS);	//Espero 10ms
-		Chip_GPIO_SetPinOutLow(LPC_GPIO, RST_GSM);
-		vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-		Chip_GPIO_SetPinOutHigh(LPC_GPIO, RST_GSM);
-		vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5 segundos para que reinicie
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, RST_GSM);
+	vTaskDelay(10/portTICK_RATE_MS);	//Espero 10ms
+	Chip_GPIO_SetPinOutLow(LPC_GPIO, RST_GSM);
+	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, RST_GSM);
+	vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5 segundos para que reinicie
 
-		Chip_UART_SendRB(UART_SELECTION, &txring, "AT", sizeof("AT") - 1); //Enviamos "AT"
-		vTaskDelay(4000/portTICK_RATE_MS);	//Espero 4 segundos
-		//Aca deberia devolver "OK"
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 
-		//Seguir ejemplo de https://www.teachmemicro.com/send-data-sim800-gprs-thingspeak/
-		//Utilizando libreria Adafruit_FONA
+	vTaskDelay(4000/portTICK_RATE_MS);	//Espero 4 segundos
+	//Aca deberia devolver "OK"
 
-		/*
-		 * Pagina 208 Command Manual
-			AT+CGATT	- Attach or detach from GPRS service
-			AT+CGDCONT	- Define PDP context
-			AT+CGQMIN	- Quality of service profile (minimum acceptable)
-			AT+CGQREQ	- Quality of service profile (requested)
-			AT+CGACT	- PDP context activate or deactivate
-			AT+CGDATA	- Enter data state
-			AT+CGPADDR	- Show PDP address
-			AT+CGCLASS	- GPRS mobile station class
-			AT+CGEREP	- Control unsolicited GPRS event reporting
-			AT+CGREG	- Network registration status
-			AT+CGSMS	- Select service for MO SMS messages
-		 */
-	}
+	//Seguir ejemplo de https://www.teachmemicro.com/send-data-sim800-gprs-thingspeak/
+	//Utilizando libreria Adafruit_FONA
+
+	/*
+	 * Pagina 208 Command Manual
+		AT+CGATT	- Attach or detach from GPRS service
+		AT+CGDCONT	- Define PDP context
+		AT+CGQMIN	- Quality of service profile (minimum acceptable)
+		AT+CGQREQ	- Quality of service profile (requested)
+		AT+CGACT	- PDP context activate or deactivate
+		AT+CGDATA	- Enter data state
+		AT+CGPADDR	- Show PDP address
+		AT+CGCLASS	- GPRS mobile station class
+		AT+CGEREP	- Control unsolicited GPRS event reporting
+		AT+CGREG	- Network registration status
+		AT+CGSMS	- Select service for MO SMS messages
+	 */
+	vTaskDelete(NULL);	//Borra la tarea
 }
 
 
