@@ -235,28 +235,48 @@ static void xTaskUART1Config(void *pvParameters)
 /* vTaskGSMConfig */
 static void vTaskGSMConfig(void *pvParameters)
 {
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CREG=1\r", sizeof("AT+CREG=1\r") - 1); //Enable network registration
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CGATT=1\r", sizeof("AT+CGATT=1\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"\r", sizeof("AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+SAPBR=3,1,\"APN\",FONAnet\r", sizeof("AT+SAPBR=3,1,\"APN\",FONAnet\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+SAPBR=3,1,\"USER\",0\r", sizeof("AT+SAPBR=3,1,\"USER\",0\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+SAPBR=3,1,\"PWD\",0\r", sizeof("AT+SAPBR=3,1,\"PWD\",0\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+SAPBR=1,1\r", sizeof("AT+SAPBR=1,1\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+
 	/*
-	Chip_GPIO_SetPinOutHigh(LPC_GPIO, RST_GSM);
-	vTaskDelay(10/portTICK_RATE_MS);	//Espero 10ms
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, RST_GSM);
-	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-	Chip_GPIO_SetPinOutHigh(LPC_GPIO, RST_GSM);
-	vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5 segundos para que reinicie
-
-	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-
-	vTaskDelay(4000/portTICK_RATE_MS);	//Espero 4 segundos
-	//Aca deberia devolver "OK"
-
-	//Seguir ejemplo de https://www.teachmemicro.com/send-data-sim800-gprs-thingspeak/
-	//Utilizando libreria Adafruit_FONA
-	*/
-
+	Seguir ejemplo de https://www.teachmemicro.com/send-data-sim800-gprs-thingspeak/
+	Utilizando libreria Adafruit_FONA
+	 */
 
 	/*
 	 * Pagina 26 Hardware Design
