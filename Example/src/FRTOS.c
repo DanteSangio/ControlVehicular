@@ -114,6 +114,7 @@ QueueHandle_t Cola_TX;
 STATIC RINGBUFF_T txring, rxring;								//Transmit and receive ring buffers
 static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];	//Transmit and receive buffers
 
+char url_string[] = "api.thingspeak.com/update?api_key=0F1D2F1QQUL2OHKH&field1";	//REVISAR URL
 
 /*****************************************************************************
  * Functions
@@ -245,45 +246,61 @@ static void vTaskGSMConfig(void *pvParameters)
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 
 
+	///////////////////
+	//Para activar GPRS
+
 	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CREG=1\r", sizeof("AT+CREG=1\r") - 1); //Enable network registration
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-
 
 	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CGATT=1\r", sizeof("AT+CGATT=1\r") - 1); //
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
-
 	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"\r", sizeof("AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"\r") - 1); //
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-
 
 	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+SAPBR=3,1,\"APN\",FONAnet\r", sizeof("AT+SAPBR=3,1,\"APN\",FONAnet\r") - 1); //
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
-
 	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+SAPBR=3,1,\"USER\",0\r", sizeof("AT+SAPBR=3,1,\"USER\",0\r") - 1); //
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
-
 	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+SAPBR=3,1,\"PWD\",0\r", sizeof("AT+SAPBR=3,1,\"PWD\",0\r") - 1); //
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-
 
 	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+SAPBR=1,1\r", sizeof("AT+SAPBR=1,1\r") - 1); //
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
 
-	/*
-	Seguir ejemplo de https://www.teachmemicro.com/send-data-sim800-gprs-thingspeak/
-	Utilizando libreria Adafruit_FONA
-	 */
+	///////////////////
+	//Para enviar datos por GPRS
+
+
 
 	/*
+	///////////////////
+	//Para mandar SMS
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CNMI=2,2,0,0\r", sizeof("AT+CNMI=2,2,0,0\r") - 1); //No guardo los mensajes en memoria, los envio directamente por UART cuando llegan
+	vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CMGF=1\r", sizeof("AT+CMGF=1\r") - 1); //Activo modo texto. ALT+CMGF = 1 (texto). ALT + CMGF = 0 (PDU)
+	vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CSCS=\"GSM\"\r", sizeof("AT+CSCS=\"GSM\"\r") - 1);
+	vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CMGS=\"+5491137863836\"\r", sizeof("AT+CMGS=\"+5491137863836\"\r") - 1);
+	vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
+	Chip_UART_SendRB(UART_SELECTION, &txring, "EMERGENCIA\032", sizeof("EMERGENCIA\032") - 1);
+	/*
+
+
+	/*
+	 * Seguir ejemplo de https://www.teachmemicro.com/send-data-sim800-gprs-thingspeak/
+	 Utilizando libreria Adafruit_FONA
+
 	 * Pagina 26 Hardware Design
-	 */
 
-
-	/*
 	 * Pagina 208 Command Manual
 		AT+CGATT	- Attach or detach from GPRS service
 		AT+CGDCONT	- Define PDP context
@@ -300,6 +317,42 @@ static void vTaskGSMConfig(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea
 }
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* vTaskEnviarSMS */
+static void vTaskEnviarSMS(void *pvParameters)
+{
+	while(1)
+	{
+		Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+		vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+
+		Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+		vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+
+		Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+		vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+
+
+		///////////////////
+		//Para mandar SMS
+
+		Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CNMI=2,2,0,0\r", sizeof("AT+CNMI=2,2,0,0\r") - 1); //No guardo los mensajes en memoria, los envio directamente por UART cuando llegan
+		vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
+
+		Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CMGF=1\r", sizeof("AT+CMGF=1\r") - 1); //Activo modo texto. ALT+CMGF = 1 (texto). ALT + CMGF = 0 (PDU)
+		vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
+
+		Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CSCS=\"GSM\"\r", sizeof("AT+CSCS=\"GSM\"\r") - 1);
+		vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
+
+		Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CMGS=\"+5491137863836\"\r", sizeof("AT+CMGS=\"+5491137863836\"\r") - 1);
+		vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
+		Chip_UART_SendRB(UART_SELECTION, &txring, "EMERGENCIA\032", sizeof("EMERGENCIA\032") - 1);
+	}
+
+	vTaskDelete(NULL);	//Borra la tarea
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskCargarAnillo */
@@ -409,6 +462,10 @@ int main(void)
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskGSMConfig, (char *) "vTaskGSMConfig",
+					configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+					(xTaskHandle *) NULL);
+
+	xTaskCreate(vTaskEnviarSMS, (char *) "vTaskEnviarSMS",
 					configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 					(xTaskHandle *) NULL);
 
