@@ -42,7 +42,7 @@
 #define TXD2	0,10	//RX UART2	(Pin 41 LPC1769)
 #define RXD2	0,11	//TX UART2	(Pin 40 LPC1769)
 
-#define UART_SRB_SIZE 32	//S:Send - Transmit ring buffer size
+#define UART_SRB_SIZE 1024	//S:Send - Transmit ring buffer size
 #define UART_RRB_SIZE 1024	//R:Receive - Receive ring buffer size
 
 //GSM
@@ -110,11 +110,18 @@
 SemaphoreHandle_t Semaforo_RX;
 QueueHandle_t Cola_RX;
 QueueHandle_t Cola_TX;
+QueueHandle_t Cola_Pulsadores;
 
 STATIC RINGBUFF_T txring, rxring;								//Transmit and receive ring buffers
 static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];	//Transmit and receive buffers
 
-char url_string[] = "api.thingspeak.com/update?api_key=0F1D2F1QQUL2OHKH&field1";	//REVISAR URL
+//ThingSpeak
+char http_cmd[80];
+//char url_string[] = "api.thingspeak.com/update?api_key=A2Q16VCUJKXA71O6&field1";	//URL
+char url_string[] = "api.thingspeak.com/update?api_key=";	//URL
+char apiKey[] = "A2Q16VCUJKXA71O6&field1";		//Write API key from ThingSpeak
+int status;
+int datalen;
 
 /*****************************************************************************
  * Functions
@@ -172,7 +179,8 @@ void uC_StartUp (void)
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED4);
 }
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* UART1_IRQHandler */
 void UART1_IRQHandler(void)
 {
 	BaseType_t Testigo=pdFALSE;
@@ -204,6 +212,8 @@ void UART1_IRQHandler(void)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* xTaskUART1Config */
 static void xTaskUART1Config(void *pvParameters)
 {
 	DEBUGOUT("Configurando la UART1..\n");	//Imprimo en la consola
@@ -238,10 +248,8 @@ static void vTaskGSMConfig(void *pvParameters)
 {
 	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-
 	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-
 	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 
@@ -270,29 +278,54 @@ static void vTaskGSMConfig(void *pvParameters)
 	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+SAPBR=1,1\r", sizeof("AT+SAPBR=1,1\r") - 1); //
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+SAPBR=0,1\r", sizeof("AT+SAPBR=1,1\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
-	///////////////////
-	//Para enviar datos por GPRS
-
-
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CGATT=0\r", sizeof("AT+CGATT=0\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
 	/*
 	///////////////////
-	//Para mandar SMS
+	//Para enviar datos por GPRS a ThingSpeak
 
-	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CNMI=2,2,0,0\r", sizeof("AT+CNMI=2,2,0,0\r") - 1); //No guardo los mensajes en memoria, los envio directamente por UART cuando llegan
-	vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
+	sprintf(http_cmd,"%s=10",url_string);	//Copio el valor que quiero enviar
 
-	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CMGF=1\r", sizeof("AT+CMGF=1\r") - 1); //Activo modo texto. ALT+CMGF = 1 (texto). ALT + CMGF = 0 (PDU)
-	vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPTERM\r", sizeof("AT+HTTPTERM\r") - 1); //Handle any pending
 
-	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CSCS=\"GSM\"\r", sizeof("AT+CSCS=\"GSM\"\r") - 1);
-	vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
+	//Initialize and set parameters
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPINIT\r", sizeof("AT+HTTPINIT\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPPARA=\"CID\",1\r", sizeof("AT+HTTPPARA=\"CID\",1\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPPARA=\"UA\",FONA\r", sizeof("AT+HTTPPARA=\"UA\",FONA\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPPARA=\"URL\",\"", sizeof("") - 1); //
+	Chip_UART_SendRB(UART_SELECTION, &txring, http_cmd, sizeof(http_cmd) - 1); //
+	Chip_UART_SendRB(UART_SELECTION, &txring, "\"\r", sizeof("\"\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
-	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CMGS=\"+5491137863836\"\r", sizeof("AT+CMGS=\"+5491137863836\"\r") - 1);
-	vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
-	Chip_UART_SendRB(UART_SELECTION, &txring, "EMERGENCIA\032", sizeof("EMERGENCIA\032") - 1);
-	/*
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPPARA=\"REDIR\",1\r", sizeof("AT+HTTPPARA=\"REDIR\",1\r") - 1); //
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPSSL=1\r", sizeof("AT+HTTPSSL=1\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+	//HTTP GET
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPACTION=0\r", sizeof("AT+HTTPACTION=0\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+	//HTTP RESPONSE
+	//Chip_UART_SendRB(UART_SELECTION, &txring, "+HTTPACTION:", sizeof("+HTTPACTION:") - 1); //
+	//Chip_UART_SendRB(UART_SELECTION, &txring, status, sizeof(status) - 1); //
+	//Chip_UART_SendRB(UART_SELECTION, &txring, ",", sizeof(",") - 1); //','
+	//Chip_UART_SendRB(UART_SELECTION, &txring, 1, sizeof(int) - 1); //
+
+	//Chip_UART_SendRB(UART_SELECTION, &txring, "+HTTPACTION:", sizeof("+HTTPACTION:") - 1); //
+	//Chip_UART_SendRB(UART_SELECTION, &txring, datalen, sizeof(datalen) - 1); //
+	//Chip_UART_SendRB(UART_SELECTION, &txring, ",", sizeof(",") - 1); //','
+	//Chip_UART_SendRB(UART_SELECTION, &txring, 2, sizeof(int) - 1); //
+
+	Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPREAD\r", sizeof("AT+HTTPREAD\r") - 1); //
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+	*/
 
 
 	/*
@@ -317,42 +350,6 @@ static void vTaskGSMConfig(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea
 }
 
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskEnviarSMS */
-static void vTaskEnviarSMS(void *pvParameters)
-{
-	while(1)
-	{
-		Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-		vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-
-		Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-		vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-
-		Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-		vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-
-
-		///////////////////
-		//Para mandar SMS
-
-		Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CNMI=2,2,0,0\r", sizeof("AT+CNMI=2,2,0,0\r") - 1); //No guardo los mensajes en memoria, los envio directamente por UART cuando llegan
-		vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
-
-		Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CMGF=1\r", sizeof("AT+CMGF=1\r") - 1); //Activo modo texto. ALT+CMGF = 1 (texto). ALT + CMGF = 0 (PDU)
-		vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
-
-		Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CSCS=\"GSM\"\r", sizeof("AT+CSCS=\"GSM\"\r") - 1);
-		vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
-
-		Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CMGS=\"+5491137863836\"\r", sizeof("AT+CMGS=\"+5491137863836\"\r") - 1);
-		vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
-		Chip_UART_SendRB(UART_SELECTION, &txring, "EMERGENCIA\032", sizeof("EMERGENCIA\032") - 1);
-	}
-
-	vTaskDelete(NULL);	//Borra la tarea
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskCargarAnillo */
@@ -433,6 +430,130 @@ BaseType_t LeerCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* vTaskEnviarGSM */
+static void vTaskEnviarGSM(void *pvParameters)
+{
+	uint8_t Receive=OFF;
+
+	while(1)
+	{
+		xQueueReceive(Cola_Pulsadores, &Receive, portMAX_DELAY);
+
+		if(Receive==1)		//1: ENVIAR SMS
+		{
+			Receive=OFF;	//Reestablezco variable
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+
+			///////////////////
+			//Para enviar SMS
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CNMI=2,2,0,0\r", sizeof("AT+CNMI=2,2,0,0\r") - 1); //No guardo los mensajes en memoria, los envio directamente por UART cuando llegan
+			vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CMGF=1\r", sizeof("AT+CMGF=1\r") - 1); //Activo modo texto. ALT+CMGF = 1 (texto). ALT + CMGF = 0 (PDU)
+			vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CSCS=\"GSM\"\r", sizeof("AT+CSCS=\"GSM\"\r") - 1);
+			vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CMGS=\"+5491137863836\"\r", sizeof("AT+CMGS=\"+5491137863836\"\r") - 1);
+			vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
+			Chip_UART_SendRB(UART_SELECTION, &txring, "EMERGENCIA\032", sizeof("EMERGENCIA\032") - 1);
+		}
+
+		else if(Receive==2)	//2: ENVIAR DATOS POR GPRS A THINGSPEAK
+		{
+			Receive=OFF;	//Reestablezco variable
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+
+			///////////////////
+			//Para enviar datos por GPRS a ThingSpeak
+
+			//sprintf(apiKey,"%s=10",url_string);	//Copio el valor que quiero enviar
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPTERM\r", sizeof("AT+HTTPTERM\r") - 1); //Handle any pending
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+			//Initialize and set parameters
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPINIT\r", sizeof("AT+HTTPINIT\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPPARA=\"CID\",1\r", sizeof("AT+HTTPPARA=\"CID\",1\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPPARA=\"UA\",FONA\r", sizeof("AT+HTTPPARA=\"UA\",FONA\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPPARA=\"URL\",\"api.thingspeak.com/update?api_key=A2Q16VCUJKXA71O6&field1=50", sizeof("AT+HTTPPARA=\"URL\",\"api.thingspeak.com/update?api_key=A2Q16VCUJKXA71O6&field1=50") - 1); //
+			//Chip_UART_SendRB(UART_SELECTION, &txring, apiKey, sizeof(apiKey) - 1); //
+			Chip_UART_SendRB(UART_SELECTION, &txring, "\"\r", sizeof("\"\r") - 1); //
+			vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPPARA=\"REDIR\",1\r", sizeof("AT+HTTPPARA=\"REDIR\",1\r") - 1); //
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPSSL=1\r", sizeof("AT+HTTPSSL=1\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+			//HTTP GET
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPACTION=0\r", sizeof("AT+HTTPACTION=0\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+			//HTTP RESPONSE
+			//Chip_UART_SendRB(UART_SELECTION, &txring, "+HTTPACTION:", sizeof("+HTTPACTION:") - 1); //
+			//Chip_UART_SendRB(UART_SELECTION, &txring, status, sizeof(status) - 1); //
+			//Chip_UART_SendRB(UART_SELECTION, &txring, ",", sizeof(",") - 1); //','
+			//Chip_UART_SendRB(UART_SELECTION, &txring, 1, sizeof(int) - 1); //
+
+			//Chip_UART_SendRB(UART_SELECTION, &txring, "+HTTPACTION:", sizeof("+HTTPACTION:") - 1); //
+			//Chip_UART_SendRB(UART_SELECTION, &txring, datalen, sizeof(datalen) - 1); //
+			//Chip_UART_SendRB(UART_SELECTION, &txring, ",", sizeof(",") - 1); //','
+			//Chip_UART_SendRB(UART_SELECTION, &txring, 2, sizeof(int) - 1); //
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPREAD\r", sizeof("AT+HTTPREAD\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+		}
+	}
+
+	vTaskDelete(NULL);	//Borra la tarea
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* xTaskPulsadores */
+static void xTaskPulsadores(void *pvParameters)
+{
+	uint8_t Send=OFF;
+
+	while (1)
+	{
+		if(Chip_GPIO_GetPinState(LPC_GPIO, SW1)==OFF)	//Si se presiona el SW1
+		{
+			Send=1;	//Para enviar SMS
+			xQueueSendToBack(Cola_Pulsadores, &Send, portMAX_DELAY);
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+		}
+		if(Chip_GPIO_GetPinState(LPC_GPIO, SW2)==OFF)	//Si se presiona el SW1
+		{
+			Send=2;	//Para enviar datos por GPRS a ThingSpeak
+			xQueueSendToBack(Cola_Pulsadores, &Send, portMAX_DELAY);
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+		}
+	}
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* main
 */
 int main(void)
@@ -448,6 +569,8 @@ int main(void)
 	Cola_RX = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 
 	Cola_TX = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
+
+	Cola_Pulsadores = xQueueCreate(1, sizeof(uint32_t));	//Creamos una cola
 
 	xTaskCreate(vTaskLeerAnillo, (char *) "vTaskLeerAnillo",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
@@ -465,9 +588,13 @@ int main(void)
 					configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 					(xTaskHandle *) NULL);
 
-	xTaskCreate(vTaskEnviarSMS, (char *) "vTaskEnviarSMS",
+	xTaskCreate(vTaskEnviarGSM, (char *) "vTaskEnviarGSM",
 					configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 					(xTaskHandle *) NULL);
+
+	xTaskCreate(xTaskPulsadores, (char *) "vTaskPulsadores",
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+				(xTaskHandle *) NULL);
 
 	/* Start the scheduler */
 	vTaskStartScheduler();
