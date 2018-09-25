@@ -119,8 +119,8 @@ static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];	//Transmit and rece
 char http_cmd[80];
 char url_string[] = "api.thingspeak.com/update?";	//URL
 //char url_string[] = "api.thingspeak.com/update?api_key=";	//URL
-char apiKey[] = "api_key=A2Q16VCUJKXA71O6&";		//Write API key from ThingSpeak
-char data[] = "field1=300";	//"field1=300 HTTP/1.0"
+char apiKey[] = "api_key=4IVCTNA39FY9U35C&";		//Write API key from ThingSpeak
+char data[] = "field1=30";	//"field1=300 HTTP/1.0"
 int status;
 int datalen;
 
@@ -425,6 +425,53 @@ static void vTaskEnviarGSM(void *pvParameters)
 		{
 			Receive=OFF;	//Reestablezco variable
 
+			///*
+			/////////////////// SEGUN 	https://www.youtube.com/watch?v=f-VhitIURlY
+			//Para enviar datos por GPRS a ThingSpeak
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSHUT\r", sizeof("AT+CIPSHUT\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPMUX=0\r", sizeof("AT+CIPMUX=0\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CGATT=1\r", sizeof("AT+CGATT=1\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CSTT=\"igprs.", sizeof("AT+CSTT=\"igprs.") - 1); //igprs.claro.com.ar
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "claro.com.ar\",", sizeof("claro.com.ar\",") - 1); //
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "\"clarogprs\",", sizeof("\"clarogprs\",") - 1); //
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "\"clarogprs999\"\r", sizeof("\"clarogprs999\"\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIICR\r", sizeof("AT+CIICR\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIFSR\r", sizeof("AT+CIFSR\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSTART=\"TCP\",\"api.", sizeof("AT+CIPSTART=\"TCP\",\"api.") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "thingspeak.com\",\"80\"\r", sizeof("thingspeak.com\",\"80\"\r") - 1); //
+			vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSEND=44\r", sizeof("AT+CIPSEND=44\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+			Chip_UART_SendRB(UART_SELECTION, &txring, "GET ", sizeof("GET ") - 1); //	GET
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "/update?", sizeof("/update?") - 1); //
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, apiKey, sizeof(apiKey) - 1); //
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, data, sizeof(data) - 1); //
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "\r", sizeof("\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+			//*/
+
+
 			/*
 			/////////////////// SEGUN https://www.instructables.com/id/Thingspeak-Upload-Data-Using-Gsm-Module-sim900/
 			//Para enviar datos por GPRS a ThingSpeak
@@ -477,7 +524,7 @@ static void vTaskEnviarGSM(void *pvParameters)
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 			*/
 
-			///*
+			/*
 			///////////////////
 			//Para enviar datos por GPRS a ThingSpeak
 
@@ -536,7 +583,7 @@ static void vTaskEnviarGSM(void *pvParameters)
 
 			//Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPREAD\r", sizeof("AT+HTTPREAD\r") - 1); //
 			//vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-			//*/
+			*/
 		}
 	}
 
