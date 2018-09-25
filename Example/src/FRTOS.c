@@ -457,7 +457,9 @@ static void vTaskEnviarGSM(void *pvParameters)
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION, &txring, "thingspeak.com\",\"80\"\r", sizeof("thingspeak.com\",\"80\"\r") - 1); //
 			vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
-			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSEND=44\r", sizeof("AT+CIPSEND=44\r") - 1); //
+			//Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSEND=44\r", sizeof("AT+CIPSEND=44\r") - 1); //
+			//vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSEND=53\r", sizeof("AT+CIPSEND=53\r") - 1); //
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 			Chip_UART_SendRB(UART_SELECTION, &txring, "GET ", sizeof("GET ") - 1); //	GET
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
@@ -467,8 +469,11 @@ static void vTaskEnviarGSM(void *pvParameters)
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION, &txring, data, sizeof(data) - 1); //
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION, &txring, "\r", sizeof("\r") - 1); //
+			Chip_UART_SendRB(UART_SELECTION, &txring, " HTTP/1.0\r", sizeof(" HTTP/1.0\r") - 1); //
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+			//Chip_UART_SendRB(UART_SELECTION, &txring, "\r", sizeof("\r") - 1); //
+			//vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
 			//*/
 
 

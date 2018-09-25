@@ -1454,7 +1454,7 @@ END GROUP
                 0x20084000                __top_RamAHB32 = 0x20084000
                 0x20084000                __top_RAM2 = 0x20084000
 
-.text           0x00000000     0x5f5c
+.text           0x00000000     0x5f64
  FILL mask 0xff
                 0x00000000                __vectors_start__ = ABSOLUTE (.)
  *(.isr_vector)
@@ -1463,10 +1463,10 @@ END GROUP
                 0x000000cc                . = ALIGN (0x4)
                 0x000000cc                __section_table_start = .
                 0x000000cc                __data_section_table = .
-                0x000000cc        0x4 LONG 0x5f5c LOADADDR (.data)
+                0x000000cc        0x4 LONG 0x5f64 LOADADDR (.data)
                 0x000000d0        0x4 LONG 0x10000000 ADDR (.data)
                 0x000000d4        0x4 LONG 0x2c SIZEOF (.data)
-                0x000000d8        0x4 LONG 0x5f5c LOADADDR (.data_RAM2)
+                0x000000d8        0x4 LONG 0x5f64 LOADADDR (.data_RAM2)
                 0x000000dc        0x4 LONG 0x2007c000 ADDR (.data_RAM2)
                 0x000000e0        0x4 LONG 0x0 SIZEOF (.data_RAM2)
                 0x000000e4                __data_section_table_end = .
@@ -2030,60 +2030,60 @@ END GROUP
  *(.rodata .rodata.* .constdata .constdata.*)
  .rodata        0x00005c08        0x5 ./freeRTOS/src/tasks.o
  *fill*         0x00005c0d        0x3 ff
- .rodata        0x00005c10      0x2b0 ./Example/src/FRTOS.o
+ .rodata        0x00005c10      0x2b8 ./Example/src/FRTOS.o
  .rodata.OscRateIn
-                0x00005ec0        0x4 ./Example/src/sysinit.o
-                0x00005ec0                OscRateIn
+                0x00005ec8        0x4 ./Example/src/sysinit.o
+                0x00005ec8                OscRateIn
  .rodata.RTCOscRateIn
-                0x00005ec4        0x4 ./Example/src/sysinit.o
-                0x00005ec4                RTCOscRateIn
+                0x00005ecc        0x4 ./Example/src/sysinit.o
+                0x00005ecc                RTCOscRateIn
  .rodata._Csys_alloc.str1.1
-                0x00005ec8       0x18 c:/nxp/mcuxpressoide_10.1.1_606/ide/tools/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libcr_c.a(alloc.o)
+                0x00005ed0       0x18 c:/nxp/mcuxpressoide_10.1.1_606/ide/tools/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libcr_c.a(alloc.o)
  .rodata.fp_display.str1.1
-                0x00005ee0       0x34 c:/nxp/mcuxpressoide_10.1.1_606/ide/tools/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libcr_c.a(fpprintf.o)
+                0x00005ee8       0x34 c:/nxp/mcuxpressoide_10.1.1_606/ide/tools/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libcr_c.a(fpprintf.o)
                                  0x35 (size before relaxing)
  .rodata._initio.str1.1
-                0x00005f14        0x4 c:/nxp/mcuxpressoide_10.1.1_606/ide/tools/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libcr_c.a(initio.o)
+                0x00005f1c        0x4 c:/nxp/mcuxpressoide_10.1.1_606/ide/tools/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libcr_c.a(initio.o)
  .rodata.__vfprintf.str1.1
-                0x00005f18       0x31 c:/nxp/mcuxpressoide_10.1.1_606/ide/tools/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libcr_c.a(printf.o)
+                0x00005f20       0x31 c:/nxp/mcuxpressoide_10.1.1_606/ide/tools/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libcr_c.a(printf.o)
                                  0x38 (size before relaxing)
- *fill*         0x00005f49        0x7 ff
+ *fill*         0x00005f51        0x7 ff
  .rodata.__huge_vall
-                0x00005f50        0x8 c:/nxp/mcuxpressoide_10.1.1_606/ide/tools/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libcr_c.a(_hugeval.o)
-                0x00005f50                __huge_vall
+                0x00005f58        0x8 c:/nxp/mcuxpressoide_10.1.1_606/ide/tools/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libcr_c.a(_hugeval.o)
+                0x00005f58                __huge_vall
  .rodata.__num_Ciob_streams
-                0x00005f58        0x4 c:/nxp/mcuxpressoide_10.1.1_606/ide/tools/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libcr_semihost.a(__ciob.o)
-                0x00005f58                __num_Ciob_streams
-                0x00005f5c                . = ALIGN (0x4)
+                0x00005f60        0x4 c:/nxp/mcuxpressoide_10.1.1_606/ide/tools/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7-m\libcr_semihost.a(__ciob.o)
+                0x00005f60                __num_Ciob_streams
+                0x00005f64                . = ALIGN (0x4)
 
-.glue_7         0x00005f5c        0x0
- .glue_7        0x00005f5c        0x0 linker stubs
+.glue_7         0x00005f64        0x0
+ .glue_7        0x00005f64        0x0 linker stubs
 
-.glue_7t        0x00005f5c        0x0
- .glue_7t       0x00005f5c        0x0 linker stubs
+.glue_7t        0x00005f64        0x0
+ .glue_7t       0x00005f64        0x0 linker stubs
 
-.vfp11_veneer   0x00005f5c        0x0
- .vfp11_veneer  0x00005f5c        0x0 linker stubs
+.vfp11_veneer   0x00005f64        0x0
+ .vfp11_veneer  0x00005f64        0x0 linker stubs
 
-.v4_bx          0x00005f5c        0x0
- .v4_bx         0x00005f5c        0x0 linker stubs
+.v4_bx          0x00005f64        0x0
+ .v4_bx         0x00005f64        0x0 linker stubs
 
-.iplt           0x00005f5c        0x0
- .iplt          0x00005f5c        0x0 ./freeRTOS/src/FreeRTOSCommonHooks.o
+.iplt           0x00005f64        0x0
+ .iplt          0x00005f64        0x0 ./freeRTOS/src/FreeRTOSCommonHooks.o
 
-.rel.dyn        0x00005f5c        0x0
- .rel.iplt      0x00005f5c        0x0 ./freeRTOS/src/FreeRTOSCommonHooks.o
+.rel.dyn        0x00005f64        0x0
+ .rel.iplt      0x00005f64        0x0 ./freeRTOS/src/FreeRTOSCommonHooks.o
 
 .ARM.extab
  *(.ARM.extab* .gnu.linkonce.armextab.*)
-                0x00005f5c                __exidx_start = .
+                0x00005f64                __exidx_start = .
 
 .ARM.exidx
  *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-                0x00005f5c                __exidx_end = .
-                0x00005f5c                _etext = .
+                0x00005f64                __exidx_end = .
+                0x00005f64                _etext = .
 
-.data_RAM2      0x2007c000        0x0 load address 0x00005f5c
+.data_RAM2      0x2007c000        0x0 load address 0x00005f64
  FILL mask 0xff
                 [!provide]                PROVIDE (__start_data_RAM2, .)
  *(.ramfunc.$RAM2)
@@ -2099,7 +2099,7 @@ END GROUP
                 0x10000000                . = ALIGN (0x4)
                 0x10000000                _end_uninit_RESERVED = .
 
-.data           0x10000000       0x2c load address 0x00005f5c
+.data           0x10000000       0x2c load address 0x00005f64
  FILL mask 0xff
                 0x10000000                _data = .
  *(vtable)
@@ -2116,7 +2116,7 @@ END GROUP
  *fill*         0x1000002a        0x2 ff
                 0x1000002c                _edata = .
 
-.igot.plt       0x1000002c        0x0 load address 0x00005f88
+.igot.plt       0x1000002c        0x0 load address 0x00005f90
  .igot.plt      0x1000002c        0x0 ./freeRTOS/src/FreeRTOSCommonHooks.o
 
 .bss_RAM2       0x2007c000        0x0
@@ -2222,8 +2222,8 @@ END GROUP
                 0x10008000                PROVIDE (_vStackTop, DEFINED (__user_stack_top)?__user_stack_top:(__top_RamLoc32 - 0x0))
                 0xefff74de                PROVIDE (__valid_user_code_checksum, (0x0 - ((((((_vStackTop + (ResetISR + 0x1)) + (NMI_Handler + 0x1)) + (HardFault_Handler + 0x1)) + (DEFINED (MemManage_Handler)?MemManage_Handler:0x0 + 0x1)) + (DEFINED (BusFault_Handler)?BusFault_Handler:0x0 + 0x1)) + (DEFINED (UsageFault_Handler)?UsageFault_Handler:0x0 + 0x1))))
                 0x00000000                _image_start = LOADADDR (.text)
-                0x00005f88                _image_end = (LOADADDR (.data) + SIZEOF (.data))
-                0x00005f88                _image_size = (_image_end - _image_start)
+                0x00005f90                _image_end = (LOADADDR (.data) + SIZEOF (.data))
+                0x00005f90                _image_size = (_image_end - _image_start)
 OUTPUT(ControlVehicular.axf elf32-littlearm)
 
 .debug_info     0x00000000     0x72b4
