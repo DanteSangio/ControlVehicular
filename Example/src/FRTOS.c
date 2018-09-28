@@ -119,8 +119,9 @@ static uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];	//Transmit and rece
 char http_cmd[80];
 char url_string[] = "api.thingspeak.com/update?";	//URL
 //char url_string[] = "api.thingspeak.com/update?api_key=";	//URL
-char apiKey[] = "api_key=4IVCTNA39FY9U35C&";		//Write API key from ThingSpeak
+char apiKey[] = "api_key=4IVCTNA39FY9U35C&";		//Write API key from ThingSpeak: 4IVCTNA39FY9U35C
 char data[] = "field1=30";	//"field1=300 HTTP/1.0"
+//char data[] = "field1=300 HTTP/1.1";
 int status;
 int datalen;
 
@@ -254,7 +255,7 @@ static void vTaskGSMConfig(void *pvParameters)
 	Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 
-
+	/*
 	///////////////////
 	//Para activar GPRS
 
@@ -300,7 +301,7 @@ static void vTaskGSMConfig(void *pvParameters)
 	//Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CGATT=0\r", sizeof("AT+CGATT=0\r") - 1); //
 	//vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
-
+	*/
 	vTaskDelete(NULL);	//Borra la tarea
 }
 
@@ -441,26 +442,36 @@ static void vTaskEnviarGSM(void *pvParameters)
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CGATT=1\r", sizeof("AT+CGATT=1\r") - 1); //
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CSTT=\"igprs.", sizeof("AT+CSTT=\"igprs.") - 1); //igprs.claro.com.ar
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CSTT=\"FONAnet\"\r", sizeof("AT+CSTT=\"FONAnet\"\r") - 1); //igprs.claro.com.ar
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION, &txring, "claro.com.ar\",", sizeof("claro.com.ar\",") - 1); //
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION, &txring, "\"clarogprs\",", sizeof("\"clarogprs\",") - 1); //
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION, &txring, "\"clarogprs999\"\r", sizeof("\"clarogprs999\"\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
+			//Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CSTT=\"igprs.", sizeof("AT+CSTT=\"igprs.") - 1); //igprs.claro.com.ar
+			//vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			//Chip_UART_SendRB(UART_SELECTION, &txring, "claro.com.ar\",", sizeof("claro.com.ar\",") - 1); //
+			//vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			//Chip_UART_SendRB(UART_SELECTION, &txring, "\"clarogprs\",", sizeof("\"clarogprs\",") - 1); //
+			//vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			//Chip_UART_SendRB(UART_SELECTION, &txring, "\"clarogprs999\"\r", sizeof("\"clarogprs999\"\r") - 1); //
+			//vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+
 			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIICR\r", sizeof("AT+CIICR\r") - 1); //
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIFSR\r", sizeof("AT+CIFSR\r") - 1); //
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSTART=\"TCP\",\"api.", sizeof("AT+CIPSTART=\"TCP\",\"api.") - 1); //
+			//Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSTART=\"TCP\",\"api.", sizeof("AT+CIPSTART=\"TCP\",\"api.") - 1); //
+			//vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
+			//Chip_UART_SendRB(UART_SELECTION, &txring, "thingspeak.com\",\"80\"\r", sizeof("thingspeak.com\",\"80\"\r") - 1); //
+			//vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSTART=\"TCP\",\"", sizeof("AT+CIPSTART=\"TCP\",\"") - 1); //
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION, &txring, "thingspeak.com\",\"80\"\r", sizeof("thingspeak.com\",\"80\"\r") - 1); //
+			Chip_UART_SendRB(UART_SELECTION, &txring, "184.106.153.149\",\"80\"\r", sizeof("184.106.153.149\",\"80\"\r") - 1); //
 			vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
-			//Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSEND=44\r", sizeof("AT+CIPSEND=44\r") - 1); //
-			//vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSEND=53\r", sizeof("AT+CIPSEND=53\r") - 1); //
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSEND=48\r", sizeof("AT+CIPSEND=48\r") - 1); //44
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+			//Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPACTION=0", sizeof("AT+HTTPACTION=0") - 1); //
+			//vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+			//Chip_UART_SendRB(UART_SELECTION, &txring, "AT+HTTPACTION=0\r", sizeof("AT+HTTPACTION=0\r") - 1); //
+			//vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 			Chip_UART_SendRB(UART_SELECTION, &txring, "GET ", sizeof("GET ") - 1); //	GET
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION, &txring, "/update?", sizeof("/update?") - 1); //
@@ -469,11 +480,12 @@ static void vTaskEnviarGSM(void *pvParameters)
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION, &txring, data, sizeof(data) - 1); //
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION, &txring, " HTTP/1.0\r", sizeof(" HTTP/1.0\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+			//Chip_UART_SendRB(UART_SELECTION, &txring, " HTTP/1.0\r", sizeof(" HTTP/1.0\r") - 1); //
+			//vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 			//Chip_UART_SendRB(UART_SELECTION, &txring, "\r", sizeof("\r") - 1); //
 			//vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-
+			Chip_UART_SendRB(UART_SELECTION, &txring, "\r\n\r\n", sizeof("\r\n\r\n") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 			//*/
 
 
