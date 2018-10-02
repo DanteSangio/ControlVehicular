@@ -183,6 +183,7 @@ void uC_StartUp (void)
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED4);
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* UART1_IRQHandler */
 void UART1_IRQHandler(void)
@@ -245,6 +246,7 @@ static void xTaskUART1Config(void *pvParameters)
 
 	vTaskDelete(NULL);	//Borra la tarea
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskGSMConfig */
@@ -358,15 +360,15 @@ static void vTaskEnviarGSM(void *pvParameters)
 		{
 			Receive=OFF;	//Reestablezco variable
 
-			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-
 			///////////////////
 			//Para enviar SMS
+
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 
 			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CNMI=2,2,0,0\r", sizeof("AT+CNMI=2,2,0,0\r") - 1); //No guardo los mensajes en memoria, los envio directamente por UART cuando llegan
 			vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
@@ -388,6 +390,7 @@ static void vTaskEnviarGSM(void *pvParameters)
 
 			/////////////////// SEGUN 	https://www.youtube.com/watch?v=f-VhitIURlY
 			//Para enviar datos por GPRS a ThingSpeak
+
 			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION, &txring, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
@@ -396,25 +399,25 @@ static void vTaskEnviarGSM(void *pvParameters)
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 
 			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSHUT\r", sizeof("AT+CIPSHUT\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
 			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPMUX=0\r", sizeof("AT+CIPMUX=0\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
 			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CGATT=1\r", sizeof("AT+CGATT=1\r") - 1); //
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
-			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CSTT=\"FONAnet\"\r", sizeof("AT+CSTT=\"FONAnet\"\r") - 1); //igprs.claro.com.ar
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CSTT=\"FONAnet\"\r", sizeof("AT+CSTT=\"FONAnet\"\r") - 1); //
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
 			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIICR\r", sizeof("AT+CIICR\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
 			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIFSR\r", sizeof("AT+CIFSR\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
 			Chip_UART_SendRB(UART_SELECTION, &txring, "AT+CIPSTART=\"TCP\",\"", sizeof("AT+CIPSTART=\"TCP\",\"") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION, &txring, "184.106.153.149\",\"80\"\r", sizeof("184.106.153.149\",\"80\"\r") - 1); //
 			vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
 
@@ -500,12 +503,12 @@ int main(void)
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskGSMConfig, (char *) "vTaskGSMConfig",
-					configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
-					(xTaskHandle *) NULL);
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskEnviarGSM, (char *) "vTaskEnviarGSM",
-					configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
-					(xTaskHandle *) NULL);
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+				(xTaskHandle *) NULL);
 
 	xTaskCreate(xTaskPulsadores, (char *) "vTaskPulsadores",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
@@ -517,3 +520,4 @@ int main(void)
 	/* Nunca debería arribar aquí */
     return 0;
 }
+
