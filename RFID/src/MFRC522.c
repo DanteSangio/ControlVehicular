@@ -2228,8 +2228,10 @@ bool MIFARE_OpenUidBackdoor(MFRC522Ptr_t mfrc, bool logErrors) {
  * Make sure to have selected the card before this function is called.
  */
 bool MIFARE_SetUid(MFRC522Ptr_t mfrc, uint8_t *newUid, uint8_t uidSize,
-				   bool logErrors) {
+				   bool logErrors)
+{
 
+	MIFARE_Key key = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 	// UID + BCC uint8_t can not be larger than 16 together
 	if (!newUid || !uidSize || uidSize > 15) {
 		if (logErrors) {
@@ -2239,7 +2241,7 @@ bool MIFARE_SetUid(MFRC522Ptr_t mfrc, uint8_t *newUid, uint8_t uidSize,
 	}
 
 	// Authenticate for reading
-	MIFARE_Key key = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
 	StatusCode status = PCD_Authenticate(mfrc, PICC_CMD_MF_AUTH_KEY_A,
 										 (uint8_t)1, &key, &(mfrc->uid));
 	if (status != STATUS_OK) {
