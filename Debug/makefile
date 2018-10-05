@@ -9,7 +9,7 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include freeRTOS/src/subdir.mk
--include Example/src/subdir.mk
+-include RFID/src/subdir.mk
 -include subdir.mk
 -include objects.mk
 
@@ -27,7 +27,7 @@ endif
 all: ControlVehicular.axf
 
 dependents:
-	-cd D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug && $(MAKE) clean all
+	-cd D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug && $(MAKE) all
 
 # Tool invocations
 ControlVehicular.axf: $(OBJS) $(USER_OBJS) D:/Facultad/Digitales\ II/Repositorio\ MCU/lpc_chip_175x_6x/Debug/liblpc_chip_175x_6x.a
