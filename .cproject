@@ -48,6 +48,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_175x_6x}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/Example/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/freeRTOS/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/GPS/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/UART/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FRTOS/Example/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_175x_6x/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FRTOS/freeRTOS/inc}&quot;"/>
