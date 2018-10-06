@@ -27,7 +27,7 @@ endif
 all: ControlVehicular.axf
 
 dependents:
-	-cd C:/Users/Fede/Documents/MCUXpressoIDE_10.1.1_606/workspace/lpc_chip_175x_6x/Debug && $(MAKE) all
+	-cd C:/Users/Fede/Documents/MCUXpressoIDE_10.1.1_606/workspace/lpc_chip_175x_6x/Debug && $(MAKE) clean all
 
 # Tool invocations
 ControlVehicular.axf: $(OBJS) $(USER_OBJS) C:/Users/Fede/Documents/MCUXpressoIDE_10.1.1_606/workspace/lpc_chip_175x_6x/Debug/liblpc_chip_175x_6x.a
