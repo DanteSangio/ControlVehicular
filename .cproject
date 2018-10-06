@@ -127,7 +127,9 @@
 					</folderInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Example/src"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="GPS/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="RFID/src"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="UART/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="freeRTOS/src"/>
 					</sourceEntries>
 				</configuration>

@@ -23,6 +23,9 @@
 
 //Funciones
 void AnalizarTramaGPS (uint8_t dato);
+void uC_StartUp (void);
+
+
 
 
 #endif /* EXAMPLE_INC_GPS_H_ */
