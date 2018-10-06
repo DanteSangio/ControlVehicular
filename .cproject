@@ -46,6 +46,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_175x_6x}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/Example/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/freeRTOS/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/GPS/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/UART/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FRTOS/Example/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_175x_6x/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FRTOS/freeRTOS/inc}&quot;"/>
@@ -62,6 +64,9 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_175x_6x}&quot;"/>
 									<listOptionValue builtIn="false" value="D:/Workspace/FRTOS/FRTOS/inc"/>
 									<listOptionValue builtIn="false" value="../FRTOS/lpc_chip_175x_6x/inc"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/UART/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/GPS/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/freeRTOS/inc}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.292723990" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 								<inputType id="com.crt.advproject.assembler.input.507633431" name="Additional Assembly Source Files" superClass="com.crt.advproject.assembler.input"/>
@@ -96,6 +101,12 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<sourceEntries>
+						<entry excluding="freeRTOS/src|GPS/src|Example/src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Example/src"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="GPS/src"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="freeRTOS/src"/>
+					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
