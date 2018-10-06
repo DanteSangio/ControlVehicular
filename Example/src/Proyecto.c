@@ -145,18 +145,18 @@ static void xTaskRTConfig(void *pvParameters)
 
 	/* Set current time for RTC 2:00:00PM, 2012-10-05 */
 
-	/*
+/*
 	FullTime.time[RTC_TIMETYPE_SECOND]  = 0;
-	FullTime.time[RTC_TIMETYPE_MINUTE]  = 05;
-	FullTime.time[RTC_TIMETYPE_HOUR]    = 19;
-	FullTime.time[RTC_TIMETYPE_DAYOFMONTH]  = 26;
+	FullTime.time[RTC_TIMETYPE_MINUTE]  = 25;
+	FullTime.time[RTC_TIMETYPE_HOUR]    = 21;
+	FullTime.time[RTC_TIMETYPE_DAYOFMONTH]  = 05;
 	FullTime.time[RTC_TIMETYPE_DAYOFWEEK]   = 4;
 	FullTime.time[RTC_TIMETYPE_DAYOFYEAR]   = 207;
-	FullTime.time[RTC_TIMETYPE_MONTH]   = 07;
+	FullTime.time[RTC_TIMETYPE_MONTH]   = 10;
 	FullTime.time[RTC_TIMETYPE_YEAR]    = 2018;
 
 	Chip_RTC_SetFullTime(LPC_RTC, &FullTime);
-	//*/
+	*///
 
 	/* Set the RTC to generate an interrupt on each minute */
 	Chip_RTC_CntIncrIntConfig(LPC_RTC, RTC_AMR_CIIR_IMMIN, ENABLE);
@@ -192,7 +192,7 @@ static void vTaskRFID(void *pvParameters)
 				 userTapIn();
 			}
 		}
-		vTaskDelay( 1000 / portTICK_PERIOD_MS );//Muestreo cada 1 seg
+		vTaskDelay( 500 / portTICK_PERIOD_MS );//Muestreo cada 1 seg
 	}
 
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
@@ -214,7 +214,7 @@ static void vTaskRTC(void *pvParameters)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* main
 */
-int main(void)
+int main (void)
 {
 	SystemCoreClockUpdate();
 

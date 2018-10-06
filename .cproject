@@ -87,6 +87,9 @@
 									<listOptionValue builtIn="false" value="lpc_chip_175x_6x"/>
 								</option>
 								<option id="gnu.c.link.option.paths.799045718" name="Library search path (-L)" superClass="gnu.c.link.option.paths" valueType="libPaths">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/Example/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/freeRTOS/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/RFID/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_175x_6x/Debug}&quot;"/>
 								</option>
 								<option id="com.crt.advproject.link.crpenable.1452954226" name="Enable automatic placement of Code Read Protection field in image" superClass="com.crt.advproject.link.crpenable"/>
@@ -121,6 +124,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Example/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="RFID/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="freeRTOS/src"/>
 					</sourceEntries>
