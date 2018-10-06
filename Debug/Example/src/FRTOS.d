@@ -47,7 +47,10 @@ Example/src/FRTOS.o Example/src/FRTOS.d: ../Example/src/FRTOS.c \
  C:\Users\Fede\git\ControlVehicular\freeRTOS\inc/list.h \
  C:\Users\Fede\git\ControlVehicular\freeRTOS\inc/queue.h \
  C:\Users\Fede\git\ControlVehicular\freeRTOS\inc/semphr.h \
- C:\Users\Fede\git\ControlVehicular\freeRTOS\inc/queue.h
+ C:\Users\Fede\git\ControlVehicular\freeRTOS\inc/queue.h \
+ C:\Users\Fede\git\ControlVehicular\Example\inc/ControlVehicular.h \
+ C:\Users\Fede\git\ControlVehicular\Example\inc/PlacaInfotronik.h \
+ C:\Users\Fede\git\ControlVehicular\Example\inc/GPS.h
 
 C:\Users\Fede\Documents\MCUXpressoIDE_10.1.1_606\workspace\lpc_chip_175x_6x\inc/chip.h:
 
@@ -146,3 +149,9 @@ C:\Users\Fede\git\ControlVehicular\freeRTOS\inc/queue.h:
 C:\Users\Fede\git\ControlVehicular\freeRTOS\inc/semphr.h:
 
 C:\Users\Fede\git\ControlVehicular\freeRTOS\inc/queue.h:
+
+C:\Users\Fede\git\ControlVehicular\Example\inc/ControlVehicular.h:
+
+C:\Users\Fede\git\ControlVehicular\Example\inc/PlacaInfotronik.h:
+
+C:\Users\Fede\git\ControlVehicular\Example\inc/GPS.h:
