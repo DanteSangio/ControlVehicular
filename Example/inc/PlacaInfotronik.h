@@ -8,8 +8,11 @@
 #ifndef EXAMPLE_INC_PLACAINFOTRONIK_H_
 #define EXAMPLE_INC_PLACAINFOTRONIK_H_
 
+//////////////////////////////////
+//		Placa Infotronik		//
+//////////////////////////////////
 
-//Placa Infotronic
+//Defines
 #define LED_STICK	PORT(0),PIN(22)
 #define	BUZZER		PORT(0),PIN(28)
 #define	SW1			PORT(2),PIN(10)

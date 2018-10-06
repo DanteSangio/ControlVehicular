@@ -23,11 +23,7 @@
 #include "ControlVehicular.h"
 #include "PlacaInfotronik.h"
 #include "GPS.h"
-
-/*****************************************************************************
- * Defines
- ****************************************************************************/
-
+#include "UART.h"
 
 
 /*****************************************************************************
@@ -44,12 +40,7 @@ volatile int HourGPS, MinuteGPS, DayGPS, MonthGPS, YearGPS;		//GPS: Variables qu
 volatile float LatGPS, LongGPS;									//GPS: Variables que guardan informacion
 volatile float Lat1GPS, Lat2GPS, Long1GPS, Long2GPS;			//GPS: Variables auxiliares
 
-/*****************************************************************************
- * Functions
- ****************************************************************************/
-BaseType_t LeerCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad);
-void EscribirCola(QueueHandle_t xQueue, uint8_t *Dato, uint8_t cantidad);
-void AnalizarTramaGPS (uint8_t dato);
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* uC_StartUp */
