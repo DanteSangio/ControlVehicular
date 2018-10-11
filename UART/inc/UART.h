@@ -13,9 +13,6 @@
 //////////////////////
 
 //Defines
-#define UART_SELECTION 	LPC_UART1
-#define IRQ_SELECTION 	UART1_IRQn
-#define HANDLER_NAME 	UART1_IRQHandler
 #define TXD1	0,15	//RX UART1	(Pin 14 LPC1769) (EXP 18)
 #define	RXD1	0,16	//TX UART1	(Pin 13 LPC1769) (EXP 19)
 #define TXD2	0,10	//RX UART2	(Pin 41 LPC1769)
