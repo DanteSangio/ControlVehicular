@@ -2,6 +2,6 @@
 
 #define UART_SELECTION_GSM 	LPC_UART2
 #define TX_RING_GSM			txring2
-
+#define TX_COLA_GSM			Cola_RX2
 
 
