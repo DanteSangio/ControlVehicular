@@ -417,13 +417,14 @@ static void vTaskLeerAnillo1(void *pvParameters)
 			xSemaphoreGive(Semaforo_RX1);
 			xQueueSendToBack(Cola_RX1, &Receive, portMAX_DELAY);
 		}
-
+		/*
 		//leo la cola de rercepcion y lo muestro en pantalla
 		if(LeerCola(Cola_RX1,&dato,1))
 		{
 			AnalizarTramaGSM(dato);
 			//DEBUGOUT("%c", dato);	//Imprimo en la consola
 		}
+		*/
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
@@ -472,12 +473,29 @@ static void vTaskLeerAnillo2(void *pvParameters)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* vTaskAnalizarGSM */
+static void vTaskAnalizarGSM(void *pvParameters)
+{
+	uint8_t dato=0;
+
+	while (1)
+	{
+		//leo la cola de rercepcion y lo muestro en pantalla
+		if(LeerCola(Cola_RX1,&dato,1))
+		{
+			AnalizarTramaGSM(dato);
+			//DEBUGOUT("%c", dato);	//Imprimo en la consola
+		}
+	}
+	vTaskDelete(NULL);	//Borra la tarea
+}
 
 
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskEnviarGSM */
+/* vTaskAnalizarGPS */
 static void vTaskAnalizarGPS(void *pvParameters)
 {
 	uint8_t dato=0;
@@ -717,6 +735,10 @@ int main (void)
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskAnalizarGPS, (char *) "vTaskAnalizarGPS",
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+				(xTaskHandle *) NULL);
+
+	xTaskCreate(vTaskAnalizarGSM, (char *) "vTaskAnalizarGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 

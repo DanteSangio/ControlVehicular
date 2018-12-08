@@ -94,7 +94,7 @@ void AnalizarTramaGSM (uint8_t dato)
 				xSemaphoreGive(Semaforo_GSM_Closed);
 				EstadoTrama=6;	//Trama correcta
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
-				vTaskDelay(250/portTICK_RATE_MS);	//Espero 1s
+				vTaskDelay(150/portTICK_RATE_MS);	//Espero 1s
 				Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
 			}
 			else if(Trama[0]=='E' && Trama[1]=='R' && Trama[2]=='R')	//ERROR
