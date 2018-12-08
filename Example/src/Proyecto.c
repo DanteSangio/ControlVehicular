@@ -219,7 +219,7 @@ static void xTaskRTConfig(void *pvParameters)
 
 	/* Set current time for RTC 2:00:00PM, 2012-10-05 */
 
-/*
+
 	FullTime.time[RTC_TIMETYPE_SECOND]  = 0;
 	FullTime.time[RTC_TIMETYPE_MINUTE]  = 25;
 	FullTime.time[RTC_TIMETYPE_HOUR]    = 21;
@@ -230,7 +230,7 @@ static void xTaskRTConfig(void *pvParameters)
 	FullTime.time[RTC_TIMETYPE_YEAR]    = 2018;
 
 	Chip_RTC_SetFullTime(LPC_RTC, &FullTime);
-	*///
+	//
 
 	/* Set the RTC to generate an interrupt on each minute */
 	Chip_RTC_CntIncrIntConfig(LPC_RTC, RTC_AMR_CIIR_IMMIN, ENABLE);
