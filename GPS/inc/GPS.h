@@ -20,6 +20,13 @@
 #define HORA_FECHA		4
 #define LAT_LONG		5
 
+
+#define UART_SELECTION_GPS 	LPC_UART1
+#define TX_RING_GPS			txring1
+#define TX_COLA_GPS			Cola_RX1
+
+
+
 //Placa Infotronic
 #define LED_STICK	PORT(0),PIN(22)
 #define	BUZZER		PORT(0),PIN(28)

@@ -460,14 +460,31 @@ static void vTaskLeerAnillo(void *pvParameters)
 			xQueueSendToBack(Buffer->cola, &Receive, portMAX_DELAY);
 		}
 
-		//leo la cola de rercepcion y lo muestro en pantalla
+/*		//leo la cola de rercepcion y lo muestro en pantalla
 		if(LeerCola(Buffer->cola,&dato,1))
 		{
 			DEBUGOUT("%c", dato);	//Imprimo en la consola
 		}
-
+*/
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* vTaskEnviarGSM */
+static void vTaskAnalizarGPS(void *pvParameters)
+{
+	uint8_t dato=0;
+
+	while (1)
+	{
+		if(LeerCola(TX_COLA_GPS,&dato,1))
+		{
+			AnalizarTramaGPS(dato); // que devuelva una struct que posea distintos campos: lat,long,hora,fecha y vel
+			//DEBUGOUT("%c", dato);	//Imprimo en la consola
+		}
+	}
+	vTaskDelete(NULL);	//Borra la tarea
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskEnviarGSM */
@@ -589,6 +606,7 @@ static void xTaskPulsadores(void *pvParameters)
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 		}
 	}
+	vTaskDelete(NULL);	//Borra la tarea
 }
 
 
