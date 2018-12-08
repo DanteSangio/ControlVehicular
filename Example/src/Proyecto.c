@@ -20,6 +20,7 @@
 #include "UART.h"
 #include "RFID.h"
 #include "GSM.h"
+#include "GUI.h"
 
 
 //#include "RegsLPC1769.h"
@@ -622,6 +623,8 @@ int main (void)
 
 	uC_StartUp();
 
+	GUI_Init();
+
 	vSemaphoreCreateBinary(Semaforo_RX1);			//Creamos el semaforo
 	vSemaphoreCreateBinary(Semaforo_RX2);			//Creamos el semaforo
 	vSemaphoreCreateBinary(Semaforo_RFID);
@@ -642,7 +645,7 @@ int main (void)
 	xTaskCreate(xTaskRFIDConfig, (char *) "xTaskRFIDConfig",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
-
+/*
 	xTaskCreate(vTaskRTC, (char *) "vTaskRTC",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
@@ -704,7 +707,7 @@ int main (void)
 	xTaskCreate(xTaskPulsadores, (char *) "vTaskPulsadores",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-
+*/
 	/* Start the scheduler */
 	vTaskStartScheduler();
 
