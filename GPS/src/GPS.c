@@ -21,7 +21,6 @@
 #include "string.h"
 #include <cr_section_macros.h>
 #include "ControlVehicular.h"
-#include "PlacaInfotronik.h"
 #include "GPS.h"
 #include "UART.h"
 
@@ -31,9 +30,9 @@
  ****************************************************************************/
 
 
-extern SemaphoreHandle_t Semaforo_RX;
-extern QueueHandle_t Cola_RX;
-extern QueueHandle_t Cola_TX;
+extern SemaphoreHandle_t Semaforo_RX2;
+extern QueueHandle_t Cola_RX2;
+extern QueueHandle_t Cola_TX2;
 
 extern RINGBUFF_T txring, rxring;								//Transmit and receive ring buffers
 extern uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];	//Transmit and receive buffers
@@ -55,33 +54,12 @@ void uC_StartUp (void)
 	Chip_IOCON_PinMux (LPC_IOCON, LED_STICK, IOCON_MODE_INACT, IOCON_FUNC0);
 	Chip_GPIO_SetDir (LPC_GPIO, BUZZER, OUTPUT);
 	Chip_IOCON_PinMux (LPC_IOCON, BUZZER, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, RGBB, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, RGBB, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, RGBG, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, RGBG, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, RGBR, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, RGBR, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, LED1, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, LED1, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, LED2, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, LED2, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, LED3, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, LED3, IOCON_MODE_INACT, IOCON_FUNC0);
-	Chip_GPIO_SetDir (LPC_GPIO, LED4, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, LED4, IOCON_MODE_INACT, IOCON_FUNC0);
 	Chip_GPIO_SetDir (LPC_GPIO, SW1, INPUT);
 	Chip_IOCON_PinMux (LPC_IOCON, SW1, IOCON_MODE_PULLDOWN, IOCON_FUNC0);
 
 	//Salidas apagadas
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_STICK);
-	Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, RGBR);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, RGBG);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, RGBB);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED1);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED2);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED3);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED4);
+	Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////

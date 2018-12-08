@@ -13,4 +13,4 @@ La lectura se realiza cada 1 seg.
 				- P0.8:  SSP1_MISO 		
 				- P0.9:  SSP1_MOSI 		
 
-
+Verificar pines rfid_utils.c 	setuprfids

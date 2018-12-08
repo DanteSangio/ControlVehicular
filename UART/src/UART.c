@@ -7,7 +7,6 @@
 #include "string.h"
 #include <cr_section_macros.h>
 #include "ControlVehicular.h"
-#include "PlacaInfotronik.h"
 #include "GPS.h"
 #include "UART.h"
 

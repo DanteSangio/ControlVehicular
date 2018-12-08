@@ -132,11 +132,11 @@ void setupRFID(MFRC522Ptr_t* mfrc522) {
 
 	// GPIO4[0]= P0_04
 	(*mfrc522)->_chipSelectPin.port = 0;
-	(*mfrc522)->_chipSelectPin.pin = 4;
+	(*mfrc522)->_chipSelectPin.pin = 18;
 
 	// GPIO5[0]
 	(*mfrc522)->_resetPowerDownPin.port = 0;
-	(*mfrc522)->_resetPowerDownPin.pin = 5;
+	(*mfrc522)->_resetPowerDownPin.pin = 3;
 
 	PCD_Init(*mfrc522, LPC_SSP1);
 	DEBUGOUT("\nReader 2 ");

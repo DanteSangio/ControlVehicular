@@ -13,14 +13,15 @@
 #ifndef INC_RFID_UTILS_H
 #define INC_RFID_UTILS_H
 
+#include "ControlVehicular.h"
 #include "MFRC522.h"
 #include "chip.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
 
-#define RFIDRST 0,5
-#define RFIDSS 0,4
+#define RFIDRST RFID_RST
+#define RFIDSS 	RFID_SS
 
 /**
  * Setup an MFRC522_T instance and pin configurations. 

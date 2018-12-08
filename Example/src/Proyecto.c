@@ -381,107 +381,116 @@ static void vTaskGSMConfig(void *pvParameters)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskCargarAnillo
-//Encargada de cargar el anillo a partir de la cola
-static void vTaskCargarAnillo(void *pvParameters)
-{
-	uint8_t Receive=0;
-	while (1)
-	{
-		xQueueReceive(Cola_TX, &Receive, portMAX_DELAY);
-		Chip_UART_SendRB(LPC_UART1, &txring, &Receive , 1);
-	}
-	vTaskDelete(NULL);	//Borra la tarea si sale del while
-}*/
-
 /* vTaskCargarAnillo */
 //Encargada de cargar el anillo a partir de la cola
-static void vTaskCargarAnillo(void *pvParameters)
+static void vTaskCargarAnillo1(void *pvParameters)
 {
-	ANILLO * Buffer;
-	Buffer = (ANILLO*) pvParameters;
-
 	uint8_t Receive=0;
 	while (1)
 	{
-		xQueueReceive(Buffer->cola, &Receive, portMAX_DELAY);
-		Chip_UART_SendRB(Buffer->uart,&Buffer->anillo, &Receive , 1);
+		xQueueReceive(Cola_TX1, &Receive, portMAX_DELAY);
+		Chip_UART_SendRB(LPC_UART1, &txring1, &Receive , 1);
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskLeerAnillo
+/* vTaskLeerAnillo */
 //Pasa la informacion del anillo a la cola de recepcion
-static void vTaskLeerAnillo(void *pvParameters)
+static void vTaskLeerAnillo1(void *pvParameters)
 {
 	uint8_t Receive=0;
 	uint8_t Testigo=0, dato=0;
 
 	while (1)
 	{
-		xSemaphoreTake(Semaforo_RX, portMAX_DELAY);
-		Testigo = RingBuffer_Pop(&rxring, &Receive);
+		xSemaphoreTake(Semaforo_RX1, portMAX_DELAY);
+		Testigo = RingBuffer_Pop(&rxring1, &Receive);
 		if(Testigo)
 		{
-			xSemaphoreGive(Semaforo_RX);
-			xQueueSendToBack(Cola_RX, &Receive, portMAX_DELAY);
+			xSemaphoreGive(Semaforo_RX1);
+			xQueueSendToBack(Cola_RX1, &Receive, portMAX_DELAY);
 		}
-
+		/*
 		//leo la cola de rercepcion y lo muestro en pantalla
 		if(LeerCola(Cola_RX,&dato,1))
 		{
 			AnalizarTramaGPS(dato);
 			//DEBUGOUT("%c", dato);	//Imprimo en la consola
 		}
-
+		*/
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
-}*/
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* vTaskCargarAnillo */
+//Encargada de cargar el anillo a partir de la cola
+static void vTaskCargarAnillo2(void *pvParameters)
+{
+	uint8_t Receive=0;
+	while (1)
+	{
+		xQueueReceive(Cola_TX2, &Receive, portMAX_DELAY);
+		Chip_UART_SendRB(LPC_UART2, &txring2, &Receive, 1);
+	}
+	vTaskDelete(NULL);	//Borra la tarea si sale del while
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskLeerAnillo */
 //Pasa la informacion del anillo a la cola de recepcion
-static void vTaskLeerAnillo(void *pvParameters)
+static void vTaskLeerAnillo2(void *pvParameters)
 {
-
-	ANILLO * Buffer;
-	Buffer = (ANILLO*) pvParameters;
-
 	uint8_t Receive=0;
 	uint8_t Testigo=0, dato=0;
 
 	while (1)
 	{
-		xSemaphoreTake(Buffer->Rx, portMAX_DELAY);
-		Testigo = RingBuffer_Pop(&Buffer->anillo, &Receive);
+		xSemaphoreTake(Semaforo_RX2, portMAX_DELAY);
+		Testigo = RingBuffer_Pop(&rxring2, &Receive);
 		if(Testigo)
 		{
-			xSemaphoreGive(Buffer->Rx);
-			xQueueSendToBack(Buffer->cola, &Receive, portMAX_DELAY);
+			xSemaphoreGive(Semaforo_RX2);
+			xQueueSendToBack(Cola_RX2, &Receive, portMAX_DELAY);
 		}
-
-/*		//leo la cola de rercepcion y lo muestro en pantalla
-		if(LeerCola(Buffer->cola,&dato,1))
+		/*
+		//leo la cola de rercepcion y lo muestro en pantalla
+		if(LeerCola(Cola_RX2,&dato,1))
 		{
-			DEBUGOUT("%c", dato);	//Imprimo en la consola
+			AnalizarTramaGPS(dato);
+			//DEBUGOUT("%c", dato);	//Imprimo en la consola
 		}
-*/
+		*/
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
+
+
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskEnviarGSM */
 static void vTaskAnalizarGPS(void *pvParameters)
 {
 	uint8_t dato=0;
+	uint8_t i;
 
 	while (1)
 	{
-		if(LeerCola(TX_COLA_GPS,&dato,1))
+		for(i=0;i<5;i++)
+		{
+			xQueueReset(RX_COLA_GPS);
+			vTaskDelay(1000/portTICK_RATE_MS); //1seg
+		}
+
+		while(LeerCola(RX_COLA_GPS,&dato,1))
 		{
 			AnalizarTramaGPS(dato); // que devuelva una struct que posea distintos campos: lat,long,hora,fecha y vel
 			//DEBUGOUT("%c", dato);	//Imprimo en la consola
+			//para pasar la informacion colocar una cola de una sola posicion e ir sobreescribiendola
 		}
 	}
 	vTaskDelete(NULL);	//Borra la tarea
@@ -655,7 +664,7 @@ int main (void)
 	anillo_struct.anillo = rxring1;
 	anillo_struct.cola = Cola_RX1;
 
-	xTaskCreate(vTaskLeerAnillo, (char *) "vTaskLeerAnillo1",
+	xTaskCreate(vTaskLeerAnillo1, (char *) "vTaskLeerAnillo1",
 				configMINIMAL_STACK_SIZE, &anillo_struct, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
@@ -663,25 +672,25 @@ int main (void)
 	anillo_struct.anillo = rxring2;
 	anillo_struct.cola = Cola_RX2;
 
-	xTaskCreate(vTaskLeerAnillo, (char *) "vTaskLeerAnillo2",
+	xTaskCreate(vTaskLeerAnillo2, (char *) "vTaskLeerAnillo2",
 				configMINIMAL_STACK_SIZE, &anillo_struct, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-
+	/*
 	anillo_struct.Rx = Semaforo_RX1;
 	anillo_struct.anillo = rxring1;
 	anillo_struct.cola = Cola_RX1;
 	anillo_struct.uart = LPC_UART1;
-
-	xTaskCreate(vTaskCargarAnillo, (char *) "vTaskCargarAnillo1",
+	*/
+	xTaskCreate(vTaskCargarAnillo1, (char *) "vTaskCargarAnillo1",
 				configMINIMAL_STACK_SIZE, &anillo_struct, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-
+	/*
 	anillo_struct.Rx = Semaforo_RX2;
 	anillo_struct.anillo = rxring2;
 	anillo_struct.cola = Cola_RX2;
 	anillo_struct.uart = LPC_UART2;
-
-	xTaskCreate(vTaskCargarAnillo, (char *) "vTaskCargarAnillo2",
+	*/
+	xTaskCreate(vTaskCargarAnillo2, (char *) "vTaskCargarAnillo2",
 				configMINIMAL_STACK_SIZE, &anillo_struct, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 
@@ -694,7 +703,7 @@ int main (void)
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskGSMConfig, (char *) "vTaskGSMConfig",
-				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskEnviarGSM, (char *) "vTaskEnviarGSM",
@@ -702,6 +711,10 @@ int main (void)
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(xTaskPulsadores, (char *) "vTaskPulsadores",
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+				(xTaskHandle *) NULL);
+
+	xTaskCreate(vTaskAnalizarGPS, (char *) "vTaskAnalizarGPS",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 
