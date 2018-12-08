@@ -60,6 +60,7 @@ char http_cmd[80];
 char url_string[] = "api.thingspeak.com/update?";	//URL
 char apiKey[] = "api_key=4IVCTNA39FY9U35C&";		//Write API key from ThingSpeak: 4IVCTNA39FY9U35C
 char data[] = "field1=30";	//
+char data1[] = "field1=31";	//
 int status;
 int datalen;
 
@@ -71,11 +72,14 @@ SemaphoreHandle_t Semaforo_RFID;
 SemaphoreHandle_t Semaforo_RTC;
 SemaphoreHandle_t Semaforo_RX1;
 SemaphoreHandle_t Semaforo_RX2;
+SemaphoreHandle_t Semaforo_GSM_Closed;
+
 
 
 QueueHandle_t Cola_RX1,Cola_RX2;
 QueueHandle_t Cola_TX1,Cola_TX2;
 QueueHandle_t Cola_Pulsadores;
+QueueHandle_t Cola_Connect;
 
 
 
@@ -316,6 +320,8 @@ static void xTaskUART1Config(void *pvParameters)
 	Chip_UART_SetupFIFOS(LPC_UART1, (UART_FCR_FIFO_EN | UART_FCR_RX_RS |
 							UART_FCR_TX_RS | UART_FCR_TRG_LEV3));
 
+	vTaskDelay(5000/portTICK_RATE_MS);
+
 	/* Enable receive data and line status interrupt */
 	Chip_UART_IntEnable(LPC_UART1, (UART_IER_RBRINT | UART_IER_RLSINT));
 
@@ -367,8 +373,8 @@ static void xTaskUART2Config(void *pvParameters)
 static void vTaskGSMConfig(void *pvParameters)
 {
 	//Inicializacion del reset del GSM
-	Chip_GPIO_SetDir (LPC_GPIO, RST_GSM, OUTPUT);
-	Chip_IOCON_PinMux (LPC_IOCON, RST_GSM, IOCON_MODE_INACT, IOCON_FUNC0);
+	//Chip_GPIO_SetDir (LPC_GPIO, RST_GSM, INPUT);
+	//Chip_IOCON_PinMux (LPC_IOCON, RST_GSM, IOCON_MODE_INACT, IOCON_FUNC0);
 
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
@@ -411,14 +417,13 @@ static void vTaskLeerAnillo1(void *pvParameters)
 			xSemaphoreGive(Semaforo_RX1);
 			xQueueSendToBack(Cola_RX1, &Receive, portMAX_DELAY);
 		}
-		/*
+
 		//leo la cola de rercepcion y lo muestro en pantalla
-		if(LeerCola(Cola_RX,&dato,1))
+		if(LeerCola(Cola_RX1,&dato,1))
 		{
-			AnalizarTramaGPS(dato);
+			AnalizarTramaGSM(dato);
 			//DEBUGOUT("%c", dato);	//Imprimo en la consola
 		}
-		*/
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
@@ -443,7 +448,7 @@ static void vTaskCargarAnillo2(void *pvParameters)
 static void vTaskLeerAnillo2(void *pvParameters)
 {
 	uint8_t Receive=0;
-	uint8_t Testigo=0, dato=0;
+	uint8_t Testigo=0;
 
 	while (1)
 	{
@@ -488,7 +493,7 @@ static void vTaskAnalizarGPS(void *pvParameters)
 
 		while(LeerCola(RX_COLA_GPS,&dato,1))
 		{
-			AnalizarTramaGPS(dato); // que devuelva una struct que posea distintos campos: lat,long,hora,fecha y vel
+			//AnalizarTramaGPS(dato); // que devuelva una struct que posea distintos campos: lat,long,hora,fecha y vel
 			//DEBUGOUT("%c", dato);	//Imprimo en la consola
 			//para pasar la informacion colocar una cola de una sola posicion e ir sobreescribiendola
 		}
@@ -500,9 +505,10 @@ static void vTaskAnalizarGPS(void *pvParameters)
 static void vTaskEnviarGSM(void *pvParameters)
 {
 	uint8_t Receive=OFF;
+	uint8_t dato=0;
 
 	while(1)
-	{
+	{/*
 		xQueueReceive(Cola_Pulsadores, &Receive, portMAX_DELAY);
 
 		if(Receive==1)		//1: ENVIAR SMS
@@ -532,41 +538,45 @@ static void vTaskEnviarGSM(void *pvParameters)
 			vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "EMERGENCIA\032", sizeof("EMERGENCIA\032") - 1);
 		}
+		*/
 
-		else if(Receive==2)	//2: ENVIAR DATOS POR GPRS A THINGSPEAK
-		{
+		//else if(Receive==2)	//2: ENVIAR DATOS POR GPRS A THINGSPEAK
+		//{
 			Receive=OFF;	//Reestablezco variable
 
 			/////////////////// SEGUN 	https://www.youtube.com/watch?v=f-VhitIURlY
 			//Para enviar datos por GPRS a ThingSpeak
 
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			if(dato==0)
+			{
+				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+				vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
+				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+				vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
+				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
+				vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
 
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSHUT\r", sizeof("AT+CIPSHUT\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSHUT\r", sizeof("AT+CIPSHUT\r") - 1); //
+				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPMUX=0\r", sizeof("AT+CIPMUX=0\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPMUX=0\r", sizeof("AT+CIPMUX=0\r") - 1); //
+				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CGATT=1\r", sizeof("AT+CGATT=1\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CGATT=1\r", sizeof("AT+CGATT=1\r") - 1); //
+				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CSTT=\"FONAnet\"\r", sizeof("AT+CSTT=\"FONAnet\"\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CSTT=\"FONAnet\"\r", sizeof("AT+CSTT=\"FONAnet\"\r") - 1); //
+				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIICR\r", sizeof("AT+CIICR\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIICR\r", sizeof("AT+CIICR\r") - 1); //
+				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIFSR\r", sizeof("AT+CIFSR\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIFSR\r", sizeof("AT+CIFSR\r") - 1); //
+				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+			}
 
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSTART=\"TCP\",\"", sizeof("AT+CIPSTART=\"TCP\",\"") - 1); //
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "184.106.153.149\",\"80\"\r", sizeof("184.106.153.149\",\"80\"\r") - 1); //
 			vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
 
@@ -574,17 +584,22 @@ static void vTaskEnviarGSM(void *pvParameters)
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "GET ", sizeof("GET ") - 1); //	GET
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "/update?", sizeof("/update?") - 1); //
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, apiKey, sizeof(apiKey) - 1); //
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, data, sizeof(data) - 1); //
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
 
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "\r\n\r\n", sizeof("\r\n\r\n") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-		}
+			//vTaskDelay(10000/portTICK_RATE_MS);	//Espero 30s
+
+			xSemaphoreTake(Semaforo_GSM_Closed, 10000/portTICK_RATE_MS);
+
+			xQueuePeek(Cola_Connect, &dato, portMAX_DELAY);			//Para chequear si dio un error
+
+		//}
 	}
 	vTaskDelete(NULL);	//Borra la tarea
 }
@@ -624,6 +639,8 @@ static void xTaskPulsadores(void *pvParameters)
 */
 int main (void)
 {
+	uint8_t aux=0;
+
 	SystemCoreClockUpdate();
 
 	/* Initializes GPIO */
@@ -634,15 +651,18 @@ int main (void)
 	vSemaphoreCreateBinary(Semaforo_RX1);			//Creamos el semaforo
 	vSemaphoreCreateBinary(Semaforo_RX2);			//Creamos el semaforo
 	vSemaphoreCreateBinary(Semaforo_RFID);
-	xSemaphoreTake(Semaforo_RFID, portMAX_DELAY); //semaforo de inicializacion de rfid
+	xSemaphoreTake(Semaforo_RFID, portMAX_DELAY); 	//semaforo de inicializacion de rfid
 	vSemaphoreCreateBinary(Semaforo_RTC);			//Creamos el semaforo
+	vSemaphoreCreateBinary(Semaforo_GSM_Closed);			//Creamos el semaforo
+	xSemaphoreTake(Semaforo_GSM_Closed, portMAX_DELAY);
 
 	Cola_RX1 = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_TX1 = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_RX2 = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_TX2 = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
-	Cola_Pulsadores = xQueueCreate(1, sizeof(uint32_t));	//Creamos una cola
-
+	Cola_Pulsadores = xQueueCreate(1, sizeof(uint32_t));		//Creamos una cola
+	Cola_Connect = xQueueCreate(1, sizeof(uint8_t));			//Creamos una cola
+	xQueueOverwrite(Cola_Connect, &aux);
 
 	xTaskCreate(vTaskRFID, (char *) "vTaskRFID",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
@@ -660,38 +680,20 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
 
-	anillo_struct.Rx = Semaforo_RX1;
-	anillo_struct.anillo = rxring1;
-	anillo_struct.cola = Cola_RX1;
-
 	xTaskCreate(vTaskLeerAnillo1, (char *) "vTaskLeerAnillo1",
-				configMINIMAL_STACK_SIZE, &anillo_struct, (tskIDLE_PRIORITY + 2UL),
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-
-	anillo_struct.Rx = Semaforo_RX2;
-	anillo_struct.anillo = rxring2;
-	anillo_struct.cola = Cola_RX2;
 
 	xTaskCreate(vTaskLeerAnillo2, (char *) "vTaskLeerAnillo2",
-				configMINIMAL_STACK_SIZE, &anillo_struct, (tskIDLE_PRIORITY + 2UL),
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-	/*
-	anillo_struct.Rx = Semaforo_RX1;
-	anillo_struct.anillo = rxring1;
-	anillo_struct.cola = Cola_RX1;
-	anillo_struct.uart = LPC_UART1;
-	*/
+
 	xTaskCreate(vTaskCargarAnillo1, (char *) "vTaskCargarAnillo1",
-				configMINIMAL_STACK_SIZE, &anillo_struct, (tskIDLE_PRIORITY + 1UL),
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-	/*
-	anillo_struct.Rx = Semaforo_RX2;
-	anillo_struct.anillo = rxring2;
-	anillo_struct.cola = Cola_RX2;
-	anillo_struct.uart = LPC_UART2;
-	*/
+
 	xTaskCreate(vTaskCargarAnillo2, (char *) "vTaskCargarAnillo2",
-				configMINIMAL_STACK_SIZE, &anillo_struct, (tskIDLE_PRIORITY + 1UL),
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(xTaskUART1Config, (char *) "xTaskUART1Config",
@@ -707,7 +709,7 @@ int main (void)
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskEnviarGSM, (char *) "vTaskEnviarGSM",
-				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(xTaskPulsadores, (char *) "vTaskPulsadores",
