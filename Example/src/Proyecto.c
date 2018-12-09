@@ -45,6 +45,8 @@ MFRC522Ptr_t mfrcInstance;
 int last_balance = 0;
 unsigned int last_user_ID;
 
+struct Datos_Nube dato25;
+
 
 typedef struct
 {
@@ -55,6 +57,8 @@ typedef struct
 }ANILLO;
 
 ANILLO anillo_struct;
+
+struct Datos_Nube TramaEnvio;
 
 //ThingSpeak
 char http_cmd[80];
@@ -83,6 +87,7 @@ QueueHandle_t Cola_TX1,Cola_TX2;
 QueueHandle_t Cola_Pulsadores;
 QueueHandle_t Cola_Connect;
 QueueHandle_t Cola_SD;
+QueueHandle_t Cola_Datos_GPS;
 
 
 STATIC RINGBUFF_T txring1,txring2, rxring1,rxring2;								//Transmit and receive ring buffers
@@ -518,7 +523,7 @@ static void vTaskAnalizarGPS(void *pvParameters)
 
 		while(LeerCola(RX_COLA_GPS,&dato,1))
 		{
-			//AnalizarTramaGPS(dato); // que devuelva una struct que posea distintos campos: lat,long,hora,fecha y vel
+			AnalizarTramaGPS(dato); // que devuelva una struct que posea distintos campos: lat,long,hora,fecha y vel
 			//DEBUGOUT("%c", dato);	//Imprimo en la consola
 			//para pasar la informacion colocar una cola de una sola posicion e ir sobreescribiendola
 		}
@@ -624,10 +629,24 @@ static void vTaskEnviarGSM(void *pvParameters)
 static void xTaskPulsadores(void *pvParameters)
 {
 	uint8_t Send=OFF;
+	//static struct Datos_Nube dato25;
 
 	while (1)
 	{
-		if(Chip_GPIO_GetPinState(LPC_GPIO, SW1)==OFF)	//Si se presiona el SW1
+		//xQueuePeek(Cola_Datos_GPS, &dato25, portMAX_DELAY);			//Para chequear si dio un error
+
+		/*
+		PRUEBA BUZZER SONANDO CADA 100ms
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+		vTaskDelay(100/portTICK_RATE_MS);
+		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+		vTaskDelay(100/portTICK_RATE_MS);
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+		vTaskDelay(100/portTICK_RATE_MS);
+		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+		*/
+
+		/*if(Chip_GPIO_GetPinState(LPC_GPIO, SW1)==OFF)	//Si se presiona el SW1
 		{
 			Send=1;	//Para enviar SMS
 			xQueueSendToBack(Cola_Pulsadores, &Send, portMAX_DELAY);
@@ -644,7 +663,7 @@ static void xTaskPulsadores(void *pvParameters)
 			Send=3;	//Para enviar datos por GPRS a ThingSpeak
 			xQueueSendToBack(Cola_Pulsadores, &Send, portMAX_DELAY);
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-		}
+		}*/
 	}
 	vTaskDelete(NULL);	//Borra la tarea
 }
@@ -750,6 +769,7 @@ int main (void)
 	Cola_Connect = xQueueCreate(1, sizeof(uint8_t));			//Creamos una cola
 	xQueueOverwrite(Cola_Connect, &aux);
 	Cola_SD = xQueueCreate(4, sizeof(char) * 100);	//Creamos una cola para mandar una trama completa
+	Cola_Datos_GPS = xQueueCreate(1, sizeof(struct Datos_Nube));
 
 	/*
 	xTaskCreate(xTaskWriteSD, (char *) "xTaskWriteSD",

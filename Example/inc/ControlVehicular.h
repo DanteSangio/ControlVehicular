@@ -8,6 +8,8 @@
 #ifndef EXAMPLE_INC_CONTROLVEHICULAR_H_
 #define EXAMPLE_INC_CONTROLVEHICULAR_H_
 
+#include "stdint.h"
+
 //Defines Generales
 #define ON			((uint8_t) 1)
 #define OFF			((uint8_t) 0)
@@ -55,6 +57,13 @@
 #define SD_CS		PORT(0),PIN(27)
 
 #define F_CS		PORT(0),PIN(28)
+
+struct Datos_Nube
+{
+	char  	latitud[11],longitud[11];
+	char  	hora[6],fecha[9];
+	char 	ID[10];
+};
 
 #endif /* EXAMPLE_INC_CONTROLVEHICULAR_H_ */
 

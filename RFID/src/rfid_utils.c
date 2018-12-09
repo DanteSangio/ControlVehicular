@@ -4,6 +4,7 @@
 * they provide useful hints and background information.
 */
 #include "rfid_utils.h"
+#include "ControlVehicular.h"
 
 #define DEBUGOUT(...) printf(__VA_ARGS__)
 #define DEBUGSTR(...) printf(__VA_ARGS__)
@@ -200,10 +201,24 @@ void Comparar(unsigned int tarjeta)
 	if(tarjeta == base)
 	{
 		DEBUGOUT("Tarjeta igual\n\r");
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+		vTaskDelay(1500/portTICK_RATE_MS);	//Espero 1s
+		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
 	}
 	else
 	{
 		DEBUGOUT("Tarjeta distinta\n\r");
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+		vTaskDelay(300/portTICK_RATE_MS);	//Espero 1s
+		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+		vTaskDelay(300/portTICK_RATE_MS);	//Espero 1s
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+		vTaskDelay(300/portTICK_RATE_MS);	//Espero 1s
+		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+		vTaskDelay(300/portTICK_RATE_MS);	//Espero 1s
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+		vTaskDelay(300/portTICK_RATE_MS);	//Espero 1s
+		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
 	}
 
 	return ;
