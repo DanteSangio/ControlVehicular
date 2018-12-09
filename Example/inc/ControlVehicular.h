@@ -19,8 +19,8 @@
 
 //Defines Pines
 #define LED_STICK	PORT(0),PIN(22)
-#define	LED_VERDE	PORT(2),PIN(7)
-#define	LED_ROJO	PORT(2),PIN(8)
+#define	LED_VERDE	PORT(2),PIN(8)
+#define	LED_ROJO	PORT(2),PIN(7)
 
 #define	BUZZER		PORT(2),PIN(6)
 

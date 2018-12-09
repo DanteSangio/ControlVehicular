@@ -27,7 +27,7 @@ void SSP_Init_PINES(LPC_SSP_T *pSSP)
 		 * P0.9: MOSI
 		 */
 		Chip_IOCON_PinMux(LPC_IOCON, 0, 7, IOCON_MODE_INACT, IOCON_FUNC2);
-		Chip_IOCON_PinMux(LPC_IOCON, 0, 6, IOCON_MODE_INACT, IOCON_FUNC2);
+		//Chip_IOCON_PinMux(LPC_IOCON, 0, 6, IOCON_MODE_INACT, IOCON_FUNC2);
 		Chip_IOCON_PinMux(LPC_IOCON, 0, 8, IOCON_MODE_INACT, IOCON_FUNC2);
 		Chip_IOCON_PinMux(LPC_IOCON, 0, 9, IOCON_MODE_INACT, IOCON_FUNC2);
 	}
@@ -123,7 +123,7 @@ void PCD_WriteRegister(
 						  mfrc->_chipSelectPin.pin, (bool)true);
 
 	// Stop using the SPI bus
-	Chip_SSP_Disable(mfrc->pSSP);
+	//Chip_SSP_Disable(mfrc->pSSP);
 } // End PCD_WriteRegister()
 
 /**
@@ -164,7 +164,7 @@ void PCD_WriteNRegister(
 						  mfrc->_chipSelectPin.pin, (bool)true);
 
 	// Stop using the SPI bus
-	Chip_SSP_Disable(mfrc->pSSP);
+	//Chip_SSP_Disable(mfrc->pSSP);
 } // End PCD_WriteRegister()
 
 /**
@@ -205,7 +205,7 @@ uint8_t PCD_ReadRegister(
 						  mfrc->_chipSelectPin.pin, (bool)true);
 
 	// Stop using the SPI bus
-	Chip_SSP_Disable(mfrc->pSSP);
+	//Chip_SSP_Disable(mfrc->pSSP);
 	return value;
 } // End PCD_ReadRegister()
 
@@ -291,7 +291,7 @@ void PCD_ReadNRegister(
 						  mfrc->_chipSelectPin.pin, (bool)true);
 
 	// Stop using the SPI bus
-	Chip_SSP_Disable(mfrc->pSSP);
+	//Chip_SSP_Disable(mfrc->pSSP);
 } // End PCD_ReadRegister()
 
 /**
@@ -402,13 +402,9 @@ void PCD_Init(MFRC522Ptr_t mfrc, LPC_SSP_T *pSSP) {
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, mfrc->_resetPowerDownPin.port,
 							  mfrc->_resetPowerDownPin.pin);
 
-	if (Chip_GPIO_GetPinState(LPC_GPIO, mfrc->_resetPowerDownPin.port,
-							  mfrc->_resetPowerDownPin.pin) ==
-		false) { // The MFRC522 chip is in power down mode.
-		Chip_GPIO_SetPinState(
-				LPC_GPIO, mfrc->_resetPowerDownPin.port,
-			mfrc->_resetPowerDownPin.pin,
-			(bool)true); // Exit power down mode. This triggers a hard reset.
+	if (Chip_GPIO_GetPinState(LPC_GPIO, mfrc->_resetPowerDownPin.port,mfrc->_resetPowerDownPin.pin) ==false)
+	{ // The MFRC522 chip is in power down mode.
+		Chip_GPIO_SetPinState(LPC_GPIO, mfrc->_resetPowerDownPin.port,mfrc->_resetPowerDownPin.pin,(bool)true); // Exit power down mode. This triggers a hard reset.
 		// Section 8.8.2 in the datasheet says the oscillator start-up time is
 		// the start up time of the crystal + 37,74�s. Let us be generous: 50ms.
 
@@ -419,7 +415,9 @@ void PCD_Init(MFRC522Ptr_t mfrc, LPC_SSP_T *pSSP) {
 		delay_ms(50);
 		Board_LED_Toggle(0);*/
 
-	} else { // Perform a soft reset
+	}
+	else
+	{ // Perform a soft reset
 		PCD_Reset(mfrc);
 	}
 
@@ -457,8 +455,7 @@ void PCD_Init(MFRC522Ptr_t mfrc, LPC_SSP_T *pSSP) {
  * Performs a soft reset on the MFRC522 chip and waits for it to be ready again.
  */
 void PCD_Reset(MFRC522Ptr_t mfrc) {
-	PCD_WriteRegister(mfrc, CommandReg,
-					  PCD_SoftReset); // Issue the SoftReset command.
+	PCD_WriteRegister(mfrc, CommandReg,PCD_SoftReset); // Issue the SoftReset command.
 	// The datasheet does not mention how long the SoftRest command takes to
 	// complete.
 	// But the MFRC522 might have been in soft power-down mode (triggered by bit
@@ -466,7 +463,7 @@ void PCD_Reset(MFRC522Ptr_t mfrc) {
 	// Section 8.8.2 in the datasheet says the oscillator start-up time is the
 	// start up time of the crystal + 37,74�s. Let us be generous: 50ms.
 
-	vTaskDelay( 50 / portTICK_PERIOD_MS );//Delay de 50 mseg
+	vTaskDelay( 100 / portTICK_PERIOD_MS );//Delay de 50 mseg
 	/*
 	SysTick_Init();
 	delay_ms(50);

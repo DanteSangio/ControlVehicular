@@ -43,6 +43,7 @@
 								<option id="com.crt.advproject.gcc.hdrlib.787120719" name="Library headers" superClass="com.crt.advproject.gcc.hdrlib" value="com.crt.advproject.gcc.hdrlib.codered" valueType="enumerated"/>
 								<option id="com.crt.advproject.gcc.specs.1419498580" name="Specs" superClass="com.crt.advproject.gcc.specs" value="com.crt.advproject.gcc.specs.codered" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.304153274" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/SD/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/GSM/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/RFID/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/Example/Read balance LPCOpen/inc}&quot;"/>
@@ -134,6 +135,7 @@
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="GPS/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="GSM/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="RFID/src"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="SD/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="UART/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="freeRTOS/src"/>
 					</sourceEntries>
@@ -234,10 +236,11 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="Example/src/GSM.c|GSM/src|GSM/src}|RFID|src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="SD/src|Example/src/GSM.c|GSM/src|GSM/src}|RFID|src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="GSM/src"/>
 						<entry excluding="src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="RFID"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="RFID/src"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="SD/src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

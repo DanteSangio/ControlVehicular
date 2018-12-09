@@ -23,6 +23,7 @@
 #include "ControlVehicular.h"
 #include "GPS.h"
 #include "UART.h"
+#include "sdcard.h"
 
 
 /*****************************************************************************
@@ -49,13 +50,16 @@ void uC_StartUp (void)
 {
 	DEBUGOUT("Configurando pines I/O..\n");	//Imprimo en la consola
 
-
 	Chip_GPIO_SetDir (LPC_GPIO, LED_STICK, OUTPUT);
 	Chip_IOCON_PinMux (LPC_IOCON, LED_STICK, IOCON_MODE_INACT, IOCON_FUNC0);
 	Chip_GPIO_SetDir (LPC_GPIO, BUZZER, OUTPUT);
 	Chip_IOCON_PinMux (LPC_IOCON, BUZZER, IOCON_MODE_INACT, IOCON_FUNC0);
 	Chip_GPIO_SetDir (LPC_GPIO, SW1, INPUT);
 	Chip_IOCON_PinMux (LPC_IOCON, SW1, IOCON_MODE_PULLDOWN, IOCON_FUNC0);
+
+	//Set the chipSelectPin as digital output, do not select the slave yet
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, SDCS);
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, SDCS);
 
 	//Salidas apagadas
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_STICK);
