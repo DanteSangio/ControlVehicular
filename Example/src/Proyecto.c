@@ -629,7 +629,6 @@ static void vTaskEnviarGSM(void *pvParameters)
 static void xTaskPulsadores(void *pvParameters)
 {
 	uint8_t Send=OFF;
-	//static struct Datos_Nube dato25;
 
 	while (1)
 	{
