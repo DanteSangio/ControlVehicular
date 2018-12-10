@@ -45,7 +45,7 @@ MFRC522Ptr_t mfrcInstance;
 int last_balance = 0;
 unsigned int last_user_ID;
 
-struct Datos_Nube dato25;
+
 
 
 typedef struct
@@ -60,14 +60,7 @@ ANILLO anillo_struct;
 
 struct Datos_Nube TramaEnvio;
 
-//ThingSpeak
-char http_cmd[80];
-char url_string[] = "api.thingspeak.com/update?";	//URL
-char apiKey[] = "api_key=4IVCTNA39FY9U35C&";		//Write API key from ThingSpeak: 4IVCTNA39FY9U35C
-char data[] = "field1=30";	//
-char data1[] = "field1=31";	//
-int status;
-int datalen;
+
 
 /*****************************************************************************
  * Public types/enumerations/variables
@@ -88,9 +81,11 @@ QueueHandle_t Cola_Pulsadores;
 QueueHandle_t Cola_Connect;
 QueueHandle_t Cola_SD;
 QueueHandle_t Cola_Datos_GPS;
+QueueHandle_t Cola_Datos_RFID;
 
 
-STATIC RINGBUFF_T txring1,txring2, rxring1,rxring2;								//Transmit and receive ring buffers
+
+RINGBUFF_T txring1,txring2, rxring1,rxring2;								//Transmit and receive ring buffers
 static uint8_t rxbuff1[UART_RRB_SIZE], txbuff1[UART_SRB_SIZE],rxbuff2[UART_RRB_SIZE], txbuff2[UART_SRB_SIZE];	//Transmit and receive buffers
 
 //volatile int HourGPS, MinuteGPS, DayGPS, MonthGPS, YearGPS;		//GPS: Variables que guardan informacion
@@ -535,7 +530,8 @@ static void vTaskAnalizarGPS(void *pvParameters)
 static void vTaskEnviarGSM(void *pvParameters)
 {
 	uint8_t Receive=OFF;
-	uint8_t dato=0;
+	struct Datos_Nube informacion;
+	unsigned int informacionRFID;
 
 	while(1)
 	{
@@ -568,57 +564,10 @@ static void vTaskEnviarGSM(void *pvParameters)
 
 		//Para enviar datos por GPRS a ThingSpeak
 
-		if(dato==0)
-		{
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-			vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-			vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-			vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
-
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSHUT\r", sizeof("AT+CIPSHUT\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPMUX=0\r", sizeof("AT+CIPMUX=0\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CGATT=1\r", sizeof("AT+CGATT=1\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CSTT=\"FONAnet\"\r", sizeof("AT+CSTT=\"FONAnet\"\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIICR\r", sizeof("AT+CIICR\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIFSR\r", sizeof("AT+CIFSR\r") - 1); //
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-		}
-
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSTART=\"TCP\",\"", sizeof("AT+CIPSTART=\"TCP\",\"") - 1); //
-		vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "184.106.153.149\",\"80\"\r", sizeof("184.106.153.149\",\"80\"\r") - 1); //
-		vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
-
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSEND=48\r", sizeof("AT+CIPSEND=48\r") - 1); //44
-		vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "GET ", sizeof("GET ") - 1); //	GET
-		vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "/update?", sizeof("/update?") - 1); //
-		vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, apiKey, sizeof(apiKey) - 1); //
-		vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, data, sizeof(data) - 1); //
-		vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
-
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "\r\n\r\n", sizeof("\r\n\r\n") - 1); //
-		//vTaskDelay(10000/portTICK_RATE_MS);	//Espero 30s
-
-		xSemaphoreTake(Semaforo_GSM_Closed, 10000/portTICK_RATE_MS);
-
-		xQueuePeek(Cola_Connect, &dato, portMAX_DELAY);			//Para chequear si dio un error
+		xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
+		xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
+		//informacion.latitud[0] = 'A';
+		EnviarTramaGSM(informacion.latitud,informacion.longitud, informacionRFID);
 
 		//}
 	}
@@ -769,6 +718,7 @@ int main (void)
 	xQueueOverwrite(Cola_Connect, &aux);
 	Cola_SD = xQueueCreate(4, sizeof(char) * 100);	//Creamos una cola para mandar una trama completa
 	Cola_Datos_GPS = xQueueCreate(1, sizeof(struct Datos_Nube));
+	Cola_Datos_RFID = xQueueCreate(1, sizeof(unsigned int));
 
 	/*
 	xTaskCreate(xTaskWriteSD, (char *) "xTaskWriteSD",
