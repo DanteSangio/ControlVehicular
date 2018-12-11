@@ -44,8 +44,8 @@ void userTapIn()
 	DEBUGOUT("\nCard Read user ID: %u \n\r",last_user_ID);
 
 
-	xQueueSendToBack(Cola_Datos_RFID,&last_user_ID, portMAX_DELAY);//envio a la cola la tarjeta leida
-	//Comparar(last_user_ID);
+	//xQueueSendToBack(Cola_Datos_RFID,&last_user_ID, portMAX_DELAY);//envio a la cola la tarjeta leida
+	Comparar(last_user_ID);
 
 	// Read the user balance NO BORRAR SINO NO DETECTA CUANDO HAY TARJETA NUEVA
 	last_balance = readCardBalance(mfrcInstance);

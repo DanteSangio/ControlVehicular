@@ -50,7 +50,7 @@ http://www.tavi.co.uk/phobos/fat.html
 #define SDCARD_TYPE_STANDARD       1
 #define SDCARD_TYPE_HIGH_CAPACITY  2
 
-#define SDCS	2,8
+#define SDCS	2,12
 
 //SD
 #define FILE_READ         '1'

@@ -185,7 +185,8 @@ void EnviarTramaGSM (char* latitud, char* longitud, unsigned int rfid)
 			vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 
 			//rfid
-			strcat(data3,rfid);
+			itoa (rfid,auxRfid,10);
+			strcat(data3,auxRfid);
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)data3, sizeof(data3) - 1); //
 			vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 
@@ -201,3 +202,6 @@ void EnviarTramaGSM (char* latitud, char* longitud, unsigned int rfid)
 
 
 }
+
+//https://api.thingspeak.com/channels/648303/fields/1.json?api_key=VRMSAZ0CSI5VVHDM&results=2 url que hay que mandar para leer 2 resultados de tarjetas
+//https://api.thingspeak.com/update?api_key=BKHDQTKSFJ6YONWX&field1=4266702969&field2=Pepe comando para cargar los campos online

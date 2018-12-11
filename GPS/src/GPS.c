@@ -50,7 +50,7 @@ volatile float Lat1GPS, Lat2GPS, Long1GPS, Long2GPS;			//GPS: Variables auxiliar
 /* uC_StartUp */
 void uC_StartUp (void)
 {
-	DEBUGOUT("Configurando pines I/O..\n");	//Imprimo en la consola
+	//DEBUGOUT("Configurando pines I/O..\n");	//Imprimo en la consola
 
 	Chip_GPIO_SetDir (LPC_GPIO, LED_STICK, OUTPUT);
 	Chip_IOCON_PinMux (LPC_IOCON, LED_STICK, IOCON_MODE_INACT, IOCON_FUNC0);

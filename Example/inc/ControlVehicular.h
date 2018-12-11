@@ -17,7 +17,7 @@
 #define PIN(x)		((uint8_t) x)
 #define OUTPUT		((uint8_t) 1)
 #define INPUT		((uint8_t) 0)
-#define DEBUGOUT(...) printf(__VA_ARGS__)
+#define DEBUGOUT(...) //printf(__VA_ARGS__)
 
 //Defines Pines
 #define LED_STICK	PORT(0),PIN(22)

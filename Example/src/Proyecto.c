@@ -27,9 +27,9 @@
 
 
 
-#define DEBUGOUT1(...) printf(__VA_ARGS__)
-#define DEBUGOUT(...) printf(__VA_ARGS__)
-#define DEBUGSTR(...) printf(__VA_ARGS__)
+#define DEBUGOUT1(...) //printf(__VA_ARGS__)
+#define DEBUGOUT(...) //printf(__VA_ARGS__)
+#define DEBUGSTR(...) //printf(__VA_ARGS__)
 
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -583,12 +583,12 @@ static void xTaskPulsadores(void *pvParameters)
 	{
 		//xQueuePeek(Cola_Datos_GPS, &dato25, portMAX_DELAY);			//Para chequear si dio un error
 
-		/*
-		PRUEBA BUZZER SONANDO CADA 100ms
-		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+
+		//PRUEBA BUZZER SONANDO CADA 100ms
+		/*Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 		vTaskDelay(100/portTICK_RATE_MS);
 		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
-		vTaskDelay(100/portTICK_RATE_MS);
+		vTaskDelay(1000/portTICK_RATE_MS);
 		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 		vTaskDelay(100/portTICK_RATE_MS);
 		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
@@ -715,12 +715,12 @@ int main (void)
 	Cola_TX2 = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_Pulsadores = xQueueCreate(1, sizeof(uint32_t));		//Creamos una cola
 	Cola_Connect = xQueueCreate(1, sizeof(uint8_t));			//Creamos una cola
-	xQueueOverwrite(Cola_Connect, &aux);
+	xQueueOverwrite(Cola_Connect, &aux);//cargo con 0 para que realice toda la secuencia por primera vez
 	Cola_SD = xQueueCreate(4, sizeof(char) * 100);	//Creamos una cola para mandar una trama completa
 	Cola_Datos_GPS = xQueueCreate(1, sizeof(struct Datos_Nube));
 	Cola_Datos_RFID = xQueueCreate(1, sizeof(unsigned int));
 
-	/*
+
 	xTaskCreate(xTaskWriteSD, (char *) "xTaskWriteSD",
 					configMINIMAL_STACK_SIZE * 2, NULL, (tskIDLE_PRIORITY + 2UL),
 					(xTaskHandle *) NULL);
@@ -728,7 +728,7 @@ int main (void)
 	xTaskCreate(vTaskInicSD, (char *) "vTaskInicSD",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
-	*/
+
 	xTaskCreate(vTaskRFID, (char *) "vTaskRFID",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
