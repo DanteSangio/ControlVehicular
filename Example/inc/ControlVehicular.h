@@ -64,5 +64,10 @@ struct Datos_Nube
 	char  	hora[6],fecha[9];
 };
 
+typedef struct
+{
+	char  	tarjeta[11];
+}Tarjetas_RFID;
+
 #endif /* EXAMPLE_INC_CONTROLVEHICULAR_H_ */
 

@@ -71,8 +71,7 @@ SemaphoreHandle_t Semaforo_RTC;
 SemaphoreHandle_t Semaforo_RX1;
 SemaphoreHandle_t Semaforo_RX2;
 SemaphoreHandle_t Semaforo_GSM_Closed;
-SemaphoreHandle_t Semaforo_Inic_SD;
-SemaphoreHandle_t Semaforo_Inic_SD2;
+SemaphoreHandle_t Semaforo_GSM_Enviado;
 SemaphoreHandle_t Semaforo_SSP;
 
 QueueHandle_t Cola_RX1,Cola_RX2;
@@ -82,7 +81,7 @@ QueueHandle_t Cola_Connect;
 QueueHandle_t Cola_SD;
 QueueHandle_t Cola_Datos_GPS;
 QueueHandle_t Cola_Datos_RFID;
-
+QueueHandle_t Cola_Inicio_Tarjetas;
 
 
 RINGBUFF_T txring1,txring2, rxring1,rxring2;								//Transmit and receive ring buffers
@@ -481,27 +480,6 @@ static void vTaskLeerAnillo2(void *pvParameters)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskAnalizarGSM */
-static void vTaskAnalizarGSM(void *pvParameters)
-{
-	uint8_t dato=0;
-
-	while (1)
-	{
-		//leo la cola de rercepcion y lo muestro en pantalla
-		if(LeerCola(Cola_RX1,&dato,1))
-		{
-			AnalizarTramaGSM(dato);
-			//DEBUGOUT("%c", dato);	//Imprimo en la consola
-		}
-	}
-	vTaskDelete(NULL);	//Borra la tarea
-}
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskAnalizarGPS */
 static void vTaskAnalizarGPS(void *pvParameters)
 {
@@ -526,6 +504,26 @@ static void vTaskAnalizarGPS(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* vTaskAnalizarGSM   LO QUE HACIA ESTA TAREA LO INCLUI DENTRO DE ENVIARTRAMAGSM
+static void vTaskAnalizarGSM(void *pvParameters)
+{
+	uint8_t dato=0;
+
+	while (1)
+	{
+		xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que no este solicitando tarjetas
+		//leo la cola de rercepcion y lo muestro en pantalla
+		while(LeerCola(RX_COLA_GSM,&dato,1))
+		{
+			AnalizarTramaGSMenvio(dato);
+			//DEBUGOUT("%c", dato);	//Imprimo en la consola
+		}
+
+	}
+	vTaskDelete(NULL);	//Borra la tarea
+}
+*/
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskEnviarGSM */
 static void vTaskEnviarGSM(void *pvParameters)
 {
@@ -537,36 +535,16 @@ static void vTaskEnviarGSM(void *pvParameters)
 	{
 		/*
 		xQueueReceive(Cola_Pulsadores, &Receive, portMAX_DELAY);
-
+		Faltaria el if de los pulsadores o algo que tome una decision
 		//Para enviar SMS
-
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-		vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-		vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-		vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CNMI=2,2,0,0\r", sizeof("AT+CNMI=2,2,0,0\r") - 1); //No guardo los mensajes en memoria, los envio directamente por UART cuando llegan
-		vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
-
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CMGF=1\r", sizeof("AT+CMGF=1\r") - 1); //Activo modo texto. ALT+CMGF = 1 (texto). ALT + CMGF = 0 (PDU)
-		vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
-
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CSCS=\"GSM\"\r", sizeof("AT+CSCS=\"GSM\"\r") - 1);
-		vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
-
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CMGS=\"+5491137863836\"\r", sizeof("AT+CMGS=\"+5491137863836\"\r") - 1);
-		vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
-		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "EMERGENCIA\032", sizeof("EMERGENCIA\032") - 1);
+		EnviarMensajeGSM();
 		*/
 
 
 		//Para enviar datos por GPRS a ThingSpeak
-
+		xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que no este solicitando tarjetas
 		xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 		xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
-		//informacion.latitud[0] = 'A';
 		EnviarTramaGSM(informacion.latitud,informacion.longitud, informacionRFID);
 
 		//}
@@ -685,6 +663,31 @@ static void xTaskWriteSD(void *pvParameters)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* vTaskTarjetasGSM*/
+static void vTaskTarjetasGSM(void *pvParameters)
+{
+	Tarjetas_RFID* InicioTarjetas=NULL;//Puntero al inicio del vector de tarjetas
+	uint8_t dato=0;
+
+
+    while (1)
+	{
+    	//tarea que deberia llamar 1 vez al dia
+    	RecibirTramaGSM();
+    	vTaskDelay(10000/portTICK_RATE_MS);//espero 10 seg para asegurarme que llego todo
+		while(LeerCola(RX_COLA_GSM,&dato,1))
+		{
+			InicioTarjetas = AnalizarTramaGSMrecibido(dato);
+			xQueueSendToBack(Cola_Inicio_Tarjetas,&InicioTarjetas,portMAX_DELAY);// envio a una cola el comienzo del vector de tarjetas
+			//DEBUGOUT("%c", dato);	//Imprimo en la consola
+		}
+
+
+	}
+	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* main
 */
 int main (void)
@@ -705,6 +708,8 @@ int main (void)
 	vSemaphoreCreateBinary(Semaforo_RTC);			//Creamos el semaforo
 	vSemaphoreCreateBinary(Semaforo_GSM_Closed);			//Creamos el semaforo
 	xSemaphoreTake(Semaforo_GSM_Closed, portMAX_DELAY);
+	vSemaphoreCreateBinary(Semaforo_GSM_Enviado);			//Creamos el semaforo
+	xSemaphoreTake(Semaforo_GSM_Enviado, portMAX_DELAY);
 	vSemaphoreCreateBinary(Semaforo_SSP);			//Creamos el semaforo
 	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 
@@ -719,6 +724,7 @@ int main (void)
 	Cola_SD = xQueueCreate(4, sizeof(char) * 100);	//Creamos una cola para mandar una trama completa
 	Cola_Datos_GPS = xQueueCreate(1, sizeof(struct Datos_Nube));
 	Cola_Datos_RFID = xQueueCreate(1, sizeof(unsigned int));
+	Cola_Inicio_Tarjetas = xQueueCreate(1, sizeof(Tarjetas_RFID*));
 
 
 	xTaskCreate(xTaskWriteSD, (char *) "xTaskWriteSD",
@@ -784,9 +790,14 @@ int main (void)
 	xTaskCreate(vTaskAnalizarGPS, (char *) "vTaskAnalizarGPS",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-
+	/*
 	xTaskCreate(vTaskAnalizarGSM, (char *) "vTaskAnalizarGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+				(xTaskHandle *) NULL);
+	*/
+
+	xTaskCreate(vTaskTarjetasGSM, (char *) "vTaskTarjetasGSM",
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
 	/* Start the scheduler */
