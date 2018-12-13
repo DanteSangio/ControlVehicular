@@ -28,7 +28,7 @@
 
 
 #define DEBUGOUT1(...) //printf(__VA_ARGS__)
-#define DEBUGOUT(...) //printf(__VA_ARGS__)
+#define DEBUGOUT(...)  //printf(__VA_ARGS__)
 #define DEBUGSTR(...) //printf(__VA_ARGS__)
 
 /*****************************************************************************
@@ -542,7 +542,7 @@ static void vTaskEnviarGSM(void *pvParameters)
 
 
 		//Para enviar datos por GPRS a ThingSpeak
-		xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que no este solicitando tarjetas
+		//xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que no este solicitando tarjetas
 		xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 		xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
 		EnviarTramaGSM(informacion.latitud,informacion.longitud, informacionRFID);
@@ -727,6 +727,7 @@ int main (void)
 	Cola_Inicio_Tarjetas = xQueueCreate(1, sizeof(Tarjetas_RFID*));
 
 
+	/*
 	xTaskCreate(xTaskWriteSD, (char *) "xTaskWriteSD",
 					configMINIMAL_STACK_SIZE * 2, NULL, (tskIDLE_PRIORITY + 2UL),
 					(xTaskHandle *) NULL);
@@ -735,6 +736,7 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
 
+	*/
 	xTaskCreate(vTaskRFID, (char *) "vTaskRFID",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
@@ -783,10 +785,12 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
+	/*
 	xTaskCreate(xTaskPulsadores, (char *) "vTaskPulsadores",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 
+	*/
 	xTaskCreate(vTaskAnalizarGPS, (char *) "vTaskAnalizarGPS",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
@@ -796,10 +800,12 @@ int main (void)
 				(xTaskHandle *) NULL);
 	*/
 
+	/*
 	xTaskCreate(vTaskTarjetasGSM, (char *) "vTaskTarjetasGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
+	*/
 	/* Start the scheduler */
 	vTaskStartScheduler();
 

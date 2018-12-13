@@ -29,6 +29,7 @@
 /*****************************************************************************
  * Types/enumerations/variables
  ****************************************************************************/
+//#define DEBUGOUT(...) printf(__VA_ARGS__)
 
 
 extern SemaphoreHandle_t Semaforo_GSM_Closed;
