@@ -40,9 +40,9 @@ extern QueueHandle_t Cola_RX1;
 char http_cmd[80];
 char url_string[] = "api.thingspeak.com/update?";	//URL
 char apiKey[] = "api_key=4IVCTNA39FY9U35C";		//Write API key from ThingSpeak: 4IVCTNA39FY9U35C
-char data1[50] = "&field1=";	//
-char data2[50] = "&field2=";	//
-char data3[50] = "&field3=";	//
+char data1Original[10] = "&field1=\0";	//
+char data2Original[10] = "&field2=\0";	//
+char data3Original[10] = "&field3=\0";	//
 int status;
 int datalen;
 
@@ -151,7 +151,8 @@ void EnviarMensajeGSM (void)
 void EnviarTramaGSM (char* latitud, char* longitud, unsigned int rfid)
 {
 	static uint8_t dato=0;
-	char auxRfid[16];
+	char auxRfid[16],data1[50],data2[50],data3[50];
+
 	if(dato==0)
 			{
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
@@ -168,7 +169,7 @@ void EnviarTramaGSM (char* latitud, char* longitud, unsigned int rfid)
 				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CGATT=1\r", sizeof("AT+CGATT=1\r") - 1); //
-				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+				vTaskDelay(2000/portTICK_RATE_MS);	//Espero 1s
 
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CSTT=\"FONAnet\"\r", sizeof("AT+CSTT=\"FONAnet\"\r") - 1); //
 				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
@@ -190,28 +191,31 @@ void EnviarTramaGSM (char* latitud, char* longitud, unsigned int rfid)
 			vTaskDelay(500/portTICK_RATE_MS);	//Espero 1s
 
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "GET ", sizeof("GET ") - 1); //	GET
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "/update?", sizeof("/update?") - 1); //
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 
 
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)apiKey, sizeof(apiKey) - 1); //
-			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+			vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 
 			//latitud
+			strcpy(data1, data1Original);
 			strcat(data1,latitud);//le sumo al campo 1 la latitud
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)data1, sizeof(data1) - 1); //
+			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)data1, strlen(data1)); //
 			vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 
 			//envio longitud
+			strcpy(data2, data2Original);
 			strcat(data2,longitud);
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)data2, sizeof(data2) - 1); //
+			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)data2, strlen(data1)); //
 			vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 
 			//rfid
-			itoa (rfid,auxRfid,10);
+			itoa ((int)rfid,auxRfid,10);
+			strcpy(data3, data3Original);
 			strcat(data3,auxRfid);
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)data3, sizeof(data3) - 1); //
+			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)data3, strlen(data1)); //
 			vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 
 
@@ -220,12 +224,13 @@ void EnviarTramaGSM (char* latitud, char* longitud, unsigned int rfid)
 
 
 			//analizo para verificar si hubo error, connect y/o closed
+			/*
 			while(LeerCola(RX_COLA_GSM,&dato,1))
 			{
 				AnalizarTramaGSMenvio(dato);
-				//DEBUGOUT("%c", dato);	//Imprimo en la consola
+				DEBUGOUT("%c", dato);	//Imprimo en la consola
 			}
-
+			*/
 			xSemaphoreTake(Semaforo_GSM_Closed, 10000/portTICK_RATE_MS);
 
 

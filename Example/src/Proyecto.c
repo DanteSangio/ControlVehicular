@@ -28,7 +28,7 @@
 
 
 #define DEBUGOUT1(...) //printf(__VA_ARGS__)
-#define DEBUGOUT(...)  //printf(__VA_ARGS__)
+#define DEBUGOUT(...)  printf(__VA_ARGS__)
 #define DEBUGSTR(...) //printf(__VA_ARGS__)
 
 /*****************************************************************************
@@ -504,25 +504,25 @@ static void vTaskAnalizarGPS(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskAnalizarGSM   LO QUE HACIA ESTA TAREA LO INCLUI DENTRO DE ENVIARTRAMAGSM
+// vTaskAnalizarGSM   LO QUE HACIA ESTA TAREA LO INCLUI DENTRO DE ENVIARTRAMAGSM
 static void vTaskAnalizarGSM(void *pvParameters)
 {
 	uint8_t dato=0;
 
 	while (1)
 	{
-		xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que no este solicitando tarjetas
+		//xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que no este solicitando tarjetas
 		//leo la cola de rercepcion y lo muestro en pantalla
 		while(LeerCola(RX_COLA_GSM,&dato,1))
 		{
 			AnalizarTramaGSMenvio(dato);
-			//DEBUGOUT("%c", dato);	//Imprimo en la consola
+			DEBUGOUT("%c", dato);	//Imprimo en la consola
 		}
 
 	}
 	vTaskDelete(NULL);	//Borra la tarea
 }
-*/
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskEnviarGSM */
 static void vTaskEnviarGSM(void *pvParameters)
@@ -794,11 +794,11 @@ int main (void)
 	xTaskCreate(vTaskAnalizarGPS, (char *) "vTaskAnalizarGPS",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-	/*
+
 	xTaskCreate(vTaskAnalizarGSM, (char *) "vTaskAnalizarGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-	*/
+
 
 	/*
 	xTaskCreate(vTaskTarjetasGSM, (char *) "vTaskTarjetasGSM",
