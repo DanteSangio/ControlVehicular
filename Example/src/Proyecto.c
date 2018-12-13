@@ -11,26 +11,31 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include <cr_section_macros.h>
 #include "MFRC522.h"
 #include "rfid_utils.h"
 #include "string.h"
 #include "stdlib.h"
 #include "ControlVehicular.h"
+
 #include "GPS.h"
 #include "UART.h"
 #include <RFID.h>
 #include "GSM.h"
-#include <GUI.h>
 
+#include "GUI.h"
+#include "DIALOG.h"
+#include "GRAPH.h"
+#include "LCD_X_SPI.h"
+
+#include "Pantalla.h"
 
 //#include "RegsLPC1769.h"
-
-
-
+/*
 #define DEBUGOUT1(...) printf(__VA_ARGS__)
 #define DEBUGOUT(...) printf(__VA_ARGS__)
 #define DEBUGSTR(...) printf(__VA_ARGS__)
-
+*/
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
@@ -77,7 +82,8 @@ SemaphoreHandle_t Semaforo_RX2;
 QueueHandle_t Cola_RX1,Cola_RX2;
 QueueHandle_t Cola_TX1,Cola_TX2;
 QueueHandle_t Cola_Pulsadores;
-
+QueueHandle_t xcolalcd;
+QueueHandle_t xcolateclado;
 
 
 STATIC RINGBUFF_T txring1,txring2, rxring1,rxring2;								//Transmit and receive ring buffers
@@ -611,6 +617,91 @@ static void xTaskPulsadores(void *pvParameters)
 }
 
 
+void vTaskPantalla(void *pvParameters)
+{
+
+
+	uint8_t op,menu,gananterior; //menu=EST_MEDICION
+	static uint8_t PC_config=0; // empieza en el menu de medicion
+	char cadena[16];
+
+	GUI_COLOR colorfondoboton;
+
+	BUTTON_Handle botona,botonb,botonc,botond,botone;
+
+	GRAPH_Handle grafico;
+	GRAPH_SCALE_Handle escalagrafh,escalagrafv;
+	GRAPH_DATA_Handle datagraf;
+
+	short int array[250];
+	int i=250;
+
+	while(i!=0)
+	{
+		i--;
+
+			array[i]=0;
+
+	}
+
+	GUI_Init();
+	GUI_SetBkColor(0x00D3D3D3); //gris claro
+	GUI_Clear();
+
+	GUI_SetFont(GUI_FONT_COMIC18B_ASCII);
+	GUI_DispStringAt("T.P. Tecnicas Digitales 2 UTN FRBA",20,0);
+	GUI_DispStringAt("Control Vehicular",105,25);
+	GUI_DispStringAt("Sanata Romeo",143,60);
+	//GUI_DispStringAt("Ponderacion en tiempo:",10,95);
+	//GUI_DispStringAt("Ponderacion en frecuencia:",10,115);
+	//GUI_DispStringAt("Slow",175,95);
+	//GUI_DispStringAt("A",203,115);
+
+
+
+
+
+
+/*
+
+	//dibujo linea que separa la medicion de las opciones
+	GUI_DrawHLine(140,0,320);
+
+	BUTTON_SetDefaultFont(GUI_FONT_COMIC18B_ASCII);
+	BUTTON_SetDefaultTextAlign(GUI_TA_HCENTER | GUI_TA_VCENTER);
+	GUI_SetFont(GUI_FONT_COMIC18B_ASCII);
+	botona=BUTTON_CreateEx(5,145,150,40,0,WM_CF_SHOW,0,GUI_ID_BUTTON0);
+	//BUTTON_SetTextAling(botona,GUI_TA_HCENTER | GUI_TA_VCENTER);
+	BUTTON_SetText(botona, "FAST/SLOW");
+	botonb=BUTTON_CreateEx(165,145,150,40,0,WM_CF_SHOW,0,GUI_ID_BUTTON1);
+	BUTTON_SetText(botonb, "A/C");
+	//GUI_SetTextAling(botona,GUI_TA_HCENTER | GUI_TA_VCENTER);
+	//GUI_SetFont(botona,GUI_FONT_COMIC18B_ASCII);
+	botonc=BUTTON_CreateEx(5,195,150,40,0,WM_CF_SHOW,0,GUI_ID_BUTTON2);
+	BUTTON_SetText(botonc, "GRAFICO");
+	botond=BUTTON_CreateEx(165,195,150,40,0,WM_CF_SHOW,0,GUI_ID_BUTTON3);
+	BUTTON_SetText(botond, "OPCIONES");
+	BUTTON_SetBkColor(botona,BUTTON_CI_UNPRESSED,0x00FFFF80);*/
+	GUI_Exec();
+
+	colorfondoboton=BUTTON_GetDefaultBkColor(BUTTON_CI_UNPRESSED);
+
+	//borro pantalla
+	//GUI_SetBkColor(0x0080FF80);//Verde
+	//GUI_SetBkColor(0x00D3D3D3); //gris claro
+	//GUI_Clear();
+
+	grafico=GRAPH_CreateEx(0,5,310,180,0,WM_CF_HIDE,0,GUI_ID_GRAPH0);
+
+
+		while(1)
+		{
+
+		}
+
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* main
 */
@@ -619,11 +710,9 @@ int main (void)
 	SystemCoreClockUpdate();
 
 	/* Initializes GPIO */
-	Chip_GPIO_Init(LPC_GPIO);
+	//Chip_GPIO_Init(LPC_GPIO);
 
-	uC_StartUp();
-
-	GUI_Init();
+	//uC_StartUp();
 
 	vSemaphoreCreateBinary(Semaforo_RX1);			//Creamos el semaforo
 	vSemaphoreCreateBinary(Semaforo_RX2);			//Creamos el semaforo
@@ -637,7 +726,9 @@ int main (void)
 	Cola_TX2 = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_Pulsadores = xQueueCreate(1, sizeof(uint32_t));	//Creamos una cola
 
-
+	xcolalcd = xQueueCreate( 1 , sizeof(uint8_t) );
+	xcolateclado = xQueueCreate( 1 , sizeof( uint8_t ) );
+/*
 	xTaskCreate(vTaskRFID, (char *) "vTaskRFID",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
@@ -645,6 +736,15 @@ int main (void)
 	xTaskCreate(xTaskRFIDConfig, (char *) "xTaskRFIDConfig",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
+*/
+
+
+
+	xTaskCreate(vTaskPantalla, (char *) "vTaskPantalla",
+					( ( unsigned short ) 700), ( void * )xcolateclado, (tskIDLE_PRIORITY + 1UL),
+							(xTaskHandle *) NULL);
+
+
 /*
 	xTaskCreate(vTaskRTC, (char *) "vTaskRTC",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
