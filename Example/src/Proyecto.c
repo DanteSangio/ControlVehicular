@@ -616,6 +616,8 @@ static void xTaskPulsadores(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea
 }
 
+extern const GUI_BITMAP bmutnlogo; /* declare external Bitmap */
+extern const GUI_BITMAP bmcontrol; /* declare external Bitmap */
 
 void vTaskPantalla(void *pvParameters)
 {
@@ -644,14 +646,40 @@ void vTaskPantalla(void *pvParameters)
 
 	}
 
+
+
 	GUI_Init();
-	GUI_SetBkColor(0x00D3D3D3); //gris claro
+
 	GUI_Clear();
+	GUI_DrawBitmap(&bmutnlogo, 0, 0);
+
+	vTaskDelay( 5000 / portTICK_PERIOD_MS );
+
+	GUI_Clear();
+	GUI_DrawBitmap(&bmcontrol, 0, 0);
+
+	vTaskDelay( 5000 / portTICK_PERIOD_MS );
+
+	GUI_SetBkColor(0x00000000); //gris claro 0x00D3D3D3
+	GUI_Clear();
+
+
 
 	GUI_SetFont(GUI_FONT_COMIC18B_ASCII);
 	GUI_DispStringAt("T.P. Tecnicas Digitales 2 UTN FRBA",20,0);
-	GUI_DispStringAt("Control Vehicular",105,25);
-	GUI_DispStringAt("Sanata Romeo",143,60);
+	GUI_DispStringAt("Control Vehicular",95,25);
+	GUI_DrawHLine(50,0,320);
+	GUI_SetFont(GUI_FONT_D80);
+	//GUI_DispStringAt("Sanata Romeo",50,75);
+
+	// Display time as minutes and seconds
+	//GUI_DispString("Min:");
+	GUI_DispDecAt(23, 35, 100, 2);
+	//GUI_DispString(" Sec:");
+	GUI_DispDecAt(48, 160, 100, 2);
+
+
+
 	//GUI_DispStringAt("Ponderacion en tiempo:",10,95);
 	//GUI_DispStringAt("Ponderacion en frecuencia:",10,115);
 	//GUI_DispStringAt("Slow",175,95);
@@ -662,11 +690,11 @@ void vTaskPantalla(void *pvParameters)
 
 
 
-/*
+
 
 	//dibujo linea que separa la medicion de las opciones
-	GUI_DrawHLine(140,0,320);
-
+	//GUI_DrawHLine(140,0,320);
+/*
 	BUTTON_SetDefaultFont(GUI_FONT_COMIC18B_ASCII);
 	BUTTON_SetDefaultTextAlign(GUI_TA_HCENTER | GUI_TA_VCENTER);
 	GUI_SetFont(GUI_FONT_COMIC18B_ASCII);
