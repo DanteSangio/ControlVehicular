@@ -153,8 +153,8 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid)
 	static uint8_t dato=0;
 	char auxRfid[16],data1[50],data2[50],data3[50];
 
-	if(dato==0)
-			{
+	//if(dato==0)
+			//{
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
 				vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
@@ -169,7 +169,7 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid)
 				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CGATT=1\r", sizeof("AT+CGATT=1\r") - 1); //
-				vTaskDelay(2000/portTICK_RATE_MS);	//Espero 1s
+				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CSTT=\"FONAnet\"\r", sizeof("AT+CSTT=\"FONAnet\"\r") - 1); //
 				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
@@ -179,9 +179,8 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid)
 
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIFSR\r", sizeof("AT+CIFSR\r") - 1); //
 				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-			}
+			//}
 
-			//envio la latitud
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSTART=\"TCP\",\"", sizeof("AT+CIPSTART=\"TCP\",\"") - 1); //
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "184.106.153.149\",\"80\"\r", sizeof("184.106.153.149\",\"80\"\r") - 1); //
@@ -367,5 +366,5 @@ Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato)
 		default:
 		break;
 	}
-	return (NULL);//me aseguro que si no finalizo correctamente no devuelva un puntero util
+	return (NULL);//me aseguro que si no finalizo
 }

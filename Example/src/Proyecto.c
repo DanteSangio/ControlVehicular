@@ -118,14 +118,19 @@ void RTC_IRQHandler(void)
 {
 
 	BaseType_t Testigo=pdFALSE;
+	static uint8_t i=0;
 
 	/* Interrupcion cada 1 minuto */
 	if (Chip_RTC_GetIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE)) {
 		/* Clear pending interrupt */
 		Chip_RTC_ClearIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE);
-		xSemaphoreGiveFromISR(Semaforo_RTC, &Testigo);	//Devuelve si una de las tareas bloqueadas tiene mayor prioridad que la actual
-		portYIELD_FROM_ISR(Testigo);					//Si testigo es TRUE -> ejecuta el scheduler
-
+		i++;
+		if(i==30)
+		{
+			i=0;
+			xSemaphoreGiveFromISR(Semaforo_RTC, &Testigo);	//Devuelve si una de las tareas bloqueadas tiene mayor prioridad que la actual
+			portYIELD_FROM_ISR(Testigo);					//Si testigo es TRUE -> ejecuta el scheduler
+		}
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -220,7 +225,7 @@ static void xTaskRTConfig(void *pvParameters)
 {
 	RTC_TIME_T FullTime;
 	struct Datos_Nube informacion;
-	uint16_t	aux , aux1, aux2;
+	uint16_t	aux;
 	char pepe[4];
 
 	SystemCoreClockUpdate();
@@ -256,8 +261,8 @@ static void xTaskRTConfig(void *pvParameters)
 	Chip_RTC_SetFullTime(LPC_RTC, &FullTime);
 	//
 
-	/* Set the RTC to generate an interrupt on each minute */
-	Chip_RTC_CntIncrIntConfig(LPC_RTC, RTC_AMR_CIIR_IMMIN, ENABLE);
+	/* Set the RTC to generate an interrupt on each second */
+	Chip_RTC_CntIncrIntConfig(LPC_RTC, RTC_AMR_CIIR_IMSEC, ENABLE);
 
 	/* Clear interrupt pending */
 	Chip_RTC_ClearIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE);
@@ -302,9 +307,7 @@ static void vTaskRFID(void *pvParameters)
 static void vTaskRTC(void *pvParameters)
 {
 	RTC_TIME_T FullTime;
-	struct Datos_Nube informacion;
-	uint16_t	aux , aux1, aux2;
-	char pepe[4];
+
 
 	while (1)
 	{
@@ -545,8 +548,11 @@ static void vTaskEnviarGSM(void *pvParameters)
 	uint32_t informacionRFID;
 	char	auxRfid[16];
 
+	xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que ya se hayan cargado las tarjetas
 	while(1)
 	{
+		xSemaphoreTake(Semaforo_RTC,portMAX_DELAY);//hago que envie cada 1 min la informacion
+
 		/*
 		xQueueReceive(Cola_Pulsadores, &Receive, portMAX_DELAY);
 		Faltaria el if de los pulsadores o algo que tome una decision
@@ -556,13 +562,12 @@ static void vTaskEnviarGSM(void *pvParameters)
 
 
 		//Para enviar datos por GPRS a ThingSpeak
-		//xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que no este solicitando tarjetas
 		xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 		xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
 		ConvIntaChar(informacionRFID,auxRfid);
 		auxRfid[10] = 0;
 		EnviarTramaGSM(informacion.latitud,informacion.longitud, auxRfid);
-    	vTaskDelay(10000/portTICK_RATE_MS);//espero 10 seg para asegurarme que llego todo
+    	//vTaskDelay(10000/portTICK_RATE_MS);//espero 10 seg para asegurarme que llego tod o
 		//}
 	}
 	vTaskDelete(NULL);	//Borra la tarea
@@ -704,6 +709,7 @@ static void vTaskTarjetasGSM(void *pvParameters)
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+	xSemaphoreGive(Semaforo_GSM_Enviado);
 	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
 }
 
@@ -765,10 +771,10 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 4UL),
 				(xTaskHandle *) NULL);
 
-
+	/*
 	xTaskCreate(vTaskRTC, (char *) "vTaskRTC",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
-				(xTaskHandle *) NULL);
+				(xTaskHandle *) NULL);*/
 
 
 	xTaskCreate(xTaskRTConfig, (char *) "xTaskRTConfig",
@@ -803,11 +809,11 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
 
-	/*
+
 	xTaskCreate(vTaskEnviarGSM, (char *) "vTaskEnviarGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-	*/
+
 	/*
 	xTaskCreate(xTaskPulsadores, (char *) "vTaskPulsadores",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
