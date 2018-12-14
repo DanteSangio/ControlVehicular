@@ -28,7 +28,7 @@
 
 
 #define DEBUGOUT1(...) //printf(__VA_ARGS__)
-#define DEBUGOUT(...)  printf(__VA_ARGS__)
+#define DEBUGOUT(...)  // printf(__VA_ARGS__)
 #define DEBUGSTR(...) //printf(__VA_ARGS__)
 
 /*****************************************************************************
@@ -516,7 +516,7 @@ static void vTaskAnalizarGSM(void *pvParameters)
 		while(LeerCola(RX_COLA_GSM,&dato,1))
 		{
 			AnalizarTramaGSMenvio(dato);
-			DEBUGOUT("%c", dato);	//Imprimo en la consola
+			//DEBUGOUT("%c", dato);	//Imprimo en la consola
 		}
 
 	}
@@ -529,7 +529,8 @@ static void vTaskEnviarGSM(void *pvParameters)
 {
 	uint8_t Receive=OFF;
 	struct Datos_Nube informacion;
-	unsigned int informacionRFID;
+	uint32_t informacionRFID;
+	char	auxRfid[16];
 
 	while(1)
 	{
@@ -545,8 +546,10 @@ static void vTaskEnviarGSM(void *pvParameters)
 		//xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que no este solicitando tarjetas
 		xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 		xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
-		EnviarTramaGSM(informacion.latitud,informacion.longitud, informacionRFID);
-
+		ConvIntaChar(informacionRFID,auxRfid);
+		auxRfid[10] = 0;
+		EnviarTramaGSM(informacion.latitud,informacion.longitud, auxRfid);
+    	vTaskDelay(10000/portTICK_RATE_MS);//espero 10 seg para asegurarme que llego todo
 		//}
 	}
 	vTaskDelete(NULL);	//Borra la tarea
@@ -723,7 +726,7 @@ int main (void)
 	xQueueOverwrite(Cola_Connect, &aux);//cargo con 0 para que realice toda la secuencia por primera vez
 	Cola_SD = xQueueCreate(4, sizeof(char) * 100);	//Creamos una cola para mandar una trama completa
 	Cola_Datos_GPS = xQueueCreate(1, sizeof(struct Datos_Nube));
-	Cola_Datos_RFID = xQueueCreate(1, sizeof(unsigned int));
+	Cola_Datos_RFID = xQueueCreate(1, sizeof(uint32_t));
 	Cola_Inicio_Tarjetas = xQueueCreate(1, sizeof(Tarjetas_RFID*));
 
 
@@ -795,10 +798,11 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 
+	/*
 	xTaskCreate(vTaskAnalizarGSM, (char *) "vTaskAnalizarGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-
+	*/
 
 	/*
 	xTaskCreate(vTaskTarjetasGSM, (char *) "vTaskTarjetasGSM",

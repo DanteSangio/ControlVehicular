@@ -26,6 +26,8 @@ void userTapIn()
 
 {
 
+	uint32_t	ultTarjeta;
+
 //	show card UID
 	DEBUGOUT("\nCard uid bytes: ");
 	for (uint8_t i = 0; i < mfrcInstance->uid.size; i++) {
@@ -43,11 +45,33 @@ void userTapIn()
 
 	DEBUGOUT("\nCard Read user ID: %u \n\r",last_user_ID);
 
-
-	xQueueOverwrite(Cola_Datos_RFID,&last_user_ID);//envio a la cola la tarjeta leida
+	ultTarjeta = last_user_ID;
+	xQueueOverwrite(Cola_Datos_RFID,&ultTarjeta);//envio a la cola la tarjeta leida
 	Comparar(last_user_ID);
 
 	// Read the user balance NO BORRAR SINO NO DETECTA CUANDO HAY TARJETA NUEVA
 	last_balance = readCardBalance(mfrcInstance);
 
 }
+
+void ConvIntaChar(uint32_t informacionRFID,char* auxRfid)
+{
+	uint32_t aux,dato;
+	uint8_t	 i=0,j=0;
+	dato = informacionRFID;
+	char tarj[11];
+
+	do
+	{
+		aux = dato % 10;
+		itoa(aux,&tarj[i],10);
+		dato = dato / 10;
+		i++;
+	}while(dato != 0);
+
+	for(i=0,j=9;i<10;i++,j--)
+	{
+		auxRfid[j] = tarj[i];
+	}
+}
+
