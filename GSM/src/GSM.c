@@ -301,7 +301,7 @@ void RecibirTramaGSM(void)
 //Analiza la trama GSM para la verificacion de envio
 Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato)
 {
-	static int EstadoTrama=6;
+	static int EstadoTrama=10;
 	static char Trama[1024];
 	static uint16_t i, k=0;
 	static uint16_t j ,z;
@@ -327,15 +327,6 @@ Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato)
 
 		case CHEQUEO_TRAMA:		//Voy guardando la trama a partir de un "{" , guardo 70 caracteres que son los de las tarjetas
 			Trama[i]=dato;
-			/*
-			if (i==69) //para asegurarme que guarde los 69 caracteres
-			{
-				for(j=0;j<10;j++)
-				{
-					tarjetas[0].tarjeta[j] = Trama[i-9+j]; //guardo desde la posicion 60 a 69 que es donde esta la primera tarjeta
-				}
-				tarjetas[0].tarjeta[10]=0;//le pongo un null para indicar el fin de la trama
-			}*/
 
 			if (dato == '}')
 			{
@@ -365,27 +356,16 @@ Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato)
 				tarjetas[k].nombre[j] =0;//pongo un null en el ultimo caracter
 				k++;
 			}
-
-			/*
-			else if( ((i-69)%89) == 0) // si hubo otra tarjeta va a ser 89 posiciones despues del ultimo numero de la anterior
-			{
-				for(j=0;j<10;j++)//k es la variable que sabe cuantas tarjetas voy guardando arranca en 1
-				{
-					tarjetas[k].tarjeta[j] = Trama[i-9+j]; //guardo desde la posicion 60 a 69 que es donde esta la primera tarjeta
-				}
-				tarjetas[k].tarjeta[10]=0;//le pongo un null para indicar el fin de la trama
-
-			}*/
-
 			i++;
 		break;
 
 
-		case 6: 	//
+		case 6:
+			return(tarjetas);//devuelvo la direccion de la primer tarjeta, solo lo hago en caso de que las haya cargado
 		break;
 
 		default:
 		break;
 	}
-	return(tarjetas);//devuelvo la direccion de la primer tarjeta
+	return (NULL);//me aseguro que si no finalizo correctamente no devuelva un puntero util
 }

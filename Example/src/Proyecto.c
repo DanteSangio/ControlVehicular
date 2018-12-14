@@ -28,7 +28,7 @@
 
 
 #define DEBUGOUT1(...) //printf(__VA_ARGS__)
-#define DEBUGOUT(...)  // printf(__VA_ARGS__)
+#define DEBUGOUT(...)  //printf(__VA_ARGS__)
 #define DEBUGSTR(...) //printf(__VA_ARGS__)
 
 /*****************************************************************************
@@ -219,6 +219,9 @@ static void xTaskRFIDConfig(void *pvParameters)
 static void xTaskRTConfig(void *pvParameters)
 {
 	RTC_TIME_T FullTime;
+	struct Datos_Nube informacion;
+	uint16_t	aux , aux1, aux2;
+	char pepe[4];
 
 	SystemCoreClockUpdate();
 
@@ -228,15 +231,27 @@ static void xTaskRTConfig(void *pvParameters)
 
 	/* Set current time for RTC 2:00:00PM, 2012-10-05 */
 
+	xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 
 	FullTime.time[RTC_TIMETYPE_SECOND]  = 0;
-	FullTime.time[RTC_TIMETYPE_MINUTE]  = 25;
-	FullTime.time[RTC_TIMETYPE_HOUR]    = 21;
-	FullTime.time[RTC_TIMETYPE_DAYOFMONTH]  = 05;
+	pepe[0] = informacion.hora[3]; pepe[1] = informacion.hora[4]; pepe[2] =0;
+	aux = atoi (pepe);
+	FullTime.time[RTC_TIMETYPE_MINUTE]  = aux;
+	pepe[0] = informacion.hora[0]; pepe[1] = informacion.hora[1]; pepe[2] =0;
+	aux = atoi (pepe);
+	FullTime.time[RTC_TIMETYPE_HOUR]    = aux;
+	pepe[0] = informacion.fecha[0]; pepe[1] = informacion.fecha[1]; pepe[2] =0;
+	aux = atoi (pepe);
+	FullTime.time[RTC_TIMETYPE_DAYOFMONTH]  = aux;
 	FullTime.time[RTC_TIMETYPE_DAYOFWEEK]   = 4;
 	FullTime.time[RTC_TIMETYPE_DAYOFYEAR]   = 207;
-	FullTime.time[RTC_TIMETYPE_MONTH]   = 10;
-	FullTime.time[RTC_TIMETYPE_YEAR]    = 2018;
+	pepe[0] = informacion.fecha[3]; pepe[1] = informacion.fecha[4]; pepe[2] =0;
+	aux = atoi (pepe);
+	FullTime.time[RTC_TIMETYPE_MONTH]   = aux;
+	pepe[0] = informacion.fecha[6]; pepe[1] = informacion.fecha[7]; pepe[2] =0;
+	aux = atoi (pepe);
+	aux = aux + 2000;
+	FullTime.time[RTC_TIMETYPE_YEAR]= aux;
 
 	Chip_RTC_SetFullTime(LPC_RTC, &FullTime);
 	//
@@ -287,11 +302,17 @@ static void vTaskRFID(void *pvParameters)
 static void vTaskRTC(void *pvParameters)
 {
 	RTC_TIME_T FullTime;
+	struct Datos_Nube informacion;
+	uint16_t	aux , aux1, aux2;
+	char pepe[4];
+
 	while (1)
 	{
 		xSemaphoreTake(Semaforo_RTC, portMAX_DELAY);
 		Chip_RTC_GetFullTime(LPC_RTC, &FullTime);
 		showTime(&FullTime);
+
+
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
@@ -423,14 +444,6 @@ static void vTaskLeerAnillo1(void *pvParameters)
 			xSemaphoreGive(Semaforo_RX1);
 			xQueueSendToBack(Cola_RX1, &Receive, portMAX_DELAY);
 		}
-		/*
-		//leo la cola de rercepcion y lo muestro en pantalla
-		if(LeerCola(Cola_RX1,&dato,1))
-		{
-			AnalizarTramaGSM(dato);
-			//DEBUGOUT("%c", dato);	//Imprimo en la consola
-		}
-		*/
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
@@ -673,7 +686,7 @@ static void vTaskTarjetasGSM(void *pvParameters)
 	uint8_t dato=0;
 
 
-    while (1)
+    while (InicioTarjetas == NULL)
 	{
     	//tarea que deberia llamar 1 vez al dia
     	RecibirTramaGSM();
@@ -687,6 +700,10 @@ static void vTaskTarjetasGSM(void *pvParameters)
 
 
 	}
+
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+	Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
 	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
 }
 
@@ -748,9 +765,11 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 4UL),
 				(xTaskHandle *) NULL);
 
+
 	xTaskCreate(vTaskRTC, (char *) "vTaskRTC",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
+
 
 	xTaskCreate(xTaskRTConfig, (char *) "xTaskRTConfig",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
