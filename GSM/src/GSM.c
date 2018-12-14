@@ -271,7 +271,9 @@ void RecibirTramaGSM(void)
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "184.106.153.149\",\"80\"\r", sizeof("184.106.153.149\",\"80\"\r") - 1); //
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 3s
 
-	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSEND=48\r", sizeof("AT+CIPSEND=48\r") - 1); //44
+	//61  GET /channels/648303/fields/1.json?api_key=VRMSAZ0CSI5VVHDM
+	//58  GET /channels/648303/feeds.json?api_key=VRMSAZ0CSI5VVHDM
+	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSEND=58\r", sizeof("AT+CIPSEND=58\r") - 1); //44
 	vTaskDelay(500/portTICK_RATE_MS);	//Espero 1s
 
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "GET ", sizeof("GET ") - 1); //	GET
@@ -280,7 +282,7 @@ void RecibirTramaGSM(void)
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, CHANNEL2, sizeof(CHANNEL2) - 1); //
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
-	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "/fields/1.json?api_key=", sizeof("/fields/1.json?api_key=") - 1); //
+	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "/feeds.json?api_key=", sizeof("/feeds.json?api_key=") - 1); //
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, APIKEY2, sizeof(APIKEY2) - 1); //
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
@@ -300,10 +302,10 @@ void RecibirTramaGSM(void)
 Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato)
 {
 	static int EstadoTrama=6;
-	static char Trama[2048];
-	static int i, k=1;
-	uint8_t j;
-	static Tarjetas_RFID tarjetas[100];//creo 100 struct de tarjetas
+	static char Trama[1024];
+	static uint16_t i, k=0;
+	static uint16_t j ,z;
+	static Tarjetas_RFID tarjetas[30];//creo 100 struct de tarjetas
 
 	if(dato=='[')		//Inicio de la trama de datos de tarjetas
 	{
@@ -325,6 +327,7 @@ Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato)
 
 		case CHEQUEO_TRAMA:		//Voy guardando la trama a partir de un "{" , guardo 70 caracteres que son los de las tarjetas
 			Trama[i]=dato;
+			/*
 			if (i==69) //para asegurarme que guarde los 69 caracteres
 			{
 				for(j=0;j<10;j++)
@@ -332,17 +335,47 @@ Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato)
 					tarjetas[0].tarjeta[j] = Trama[i-9+j]; //guardo desde la posicion 60 a 69 que es donde esta la primera tarjeta
 				}
 				tarjetas[0].tarjeta[10]=0;//le pongo un null para indicar el fin de la trama
+			}*/
+
+			if (dato == '}')
+			{
+
+				for(j=0,z=0;z != ',';j++)//Busco donde estan la coma de que termino la tarjeta
+				{
+					z = Trama[i-j];
+				}
+				z = i-j;
+				for(j=0;j<10;j++)
+				{
+					tarjetas[k].tarjeta[j] = Trama[z-10+j]; //guardo desde la posicion de la coma 10 lugares atras
+				}
+				tarjetas[k].tarjeta[10]=0;//le pongo un null para indicar el fin de la trama
+
+
+
+				for(j=0,z=0;z != '"';j++)//Busco donde estan las comillas de inicio del nombre
+				{
+					z = Trama[i-j-2];
+				}
+				z = i-j;
+				for(j=0; z<i-1 ;z++,j++)
+				{
+					tarjetas[k].nombre[j] = Trama[z]; //guardo desde las comillas hasta un lugar menos del "}"
+				}
+				tarjetas[k].nombre[j] =0;//pongo un null en el ultimo caracter
+				k++;
 			}
 
-			else if( ((i-69)%73) == 0) // si hubo otra tarjeta va a ser 73 posiciones despues del ultimo numero de la anterior
+			/*
+			else if( ((i-69)%89) == 0) // si hubo otra tarjeta va a ser 89 posiciones despues del ultimo numero de la anterior
 			{
 				for(j=0;j<10;j++)//k es la variable que sabe cuantas tarjetas voy guardando arranca en 1
 				{
 					tarjetas[k].tarjeta[j] = Trama[i-9+j]; //guardo desde la posicion 60 a 69 que es donde esta la primera tarjeta
 				}
 				tarjetas[k].tarjeta[10]=0;//le pongo un null para indicar el fin de la trama
-				k++;
-			}
+
+			}*/
 
 			i++;
 		break;

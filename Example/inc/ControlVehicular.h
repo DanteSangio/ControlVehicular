@@ -67,6 +67,7 @@ struct Datos_Nube
 typedef struct
 {
 	char  	tarjeta[11];
+	char	nombre [20];
 }Tarjetas_RFID;
 
 #endif /* EXAMPLE_INC_CONTROLVEHICULAR_H_ */

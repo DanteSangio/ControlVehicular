@@ -681,9 +681,9 @@ static void vTaskTarjetasGSM(void *pvParameters)
 		while(LeerCola(RX_COLA_GSM,&dato,1))
 		{
 			InicioTarjetas = AnalizarTramaGSMrecibido(dato);
-			xQueueSendToBack(Cola_Inicio_Tarjetas,&InicioTarjetas,portMAX_DELAY);// envio a una cola el comienzo del vector de tarjetas
 			//DEBUGOUT("%c", dato);	//Imprimo en la consola
 		}
+		xQueueOverwrite(Cola_Inicio_Tarjetas,&InicioTarjetas);// envio a una cola el comienzo del vector de tarjetas
 
 
 	}
@@ -784,10 +784,11 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
 
+	/*
 	xTaskCreate(vTaskEnviarGSM, (char *) "vTaskEnviarGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-
+	*/
 	/*
 	xTaskCreate(xTaskPulsadores, (char *) "vTaskPulsadores",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
@@ -804,12 +805,12 @@ int main (void)
 				(xTaskHandle *) NULL);
 	*/
 
-	/*
+
 	xTaskCreate(vTaskTarjetasGSM, (char *) "vTaskTarjetasGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
-	*/
+
 	/* Start the scheduler */
 	vTaskStartScheduler();
 
