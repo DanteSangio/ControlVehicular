@@ -24,12 +24,12 @@ http://www.tavi.co.uk/phobos/fat.html
  *************************************************************************************************************************************/
 
 #include "chip.h"
-//#include "ssp_17xx_40xx.h"
 #include "sdcard.h"
-//#include "uart.h"
 #include "fat32.h"
-//#include "sysinit.c"
-
+#include "FreeRTOS.h"
+#include "ControlVehicular.h"
+#include "queue.h"
+#include "string.h"
 
 
 #define LPC_SSP                             LPC_SSP1
@@ -38,7 +38,8 @@ http://www.tavi.co.uk/phobos/fat.html
 uint8_t V_SdHighcapacityFlag_u8 = 0;
 uint8_t init_SdCard(uint8_t *cardType);
 
-
+extern QueueHandle_t Cola_Datos_GPS;
+extern QueueHandle_t Cola_Datos_RFID;
 
 /***************************************************************************************************
                           uint8_t SD_Init(uint8_t *cardType)
@@ -433,3 +434,27 @@ void SSP_DisableChipSelect(uint8_t portCS, uint8_t pinCS )
 	Chip_GPIO_SetPinState(LPC_GPIO, portCS, pinCS, 1); //Inhabilita el SS
 	return;
 }
+
+void InfoSd(char* Receive)
+{
+	struct Datos_Nube informacion;
+	Tarjetas_RFID informacionRFID;
+
+	xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
+	xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
+
+	strcat(Receive,informacion.fecha);
+	strcat(Receive," ");
+	strcat(Receive,informacion.hora);
+	strcat(Receive,",");
+	strcat(Receive,informacion.latitud);
+	strcat(Receive,",");
+	strcat(Receive,informacion.longitud);
+	strcat(Receive,",");
+	strcat(Receive,informacionRFID.tarjeta);
+	strcat(Receive,",");
+	strcat(Receive,informacionRFID.nombre);
+	strcat(Receive,".\r\n");
+
+}
+

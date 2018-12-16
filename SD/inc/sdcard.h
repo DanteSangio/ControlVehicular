@@ -62,16 +62,6 @@ http://www.tavi.co.uk/phobos/fat.html
 
 /***********************************************************************************/
 
-
-
-
-
-
-
-
-
-
-
 //SD commands, many of these are not used here
 #define GO_IDLE_STATE            0
 #define SEND_OP_COND             1
@@ -106,5 +96,6 @@ unsigned char SD_erase (uint32_t startBlock, uint32_t totalBlocks);
 void SSP_EnableChipSelect(uint8_t portCS, uint8_t pinCS );
 void SSP_DisableChipSelect(uint8_t portCS, uint8_t pinCS );
 uint8_t init_SdCard(uint8_t *cardType);
+void InfoSd(char* Receive);
 
 #endif

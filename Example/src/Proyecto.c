@@ -46,33 +46,18 @@ int last_balance = 0;
 unsigned int last_user_ID;
 
 
-
-
-typedef struct
-{
-	SemaphoreHandle_t 	Rx;
-	RINGBUFF_T 	anillo;
-	SemaphoreHandle_t 	cola;
-	LPC_USART_T			*uart;
-}ANILLO;
-
-ANILLO anillo_struct;
-
-struct Datos_Nube TramaEnvio;
-
-
-
 /*****************************************************************************
  * Public types/enumerations/variables
  ****************************************************************************/
 
 SemaphoreHandle_t Semaforo_RFID;
-SemaphoreHandle_t Semaforo_RTC;
+SemaphoreHandle_t Semaforo_RTCgsm;
 SemaphoreHandle_t Semaforo_RX1;
 SemaphoreHandle_t Semaforo_RX2;
 SemaphoreHandle_t Semaforo_GSM_Closed;
 SemaphoreHandle_t Semaforo_GSM_Enviado;
 SemaphoreHandle_t Semaforo_SSP;
+SemaphoreHandle_t Semaforo_RTCsd;
 
 QueueHandle_t Cola_RX1,Cola_RX2;
 QueueHandle_t Cola_TX1,Cola_TX2;
@@ -128,7 +113,7 @@ void RTC_IRQHandler(void)
 		if(i==30)
 		{
 			i=0;
-			xSemaphoreGiveFromISR(Semaforo_RTC, &Testigo);	//Devuelve si una de las tareas bloqueadas tiene mayor prioridad que la actual
+			xSemaphoreGiveFromISR(Semaforo_RTCgsm, &Testigo);	//Devuelve si una de las tareas bloqueadas tiene mayor prioridad que la actual
 			portYIELD_FROM_ISR(Testigo);					//Si testigo es TRUE -> ejecuta el scheduler
 		}
 	}
@@ -475,7 +460,7 @@ static void vTaskRFID(void *pvParameters)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-// vTaskRTC		TAREA QUE NO SE USA
+/* vTaskRTC		TAREA QUE NO SE USA
 static void vTaskRTC(void *pvParameters)
 {
 	RTC_TIME_T FullTime;
@@ -491,7 +476,7 @@ static void vTaskRTC(void *pvParameters)
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
-
+*/
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskAnalizarGPS */
@@ -547,17 +532,17 @@ static void vTaskEnviarGSM(void *pvParameters)
 	xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que ya se hayan cargado las tarjetas
 	while(1)
 	{
-		xSemaphoreTake(Semaforo_RTC,portMAX_DELAY);//hago que envie cada medio min la informacion
 
 		/*
 		xQueueReceive(Cola_Pulsadores, &Receive, portMAX_DELAY);
-		Faltaria el if de los pulsadores o algo que tome una decision
+		Faltaria el semaforo de los pulsadores o algo que tome una decision
 		//Para enviar SMS
 		EnviarMensajeGSM();
 		*/
 
 
 		//Para enviar datos por GPRS a ThingSpeak
+		xSemaphoreTake(Semaforo_RTCgsm,portMAX_DELAY);//hago que envie cada medio min la informacion
 		xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 		xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
 		EnviarTramaGSM(informacion.latitud,informacion.longitud, informacionRFID.tarjeta);
@@ -572,10 +557,10 @@ static void vTaskTarjetasGSM(void *pvParameters)
 	Tarjetas_RFID* InicioTarjetas=NULL;//Puntero al inicio del vector de tarjetas
 	uint8_t dato=0;
 
+	//tarea que llamo al iniciar el programa y luego la borro
 
     while (InicioTarjetas == NULL)
 	{
-    	//tarea que deberia llamar 1 vez al dia
     	RecibirTramaGSM();
     	vTaskDelay(10000/portTICK_RATE_MS);//espero 10 seg para asegurarme que llego tod o
 		while(LeerCola(RX_COLA_GSM,&dato,1))
@@ -590,6 +575,8 @@ static void vTaskTarjetasGSM(void *pvParameters)
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
 	xSemaphoreGive(Semaforo_GSM_Enviado);
+
+
 	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -672,26 +659,31 @@ static void vTaskInicSD(void *pvParameters)
 static void xTaskWriteSD(void *pvParameters)
 {
     uint8_t returnStatus,i=0;
-    fileConfig_st *srcFilePtr;
+    fileConfig_st *srcFilePtr = NULL;
     char Receive[100];
 
     while (1)
 	{
-    	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
+
+        xSemaphoreTake(Semaforo_RTCsd, portMAX_DELAY);//grabo cada medio seg
+    	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);// me fijo que este disponible el canal ssp
         /* PARA ESCRIBIR ARCHIVO */
         do
         {
         	srcFilePtr = FILE_Open("datalog.txt",WRITE,&returnStatus);
         }while(srcFilePtr == 0);
 
-		xQueueReceive(Cola_SD,&Receive,portMAX_DELAY);	//Para recibir los datos a guardar
-    	for(i=0;Receive[i];)
+		//xQueuePeek(Cola_SD,&Receive,portMAX_DELAY);	//Para recibir los datos a guardar
+        InfoSd(Receive);
+
+
+		for(i=0;Receive[i];)
 		{
 		   FILE_PutCh(srcFilePtr,Receive[i++]);
 		}
         FILE_PutCh(srcFilePtr,EOF);
         FILE_Close(srcFilePtr);
-        for(i=0;Receive[i];i++)//limpio el vector
+        for(i=0;Receive[i] != 0 || i<100;i++)//limpio el vector
         {
         	Receive[i]=0;
         }
@@ -721,7 +713,10 @@ int main (void)
 	vSemaphoreCreateBinary(Semaforo_RX2);			//Creamos el semaforo
 	vSemaphoreCreateBinary(Semaforo_RFID);
 	xSemaphoreTake(Semaforo_RFID, portMAX_DELAY); 	//semaforo de inicializacion de rfid
-	vSemaphoreCreateBinary(Semaforo_RTC);			//Creamos el semaforo
+	vSemaphoreCreateBinary(Semaforo_RTCgsm);			//Creamos el semaforo
+	xSemaphoreTake(Semaforo_RTCgsm, portMAX_DELAY);
+	vSemaphoreCreateBinary(Semaforo_RTCsd);			//Creamos el semaforo
+	xSemaphoreTake(Semaforo_RTCsd, portMAX_DELAY);
 	vSemaphoreCreateBinary(Semaforo_GSM_Closed);			//Creamos el semaforo
 	xSemaphoreTake(Semaforo_GSM_Closed, portMAX_DELAY);
 	vSemaphoreCreateBinary(Semaforo_GSM_Enviado);			//Creamos el semaforo

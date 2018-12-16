@@ -205,7 +205,7 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid)
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 
 
-			//envio longitud
+			//longitud
 			strcpy(data2, data2Original);
 			strcat(data2,longitud);
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)data2, strlen(data2)); //
