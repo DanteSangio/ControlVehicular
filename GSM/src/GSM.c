@@ -301,7 +301,7 @@ void RecibirTramaGSM(void)
 Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato)
 {
 	static int EstadoTrama=10;
-	static char Trama[1024];
+	static char Trama[2048];
 	static uint16_t i, k=0;
 	static uint16_t j ,z;
 	static Tarjetas_RFID tarjetas[30];//creo 100 struct de tarjetas
@@ -360,6 +360,10 @@ Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato)
 
 
 		case 6:
+			for(j=0;j<11;j++) //me aseguro que la ultima tarjeta tenga todas las posiciones en 0
+			{
+				tarjetas[k].tarjeta[j]=0;
+			}
 			return(tarjetas);//devuelvo la direccion de la primer tarjeta, solo lo hago en caso de que las haya cargado
 		break;
 

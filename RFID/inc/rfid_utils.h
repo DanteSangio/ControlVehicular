@@ -48,8 +48,4 @@ int readCardBalance(MFRC522Ptr_t mfrc522);
  */
 int writeCardBalance(MFRC522Ptr_t mfrc522, int newBalance);
 
-/* Compara dos numeros binarios*/
-void Comparar(unsigned int tarjeta);
-
-
 #endif

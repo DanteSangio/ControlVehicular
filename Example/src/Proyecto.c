@@ -209,6 +209,8 @@ static void xTaskRFIDConfig(void *pvParameters)
 
 	//vTaskDelay(5000/portTICK_RATE_MS);
 
+	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
+
 	DEBUGOUT1("PRUEBA RFID..\n");	//Imprimo en la consola
 
 	setupRFID(&mfrcInstance);
@@ -234,7 +236,7 @@ static void xTaskRTConfig(void *pvParameters)
 
 	Chip_RTC_Init(LPC_RTC);
 
-	/* Set current time for RTC 2:00:00PM, 2012-10-05 */
+	/* Seteo el tiempo con la hora brindada por el GPS */
 
 	xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 
@@ -273,55 +275,9 @@ static void xTaskRTConfig(void *pvParameters)
 	/* Enable RTC (starts increase the tick counter and second counter register) */
 	Chip_RTC_Enable(LPC_RTC, ENABLE);
 
-//
 	vTaskDelete(NULL);	//Borra la tarea
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskRFID */
-static void vTaskRFID(void *pvParameters)
-{
-	while (1)
-	{
-		xSemaphoreTake(Semaforo_SSP, portMAX_DELAY); //semaforo de uso de ssp
-		// Look for new cards in RFID2
-		if (PICC_IsNewCardPresent(mfrcInstance))
-		{
-			// Select one of the cards
-			if (PICC_ReadCardSerial(mfrcInstance))
-			{
-//				int status = writeCardBalance(mfrcInstance, 100000); // used to recharge the card
-				 userTapIn();
-			}
-		}
-		Chip_GPIO_SetPinOutHigh(LPC_GPIO, RFID_SS);
-		xSemaphoreGive(Semaforo_SSP);
-		vTaskDelay( 500 / portTICK_PERIOD_MS );//Muestreo cada 1 seg
-	}
-
-	vTaskDelete(NULL);	//Borra la tarea si sale del while
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskRTC */
-static void vTaskRTC(void *pvParameters)
-{
-	RTC_TIME_T FullTime;
-
-
-	while (1)
-	{
-		xSemaphoreTake(Semaforo_RTC, portMAX_DELAY);
-		Chip_RTC_GetFullTime(LPC_RTC, &FullTime);
-		showTime(&FullTime);
-
-
-	}
-	vTaskDelete(NULL);	//Borra la tarea si sale del while
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -415,7 +371,6 @@ static void vTaskGSMConfig(void *pvParameters)
 
 	vTaskDelete(NULL);	//Borra la tarea
 }
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskCargarAnillo */
 //Encargada de cargar el anillo a partir de la cola
@@ -494,6 +449,49 @@ static void vTaskLeerAnillo2(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* vTaskRFID */
+static void vTaskRFID(void *pvParameters)
+{
+	while (1)
+	{
+		xSemaphoreTake(Semaforo_SSP, portMAX_DELAY); //semaforo de uso de ssp
+		// Look for new cards in RFID
+		if (PICC_IsNewCardPresent(mfrcInstance))
+		{
+			// Select one of the cards
+			if (PICC_ReadCardSerial(mfrcInstance))
+			{
+//				int status = writeCardBalance(mfrcInstance, 100000); // used to recharge the card
+				 userTapIn();
+			}
+		}
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, RFID_SS);
+		xSemaphoreGive(Semaforo_SSP);
+		vTaskDelay( 500 / portTICK_PERIOD_MS );//Muestreo cada medio seg
+	}
+
+	vTaskDelete(NULL);	//Borra la tarea si sale del while
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// vTaskRTC		TAREA QUE NO SE USA
+static void vTaskRTC(void *pvParameters)
+{
+	RTC_TIME_T FullTime;
+
+
+	while (1)
+	{
+		xSemaphoreTake(Semaforo_RTC, portMAX_DELAY);
+		Chip_RTC_GetFullTime(LPC_RTC, &FullTime);
+		showTime(&FullTime);
+
+
+	}
+	vTaskDelete(NULL);	//Borra la tarea si sale del while
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskAnalizarGPS */
@@ -512,9 +510,8 @@ static void vTaskAnalizarGPS(void *pvParameters)
 
 		while(LeerCola(RX_COLA_GPS,&dato,1))
 		{
-			AnalizarTramaGPS(dato); // que devuelva una struct que posea distintos campos: lat,long,hora,fecha y vel
+			AnalizarTramaGPS(dato); // pasa la struct en una cola dentro de la funcion
 			//DEBUGOUT("%c", dato);	//Imprimo en la consola
-			//para pasar la informacion colocar una cola de una sola posicion e ir sobreescribiendola
 		}
 	}
 	vTaskDelete(NULL);	//Borra la tarea
@@ -545,13 +542,12 @@ static void vTaskEnviarGSM(void *pvParameters)
 {
 	uint8_t Receive=OFF;
 	struct Datos_Nube informacion;
-	uint32_t informacionRFID;
-	char	auxRfid[16];
+	Tarjetas_RFID informacionRFID;
 
 	xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que ya se hayan cargado las tarjetas
 	while(1)
 	{
-		xSemaphoreTake(Semaforo_RTC,portMAX_DELAY);//hago que envie cada 1 min la informacion
+		xSemaphoreTake(Semaforo_RTC,portMAX_DELAY);//hago que envie cada medio min la informacion
 
 		/*
 		xQueueReceive(Cola_Pulsadores, &Receive, portMAX_DELAY);
@@ -564,13 +560,37 @@ static void vTaskEnviarGSM(void *pvParameters)
 		//Para enviar datos por GPRS a ThingSpeak
 		xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 		xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
-		ConvIntaChar(informacionRFID,auxRfid);
-		auxRfid[10] = 0;
-		EnviarTramaGSM(informacion.latitud,informacion.longitud, auxRfid);
-    	//vTaskDelay(10000/portTICK_RATE_MS);//espero 10 seg para asegurarme que llego tod o
-		//}
+		EnviarTramaGSM(informacion.latitud,informacion.longitud, informacionRFID.tarjeta);
+
 	}
 	vTaskDelete(NULL);	//Borra la tarea
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* vTaskTarjetasGSM*/
+static void vTaskTarjetasGSM(void *pvParameters)
+{
+	Tarjetas_RFID* InicioTarjetas=NULL;//Puntero al inicio del vector de tarjetas
+	uint8_t dato=0;
+
+
+    while (InicioTarjetas == NULL)
+	{
+    	//tarea que deberia llamar 1 vez al dia
+    	RecibirTramaGSM();
+    	vTaskDelay(10000/portTICK_RATE_MS);//espero 10 seg para asegurarme que llego tod o
+		while(LeerCola(RX_COLA_GSM,&dato,1))
+		{
+			InicioTarjetas = AnalizarTramaGSMrecibido(dato);
+			//DEBUGOUT("%c", dato);	//Imprimo en la consola
+		}
+	}
+
+	xQueueOverwrite(Cola_Inicio_Tarjetas,&InicioTarjetas);// envio a una cola el comienzo del vector de tarjetas
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+	Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+	xSemaphoreGive(Semaforo_GSM_Enviado);
+	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* xTaskPulsadores */
@@ -580,8 +600,6 @@ static void xTaskPulsadores(void *pvParameters)
 
 	while (1)
 	{
-		//xQueuePeek(Cola_Datos_GPS, &dato25, portMAX_DELAY);			//Para chequear si dio un error
-
 
 		//PRUEBA BUZZER SONANDO CADA 100ms
 		/*Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
@@ -683,35 +701,7 @@ static void xTaskWriteSD(void *pvParameters)
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskTarjetasGSM*/
-static void vTaskTarjetasGSM(void *pvParameters)
-{
-	Tarjetas_RFID* InicioTarjetas=NULL;//Puntero al inicio del vector de tarjetas
-	uint8_t dato=0;
 
-
-    while (InicioTarjetas == NULL)
-	{
-    	//tarea que deberia llamar 1 vez al dia
-    	RecibirTramaGSM();
-    	vTaskDelay(10000/portTICK_RATE_MS);//espero 10 seg para asegurarme que llego todo
-		while(LeerCola(RX_COLA_GSM,&dato,1))
-		{
-			InicioTarjetas = AnalizarTramaGSMrecibido(dato);
-			//DEBUGOUT("%c", dato);	//Imprimo en la consola
-		}
-		xQueueOverwrite(Cola_Inicio_Tarjetas,&InicioTarjetas);// envio a una cola el comienzo del vector de tarjetas
-
-
-	}
-
-	Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
-	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
-	xSemaphoreGive(Semaforo_GSM_Enviado);
-	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* main
@@ -746,10 +736,10 @@ int main (void)
 	Cola_TX2 = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_Pulsadores = xQueueCreate(1, sizeof(uint32_t));		//Creamos una cola
 	Cola_Connect = xQueueCreate(1, sizeof(uint8_t));			//Creamos una cola
-	xQueueOverwrite(Cola_Connect, &aux);//cargo con 0 para que realice toda la secuencia por primera vez
+	xQueueOverwrite(Cola_Connect, &aux); //cargo con 0 para que realice toda la secuencia por primera vez
 	Cola_SD = xQueueCreate(4, sizeof(char) * 100);	//Creamos una cola para mandar una trama completa
 	Cola_Datos_GPS = xQueueCreate(1, sizeof(struct Datos_Nube));
-	Cola_Datos_RFID = xQueueCreate(1, sizeof(uint32_t));
+	Cola_Datos_RFID = xQueueCreate(1, sizeof(Tarjetas_RFID*));
 	Cola_Inicio_Tarjetas = xQueueCreate(1, sizeof(Tarjetas_RFID*));
 
 

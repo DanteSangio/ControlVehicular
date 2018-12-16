@@ -3,3 +3,5 @@
 
 void userTapIn();
 void ConvIntaChar(uint32_t informacionRFID,char* auxRfid);
+void Comparar(unsigned int tarjeta);/* Compara dos numeros binarios*/
+

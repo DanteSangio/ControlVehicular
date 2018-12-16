@@ -194,32 +194,4 @@ int writeCardBalance(MFRC522Ptr_t mfrc522, int newBalance) {
 }
 
 
-void Comparar(unsigned int tarjeta)
-{
-	unsigned int base = 4266702969;
 
-	if(tarjeta == base)
-	{
-		DEBUGOUT("Tarjeta igual\n\r");
-		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
-		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
-		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
-	}
-	else
-	{
-		DEBUGOUT("Tarjeta distinta\n\r");
-		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
-		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
-		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
-		vTaskDelay(300/portTICK_RATE_MS);	//Espero 1s
-		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
-		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
-		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
-		vTaskDelay(300/portTICK_RATE_MS);	//Espero 1s
-		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
-		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
-		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
-	}
-
-	return ;
-}

@@ -19,14 +19,14 @@
 extern int last_balance;
 extern unsigned int last_user_ID;
 extern MFRC522Ptr_t mfrcInstance;
-extern QueueHandle_t Cola_Datos_RFID;
+extern QueueHandle_t Cola_Datos_RFID, Cola_Inicio_Tarjetas;
 
 
 void userTapIn()
 
 {
 
-	uint32_t	ultTarjeta;
+	//uint32_t	ultTarjeta;
 
 //	show card UID
 	DEBUGOUT("\nCard uid bytes: ");
@@ -45,8 +45,8 @@ void userTapIn()
 
 	DEBUGOUT("\nCard Read user ID: %u \n\r",last_user_ID);
 
-	ultTarjeta = last_user_ID;
-	xQueueOverwrite(Cola_Datos_RFID,&ultTarjeta);//envio a la cola la tarjeta leida
+	//ultTarjeta = last_user_ID;
+	//xQueueOverwrite(Cola_Datos_RFID,&ultTarjeta);//envio a la cola la tarjeta leida
 	Comparar(last_user_ID);
 
 	// Read the user balance NO BORRAR SINO NO DETECTA CUANDO HAY TARJETA NUEVA
@@ -75,3 +75,67 @@ void ConvIntaChar(uint32_t informacionRFID,char* auxRfid)
 	}
 }
 
+void Comparar(unsigned int tarjeta) //devuelvo la tarjeta que se esta utilizando
+{
+	//unsigned int base = 4266702969;
+	Tarjetas_RFID* InicioTarjetas=NULL;//Puntero al inicio del vector de tarjetas
+	uint8_t todocero = FALSE, iguales = FALSE;
+	uint8_t j=0,k=0;
+	char	tarjAcomparar[10];
+
+
+	xQueuePeek(Cola_Inicio_Tarjetas,&InicioTarjetas,portMAX_DELAY);//leo el principio de las tarjetas
+	ConvIntaChar(tarjeta,tarjAcomparar);
+
+	for(k=0; todocero == FALSE; k++)
+	{
+		for(j=0;j<10;j++)
+		{
+			if(InicioTarjetas[k].tarjeta[j] != tarjAcomparar[j])
+				break;
+		}
+		if(j==10)
+		{
+			iguales = TRUE;
+			xQueueOverwrite(Cola_Datos_RFID, &InicioTarjetas[k]); // cargo en la cola la estructura actual
+		}
+
+		for(j=0;j<10;j++)
+		{
+			if(InicioTarjetas[k].tarjeta[j] != '0')
+				break;
+		}
+
+		if(j==10)
+		{
+			todocero = TRUE;
+		}
+
+	}
+
+
+	if(iguales == TRUE)
+	{
+		DEBUGOUT("Tarjeta Registrada\n\r");
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
+		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+	}
+	else
+	{
+		DEBUGOUT("Tarjeta NO Registrada\n\r");
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
+		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+		vTaskDelay(300/portTICK_RATE_MS);	//Espero 1s
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
+		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+		vTaskDelay(300/portTICK_RATE_MS);	//Espero 1s
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
+		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+	}
+
+	return ;
+}
