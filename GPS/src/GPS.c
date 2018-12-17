@@ -24,7 +24,7 @@
 #include "GPS.h"
 #include "UART.h"
 #include "sdcard.h"
-
+#include "RFID.h"
 
 /*****************************************************************************
  * Types/enumerations/variables
@@ -92,9 +92,9 @@ void AnalizarTramaGPS (uint8_t dato)
 	char aux3[11];
 	static struct Datos_Nube valor;
 
-	//int Aux;
-	//float Aux1;
-	//float Aux2;
+	int Auxnum;
+	float Auxnum1;
+	float Auxnum2;
 	bool flagFecha=OFF;
 
 	if(dato=='$')		//Inicio de la trama
@@ -206,6 +206,7 @@ void AnalizarTramaGPS (uint8_t dato)
 				Lat2[i-23]=Trama[i];
 			}
 			Lat2[5]='\0';
+			/*
 			aux[0]='-';
 			aux[1]=Lat1[0];
 			aux[2]=Lat1[1];
@@ -221,17 +222,19 @@ void AnalizarTramaGPS (uint8_t dato)
 			{
 				valor.latitud[j]=aux[j];
 			}
+			*/
 
-			/*
-			Aux=atoi(Lat1);
-			Lat1GPS=Aux/10000000;
-			Lat2GPS=(Aux/100000)%100;
-			Aux1=(Aux%100000);
-			Aux2=(Aux1/100000);
-			Lat2GPS=Lat2GPS+Aux2;
+
+			Auxnum=atoi(Lat1);
+			Lat1GPS=Auxnum/10000000;
+			Lat2GPS=(Auxnum/100000)%100;
+			Auxnum1=(Auxnum%100000);
+			Auxnum2=(Auxnum/100000);
+			Lat2GPS=Lat2GPS+Auxnum2;
 			Lat1GPS=Lat1GPS+(Lat2GPS/60);
 			LatGPS=-Lat1GPS;
-			*/
+			ConvIntaChar(LatGPS, valor.latitud);
+
 			//DEBUGOUT("%f\t",LatGPS);  	//-> Tira HardFault si descomento esta linea
 
 
@@ -246,6 +249,8 @@ void AnalizarTramaGPS (uint8_t dato)
 				Long2[i-37]=Trama[i];
 			}
 			Long2[5]='\0';
+
+			/*
 			aux[0]='-';
 			aux[1]=Long1[0];
 			aux[2]=Long1[1];
@@ -262,16 +267,19 @@ void AnalizarTramaGPS (uint8_t dato)
 			{
 				valor.longitud[j]=aux[j];
 			}
-			/*
-			Aux=atoi(Long1);
-			Long1GPS=Aux/10000000;
-			Long2GPS=(Aux/100000)%100;
-			Aux1=(Aux%100000);
-			Aux2=(Aux1/100000);
-			Long2GPS=Long2GPS+Aux2;
+			*/
+
+
+			Auxnum=atoi(Long1);
+			Long1GPS=Auxnum/10000000;
+			Long2GPS=(Auxnum/100000)%100;
+			Auxnum1=(Auxnum%100000);
+			Auxnum2=(Auxnum1/100000);
+			Long2GPS=Long2GPS+Auxnum2;
 			Long1GPS=Long1GPS+(Long2GPS/60);
 			LongGPS=-Long1GPS;
-			*/
+			ConvIntaChar(LatGPS, valor.longitud);
+
 			//DEBUGOUT("%f\n",LongGPS);	//-> Tira HardFault si descomento esta linea
 
 			xQueueOverwrite(Cola_Datos_GPS,&valor);
