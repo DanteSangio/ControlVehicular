@@ -105,8 +105,9 @@ void RTC_IRQHandler(void)
 	BaseType_t Testigo=pdFALSE;
 	static uint8_t i=0;
 
-	/* Interrupcion cada 1 minuto */
-	if (Chip_RTC_GetIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE)) {
+	/* Interrupcion cada 1 seg */
+	if (Chip_RTC_GetIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE))
+	{
 		/* Clear pending interrupt */
 		Chip_RTC_ClearIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE);
 		i++;
@@ -562,7 +563,7 @@ static void vTaskTarjetasGSM(void *pvParameters)
     while (InicioTarjetas == NULL)
 	{
     	RecibirTramaGSM();
-    	vTaskDelay(10000/portTICK_RATE_MS);//espero 10 seg para asegurarme que llego tod o
+    	vTaskDelay(5000/portTICK_RATE_MS);//espero 10 seg para asegurarme que llego tod o
 		while(LeerCola(RX_COLA_GSM,&dato,1))
 		{
 			InicioTarjetas = AnalizarTramaGSMrecibido(dato);
@@ -722,7 +723,7 @@ int main (void)
 	vSemaphoreCreateBinary(Semaforo_GSM_Enviado);			//Creamos el semaforo
 	xSemaphoreTake(Semaforo_GSM_Enviado, portMAX_DELAY);
 	vSemaphoreCreateBinary(Semaforo_SSP);			//Creamos el semaforo
-	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
+	//xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 
 
 	Cola_RX1 = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
@@ -734,7 +735,7 @@ int main (void)
 	xQueueOverwrite(Cola_Connect, &aux); //cargo con 0 para que realice toda la secuencia por primera vez
 	Cola_SD = xQueueCreate(4, sizeof(char) * 100);	//Creamos una cola para mandar una trama completa
 	Cola_Datos_GPS = xQueueCreate(1, sizeof(struct Datos_Nube));
-	Cola_Datos_RFID = xQueueCreate(1, sizeof(Tarjetas_RFID*));
+	Cola_Datos_RFID = xQueueCreate(1, sizeof(Tarjetas_RFID));
 	Cola_Inicio_Tarjetas = xQueueCreate(1, sizeof(Tarjetas_RFID*));
 
 

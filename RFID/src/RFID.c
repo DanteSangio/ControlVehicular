@@ -79,15 +79,15 @@ void Comparar(unsigned int tarjeta) //devuelvo la tarjeta que se esta utilizando
 {
 	//unsigned int base = 4266702969;
 	Tarjetas_RFID* InicioTarjetas=NULL;//Puntero al inicio del vector de tarjetas
-	uint8_t todocero = FALSE, iguales = FALSE;
+	uint8_t todocero, iguales;
 	uint8_t j=0,k=0;
-	char	tarjAcomparar[10];
+	char		tarjAcomparar[10];
 
 
 	xQueuePeek(Cola_Inicio_Tarjetas,&InicioTarjetas,portMAX_DELAY);//leo el principio de las tarjetas
 	ConvIntaChar(tarjeta,tarjAcomparar);
 
-	for(k=0; todocero == FALSE; k++)
+	for(k=0,todocero = FALSE,iguales = FALSE; todocero == FALSE && iguales == FALSE; k++)
 	{
 		for(j=0;j<10;j++)
 		{
@@ -102,7 +102,7 @@ void Comparar(unsigned int tarjeta) //devuelvo la tarjeta que se esta utilizando
 
 		for(j=0;j<10;j++)
 		{
-			if(InicioTarjetas[k].tarjeta[j] != '0')
+			if(InicioTarjetas[k].tarjeta[j] != 0)
 				break;
 		}
 
@@ -118,11 +118,12 @@ void Comparar(unsigned int tarjeta) //devuelvo la tarjeta que se esta utilizando
 	{
 		DEBUGOUT("Tarjeta Registrada\n\r");
 		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
-		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
+		vTaskDelay(500/portTICK_RATE_MS);	//Espero 1s
 		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
 	}
 	else
 	{
+		xQueueReset(Cola_Datos_RFID);//si se  ingreso una tarjeta no registrada no coloco ninguna
 		DEBUGOUT("Tarjeta NO Registrada\n\r");
 		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
