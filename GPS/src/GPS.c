@@ -41,8 +41,8 @@ extern uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];	//Transmit and rece
 
 
 volatile int HourGPS, MinuteGPS, DayGPS, MonthGPS, YearGPS;		//GPS: Variables que guardan informacion
-volatile float LatGPS, LongGPS;									//GPS: Variables que guardan informacion
-volatile float Lat1GPS, Lat2GPS, Long1GPS, Long2GPS;			//GPS: Variables auxiliares
+volatile int LatGPS, LongGPS;									//GPS: Variables que guardan informacion
+volatile int LatGrados, LatMinutos, LatSeg, LongGrados, LongMinutos, LongSeg;			//GPS: Variables auxiliares
 
 
 
@@ -83,18 +83,18 @@ void AnalizarTramaGPS (uint8_t dato)
 	static char Trama[100];
 	static char HourMinute[4];
 	static char Date[6];
-	static char Lat1[4];
-	static char Lat2[5];
-	static char Long1[4];
-	static char Long2[5];
+	static char Lat1[14];
+	static char Lat2[6];
+	static char Long1[14];
+	static char Long2[6];
 	char aux[11];
 	char aux2[11];
 	char aux3[11];
 	static struct Datos_Nube valor;
 
 	int Auxnum;
-	float Auxnum1;
-	float Auxnum2;
+	int Auxnum1;
+	int Auxnum2;
 	bool flagFecha=OFF;
 
 	if(dato=='$')		//Inicio de la trama
@@ -224,17 +224,32 @@ void AnalizarTramaGPS (uint8_t dato)
 			}
 			*/
 
-
+			strcat(Lat1,Lat2);
 			Auxnum=atoi(Lat1);
-			Lat1GPS=Auxnum/10000000;
-			Lat2GPS=(Auxnum/100000)%100;
-			Auxnum1=(Auxnum%100000);
+			LatGrados=Auxnum/10000000;
+			LatGPS=LatGrados*10000000;
+			LatMinutos=(Auxnum/100000)%100;
+			LatMinutos=LatMinutos*10000000/60;
+			LatGPS=LatGPS+LatMinutos;
+			LatSeg=(Auxnum%100000)*60;
+			LatSeg=LatSeg*100/3600;
+			LatGPS=LatGPS+LatSeg;
+			/*
 			Auxnum2=(Auxnum/100000);
 			Lat2GPS=Lat2GPS+Auxnum2;
 			Lat1GPS=Lat1GPS+(Lat2GPS/60);
-			LatGPS=-Lat1GPS;
+			*/
+			//LatGPS=-LatGPS;
 			ConvIntaChar(LatGPS, valor.latitud);
-
+			valor.latitud[0]='-';
+			valor.latitud[10]=valor.latitud[9];
+			valor.latitud[9]=valor.latitud[8];
+			valor.latitud[8]=valor.latitud[7];
+			valor.latitud[7]=valor.latitud[6];
+			valor.latitud[6]=valor.latitud[5];
+			valor.latitud[5]=valor.latitud[4];
+			valor.latitud[4]=valor.latitud[3];
+			valor.latitud[3]='.';
 			//DEBUGOUT("%f\t",LatGPS);  	//-> Tira HardFault si descomento esta linea
 
 
@@ -269,17 +284,39 @@ void AnalizarTramaGPS (uint8_t dato)
 			}
 			*/
 
-
+			/*
 			Auxnum=atoi(Long1);
-			Long1GPS=Auxnum/10000000;
-			Long2GPS=(Auxnum/100000)%100;
+			LongGrados=Auxnum/10000000;
+			LongMin=(Auxnum/100000)%100;
 			Auxnum1=(Auxnum%100000);
 			Auxnum2=(Auxnum1/100000);
-			Long2GPS=Long2GPS+Auxnum2;
-			Long1GPS=Long1GPS+(Long2GPS/60);
-			LongGPS=-Long1GPS;
-			ConvIntaChar(LatGPS, valor.longitud);
+			LongMin=LongMin+Auxnum2;
+			LongGrados=LongGrados+(LongMin/60);
+			LongGPS=-LongGrados;
+			*/
 
+			strcat(Long1,Long2);
+			Auxnum=atoi(Long1);
+			LongGrados=Auxnum/10000000;
+			LongGPS=LongGrados*10000000;
+			LongMinutos=(Auxnum/100000)%100;
+			LongMinutos=LongMinutos*10000000/60;
+			LongGPS=LongGPS+LongMinutos;
+			LongSeg=(Auxnum%100000)*60;
+			LongSeg=LongSeg*100/3600;
+			LongGPS=LongGPS+LongSeg;
+
+
+			ConvIntaChar(LongGPS, valor.longitud);
+			valor.longitud[0]='-';
+			valor.longitud[10]=valor.longitud[9];
+			valor.longitud[9]=valor.longitud[8];
+			valor.longitud[8]=valor.longitud[7];
+			valor.longitud[7]=valor.longitud[6];
+			valor.longitud[6]=valor.longitud[5];
+			valor.longitud[5]=valor.longitud[4];
+			valor.longitud[4]=valor.longitud[3];
+			valor.longitud[3]='.';
 			//DEBUGOUT("%f\n",LongGPS);	//-> Tira HardFault si descomento esta linea
 
 			xQueueOverwrite(Cola_Datos_GPS,&valor);

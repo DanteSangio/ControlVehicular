@@ -60,7 +60,7 @@
 
 struct Datos_Nube
 {
-	char  	latitud[11],longitud[11];
+	char  	latitud[12],longitud[12];
 	char  	hora[6],fecha[9];
 };
 
