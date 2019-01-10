@@ -4,7 +4,7 @@
  *  Created on: Oct 5, 2018
  *      Author: Fede
  */
-
+/*
 #ifndef EXAMPLE_INC_PLACAINFOTRONIK_H_
 #define EXAMPLE_INC_PLACAINFOTRONIK_H_
 
@@ -61,5 +61,5 @@
 #define SSEL1			PORT(0),PIN(6)
 
 
-
-#endif /* EXAMPLE_INC_PLACAINFOTRONIK_H_ */
+*/
+//#endif /* EXAMPLE_INC_PLACAINFOTRONIK_H_ */
