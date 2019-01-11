@@ -92,9 +92,10 @@ void AnalizarTramaGPS (uint8_t dato)
 	char aux3[11];
 	static struct Datos_Nube valor;
 
+	char	velocidad[10];
+	int		velocidadNum;
+
 	int Auxnum;
-	int Auxnum1;
-	int Auxnum2;
 	bool flagFecha=OFF;
 
 	if(dato=='$')		//Inicio de la trama
@@ -125,9 +126,16 @@ void AnalizarTramaGPS (uint8_t dato)
 			}
 		break;
 
-		case TRAMA_CORRECTA:		//TRAMA_CORRECTA
-			//DEBUGOUT("%s",Trama);
-			//DEBUGOUT("\n");
+		case VELOCIDAD:		//TRAMA_CORRECTA
+			//Obtengo los nudos * 1000 (sin el punto)
+			velocidad[0]=Trama[45];
+			velocidad[1]=Trama[47];
+			velocidad[2]=Trama[48];
+			velocidad[3]=Trama[49];
+			velocidad[4]='\0';
+			velocidadNum = atoi(velocidad);
+			velocidadNum = velocidadNum * 1.852 / 1000;//Lo paso a kilometros por hora / 1000
+			valor.velocidad = velocidadNum;
 			EstadoTrama=4;
 		break;
 
@@ -159,7 +167,6 @@ void AnalizarTramaGPS (uint8_t dato)
 			{
 				valor.hora[j]=aux[j];
 			}
-			//DEBUGOUT("%.2d:%.2d\t",HourGPS,MinuteGPS);
 
 			//Fecha
 			for(i=52;i<=57;i++)
@@ -167,14 +174,11 @@ void AnalizarTramaGPS (uint8_t dato)
 				Date[i-52]=Trama[i];
 			}
 			Date[6]='\0';
-			if(flagFecha==ON)
+			DayGPS=atoi(Date);
+			if(flagFecha==ON)//Le resto 1 dia si esta el flag encendido
 			{
 				flagFecha=OFF;
-				DayGPS=atoi(Date-1);
-			}
-			else
-			{
-				DayGPS=atoi(Date);
+				DayGPS=DayGPS - 10000;
 			}
 			YearGPS=DayGPS%100;
 			MonthGPS=(DayGPS/100)%100;
@@ -206,23 +210,6 @@ void AnalizarTramaGPS (uint8_t dato)
 				Lat2[i-23]=Trama[i];
 			}
 			Lat2[5]='\0';
-			/*
-			aux[0]='-';
-			aux[1]=Lat1[0];
-			aux[2]=Lat1[1];
-			aux[3]='.';
-			aux[4]=Lat1[2];
-			aux[5]=Lat1[3];
-			aux[6]=Lat2[0];
-			aux[7]=Lat2[1];
-			aux[8]=Lat2[2];
-			aux[9]=Lat2[3];
-			aux[10]='\0';
-			for(j=0;j<10;j++)
-			{
-				valor.latitud[j]=aux[j];
-			}
-			*/
 
 			strcat(Lat1,Lat2);
 			Auxnum=atoi(Lat1);
@@ -234,12 +221,7 @@ void AnalizarTramaGPS (uint8_t dato)
 			LatSeg=(Auxnum%100000)*60;
 			LatSeg=LatSeg*100/3600;
 			LatGPS=LatGPS+LatSeg;
-			/*
-			Auxnum2=(Auxnum/100000);
-			Lat2GPS=Lat2GPS+Auxnum2;
-			Lat1GPS=Lat1GPS+(Lat2GPS/60);
-			*/
-			//LatGPS=-LatGPS;
+
 			ConvIntaChar(LatGPS, valor.latitud);
 			valor.latitud[0]='-';
 			valor.latitud[10]=valor.latitud[9];
@@ -250,8 +232,6 @@ void AnalizarTramaGPS (uint8_t dato)
 			valor.latitud[5]=valor.latitud[4];
 			valor.latitud[4]=valor.latitud[3];
 			valor.latitud[3]='.';
-			//DEBUGOUT("%f\t",LatGPS);  	//-> Tira HardFault si descomento esta linea
-
 
 			//Longitud
 			for(i=32;i<=35;i++)
@@ -265,35 +245,6 @@ void AnalizarTramaGPS (uint8_t dato)
 			}
 			Long2[5]='\0';
 
-			/*
-			aux[0]='-';
-			aux[1]=Long1[0];
-			aux[2]=Long1[1];
-			aux[3]='.';
-			aux[4]=Long1[2];
-			aux[5]=Long1[3];
-			aux[6]=Long2[0];
-			aux[7]=Long2[1];
-			aux[8]=Long2[2];
-			aux[9]=Long2[3];
-			aux[10]='\0';
-
-			for(j=0;j<10;j++)
-			{
-				valor.longitud[j]=aux[j];
-			}
-			*/
-
-			/*
-			Auxnum=atoi(Long1);
-			LongGrados=Auxnum/10000000;
-			LongMin=(Auxnum/100000)%100;
-			Auxnum1=(Auxnum%100000);
-			Auxnum2=(Auxnum1/100000);
-			LongMin=LongMin+Auxnum2;
-			LongGrados=LongGrados+(LongMin/60);
-			LongGPS=-LongGrados;
-			*/
 
 			strcat(Long1,Long2);
 			Auxnum=atoi(Long1);
@@ -317,7 +268,6 @@ void AnalizarTramaGPS (uint8_t dato)
 			valor.longitud[5]=valor.longitud[4];
 			valor.longitud[4]=valor.longitud[3];
 			valor.longitud[3]='.';
-			//DEBUGOUT("%f\n",LongGPS);	//-> Tira HardFault si descomento esta linea
 
 			xQueueOverwrite(Cola_Datos_GPS,&valor);
 
