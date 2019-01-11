@@ -23,17 +23,17 @@ extern QueueHandle_t Cola_Datos_RFID, Cola_Inicio_Tarjetas;
 
 
 void userTapIn()
-
 {
-
+	Tarjetas_RFID Tarj_actual;
 	//uint32_t	ultTarjeta;
 
 //	show card UID
-	DEBUGOUT("\nCard uid bytes: ");
-	for (uint8_t i = 0; i < mfrcInstance->uid.size; i++) {
-		DEBUGOUT(" %X", mfrcInstance->uid.uidByte[i]);
-	}
-	DEBUGOUT("\n\r");
+	//DEBUGOUT("\nCard uid bytes: ");
+	//for (uint8_t i = 0; i < mfrcInstance->uid.size; i++)
+	//{
+		//DEBUGOUT(" %X", mfrcInstance->uid.uidByte[i]);
+	//}
+	//DEBUGOUT("\n\r");
 
 
 	// Convert the uid bytes to an integer, byte[0] is the MSB
@@ -43,14 +43,16 @@ void userTapIn()
 		(int)mfrcInstance->uid.uidByte[1] << 16 |
 		(int)mfrcInstance->uid.uidByte[0] << 24;
 
-	DEBUGOUT("\nCard Read user ID: %u \n\r",last_user_ID);
+	//DEBUGOUT("\nCard Read user ID: %u \n\r",last_user_ID);
 
-	//ultTarjeta = last_user_ID;
-	//xQueueOverwrite(Cola_Datos_RFID,&ultTarjeta);//envio a la cola la tarjeta leida
-	Comparar(last_user_ID);
+	//Comparar(last_user_ID);
+	ConvIntaChar(last_user_ID, Tarj_actual.tarjeta);
+
+	xQueueOverwrite(Cola_Datos_RFID, &Tarj_actual); // cargo en la cola la estructura actual
+
 
 	// Read the user balance NO BORRAR SINO NO DETECTA CUANDO HAY TARJETA NUEVA
-	last_balance = readCardBalance(mfrcInstance);
+	//last_balance = readCardBalance(mfrcInstance);
 
 }
 

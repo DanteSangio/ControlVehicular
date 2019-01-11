@@ -35,7 +35,7 @@
 // send only one byte per transfer, see WriteRegister functions
 #define BUFFER_SIZE  1 
 // Defined as 4MHz in the original library
-#define MFRC522_BIT_RATE 400000
+#define MFRC522_BIT_RATE 8000000//400000
 // Used for ADT object allocation
 #define MFRC_MAX_INSTANCES 2	 
 

@@ -18,8 +18,8 @@
 #define TXD2	0,10	//RX UART2	(Pin 41 LPC1769)
 #define RXD2	0,11	//TX UART2	(Pin 40 LPC1769)
 
-#define UART_SRB_SIZE 1024	//S:Send - Transmit ring buffer size
-#define UART_RRB_SIZE 1024	//R:Receive - Receive ring buffer size
+#define UART_SRB_SIZE 512	//S:Send - Transmit ring buffer size
+#define UART_RRB_SIZE 512	//R:Receive - Receive ring buffer size
 
 
 //Funciones
