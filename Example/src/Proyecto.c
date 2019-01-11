@@ -28,6 +28,7 @@
 #include "GRAPH.h"
 #include "LCD_X_SPI.h"
 
+
 #include "Pantalla.h"
 
 //#include "RegsLPC1769.h"
@@ -293,9 +294,9 @@ void vTaskPantalla(void *pvParameters)
 					GUI_DrawHLine(45,0,320);
 
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringAt(" PARA ENVIAR UN SMS A  ",0,60);
-					GUI_DispStringAt(" LA CENTRAL, PRESIONE  ",0,90);
-					GUI_DispStringAt(" CONFIRMAR...          ",0,120);
+					GUI_DispStringHCenterAt("PARA ENVIAR UN SMS A",160,75);
+					GUI_DispStringHCenterAt("LA CENTRAL, PRESIONE",160,110);
+					GUI_DispStringHCenterAt("CONFIRMAR...",160,145);
 
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt("SIGUIENTE",80,210);
@@ -340,9 +341,9 @@ void vTaskPantalla(void *pvParameters)
 					GUI_DrawHLine(45,0,320);
 
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringAt(" PARA CONFIRMAR SALIDA",0,60);
-					GUI_DispStringAt(" DE CONDUCTOR, PRESIONE",0,90);
-					GUI_DispStringAt(" CONFIRMAR... ",0,120);
+					GUI_DispStringHCenterAt(" PARA CONFIRMAR SALIDA",160,75);
+					GUI_DispStringHCenterAt(" DE CONDUCTOR, PRESIONE",160,110);
+					GUI_DispStringHCenterAt(" CONFIRMAR... ",160,145);
 
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt("SIGUIENTE",80,210);
@@ -378,7 +379,7 @@ void vTaskPantalla(void *pvParameters)
 				GUI_DrawHLine(45,0,320);
 
 				GUI_SetFont(GUI_FONT_24B_ASCII);
-				GUI_DispStringHCenterAt("MENSAJE ENVIADO",160,120);
+				GUI_DispStringHCenterAt("MENSAJE ENVIADO",160,110);
 
 				GUI_DrawHLine(195,0,320);
 				GUI_DrawHLine(200,0,320);
@@ -396,7 +397,7 @@ void vTaskPantalla(void *pvParameters)
 				if(FlagEstado==ON)
 				{
 					FlagEstado=OFF;
-					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_SetFont(GUI_FONT_32B_ASCII);
 					GUI_DispStringHCenterAt("10/01/2019",160,10);
 
 					GUI_SetFont(GUI_FONT_D48);
@@ -438,17 +439,17 @@ void vTaskPantalla(void *pvParameters)
 					GUI_DrawHLine(45,0,320);
 
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringAt(" PARA CONFIRMAR LA SALIDA",0,60);
-					GUI_DispStringAt(" DE CONDUCTOR MANTENGA",0,90);
-					GUI_DispStringAt(" PRESIONADOS LOS",0,120);
-					GUI_DispStringAt(" DOS PULSADORES...",0,150);
+					GUI_DispStringHCenterAt(" PARA CONFIRMAR LA SALIDA",160,60);
+					GUI_DispStringHCenterAt(" DE CONDUCTOR MANTENGA",160,90);
+					GUI_DispStringHCenterAt(" PRESIONADOS LOS",160,120);
+					GUI_DispStringHCenterAt(" DOS PULSADORES...",160,150);
 
 					GUI_DrawHLine(195,0,320);
 					GUI_DrawHLine(200,0,320);
 				}
 				if(Receive==11)		//Se presionaron ambos pulsadores
 				{
-					//EstadoPantalla=6; PONER SALIDA CORRECTA Y SACAR LA TARJETA
+					EstadoPantalla=11; //FALTA SACAR LA TARJETA
 					FlagEstado=ON;
 					GUI_Clear();
 				}
@@ -470,10 +471,10 @@ void vTaskPantalla(void *pvParameters)
 					GUI_DrawHLine(45,0,320);
 
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringAt(" SE ENVIARA UN SMS A LA",0,60);
-					GUI_DispStringAt(" CENTRAL. PARA CONFIRMAR",0,90);
-					GUI_DispStringAt(" MANTENGA APRETADO LOS",0,120);
-					GUI_DispStringAt(" DOS PULSADORES...",0,150);
+					GUI_DispStringHCenterAt(" SE ENVIARA UN SMS A LA",160,60);
+					GUI_DispStringHCenterAt(" CENTRAL. PARA CONFIRMAR",160,90);
+					GUI_DispStringHCenterAt(" MANTENGA APRETADO LOS",160,120);
+					GUI_DispStringHCenterAt(" DOS PULSADORES...",160,150);
 
 					GUI_DrawHLine(195,0,320);
 					GUI_DrawHLine(200,0,320);
@@ -486,6 +487,36 @@ void vTaskPantalla(void *pvParameters)
 				}
 				//Contar 10 seg, si no se presiona tecla -> EstadoPantalla=0;
 			break;
+
+			case 11:
+
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispDecAt(23,240,10,2);
+				GUI_DispStringAt(":",264,10);
+				GUI_DispDecAt(48,271,10,2);
+
+				GUI_DrawHLine(40,0,320);
+				GUI_DrawHLine(45,0,320);
+
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("SE DESLOGUEO",160,100);
+				GUI_DispStringHCenterAt("CORRECTAMENTE",160,130);
+				GUI_DrawHLine(195,0,320);
+				GUI_DrawHLine(200,0,320);
+
+				Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+				vTaskDelay(1000/portTICK_PERIOD_MS);
+				Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+
+				vTaskDelay(1000);
+
+				EstadoPantalla=0;
+				FlagEstado=ON;
+				GUI_Clear();
+
+				break;
 		}
 	}
 }
