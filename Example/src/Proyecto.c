@@ -66,6 +66,8 @@ SemaphoreHandle_t Semaforo_GSM_Closed;
 SemaphoreHandle_t Semaforo_GSM_Enviado;
 SemaphoreHandle_t Semaforo_SSP;
 SemaphoreHandle_t Semaforo_RTCsd;
+SemaphoreHandle_t Semaforo_YaHayTarj;
+
 
 QueueHandle_t Cola_RX1,Cola_RX2;
 QueueHandle_t Cola_TX1,Cola_TX2;
@@ -456,6 +458,8 @@ static void vTaskRFID(void *pvParameters)
 	//xSemaphoreGive(Semaforo_GSM_Enviado);
 	while (1)
 	{
+		xSemaphoreTake(Semaforo_YaHayTarj, portMAX_DELAY);
+		xSemaphoreGive(Semaforo_YaHayTarj);
 		xSemaphoreTake(Semaforo_SSP, portMAX_DELAY); //semaforo de uso de ssp
 		// Look for new cards in RFID
 		if (PICC_IsNewCardPresent(mfrcInstance))
@@ -465,9 +469,8 @@ static void vTaskRFID(void *pvParameters)
 			{
 //				int status = writeCardBalance(mfrcInstance, 100000); // used to recharge the card
 				userTapIn();
-
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, RFID_SS);
-				FlagBorrar=1;
+
 				/*
 				//Grabo hora de entrada
 				xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
@@ -482,8 +485,6 @@ static void vTaskRFID(void *pvParameters)
 		}
 		Chip_GPIO_SetPinOutHigh(LPC_GPIO, RFID_SS);
 		xSemaphoreGive(Semaforo_SSP);
-		if(FlagBorrar==1)
-			break;
 		vTaskDelay( 500 / portTICK_PERIOD_MS );//Muestreo cada medio seg
 	}
 
@@ -1006,6 +1007,8 @@ void vTaskTFT(void *pvParameters)
 				{
 					FlagEstado=ON;
 					EstadoPantalla=0;
+					xSemaphoreTake(Semaforo_YaHayTarj, portMAX_DELAY);
+					ReceivePulsadores=0;
 				}
 				//Si acerca la tarjeta correcta cambia al estado 0
 
@@ -1125,11 +1128,7 @@ void vTaskTFT(void *pvParameters)
 
 				EstadoPantalla=7;
 				FlagEstado=ON;
-
-				xTaskCreate(vTaskRFID, (char *) "vTaskRFID2",
-						(( unsigned short ) 150), NULL, (tskIDLE_PRIORITY + 1UL),
-							(xTaskHandle *) NULL);
-
+				xSemaphoreGive(Semaforo_YaHayTarj);
 				break;
 		}
 	}
@@ -1165,6 +1164,7 @@ int main (void)
 	xSemaphoreTake(Semaforo_GSM_Enviado, portMAX_DELAY);
 	vSemaphoreCreateBinary(Semaforo_SSP);			//Creamos el semaforo
 	//xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
+	vSemaphoreCreateBinary(Semaforo_YaHayTarj);
 
 
 	Cola_RX1 = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
@@ -1214,11 +1214,11 @@ int main (void)
 	xTaskCreate(vTaskLeerAnillo1, (char *) "vTaskLeerAnillo1",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-
+ */
 	xTaskCreate(vTaskLeerAnillo2, (char *) "vTaskLeerAnillo2",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-
+	/*
 	xTaskCreate(vTaskCargarAnillo1, (char *) "vTaskCargarAnillo1",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
@@ -1230,11 +1230,11 @@ int main (void)
 	xTaskCreate(xTaskUART1Config, (char *) "xTaskUART1Config",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
-
+	*/
 	xTaskCreate(xTaskUART2Config, (char *) "xTaskUART2Config",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
-
+	/*
 	xTaskCreate(vTaskGSMConfig, (char *) "vTaskGSMConfig",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
@@ -1244,11 +1244,11 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
-
+*/
 	xTaskCreate(vTaskAnalizarGPS, (char *) "vTaskAnalizarGPS",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-
+/*
 
 	xTaskCreate(vTaskTarjetasGSM, (char *) "vTaskTarjetasGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
