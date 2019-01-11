@@ -43,6 +43,8 @@
 								<option id="com.crt.advproject.gcc.hdrlib.787120719" name="Library headers" superClass="com.crt.advproject.gcc.hdrlib" value="com.crt.advproject.gcc.hdrlib.codered" valueType="enumerated"/>
 								<option id="com.crt.advproject.gcc.specs.1419498580" name="Specs" superClass="com.crt.advproject.gcc.specs" value="com.crt.advproject.gcc.specs.codered" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.304153274" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/PANTALLA/inc/GUI}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/PANTALLA/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/SD/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/GSM/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/RFID/inc}&quot;"/>
@@ -72,6 +74,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/GPS/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/GSM/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/UART/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/PANTALLA/inc}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.292723990" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 								<inputType id="com.crt.advproject.assembler.input.507633431" name="Additional Assembly Source Files" superClass="com.crt.advproject.assembler.input"/>
@@ -134,6 +137,7 @@
 						<entry excluding="GSM.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Example/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="GPS/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="GSM/src"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="PANTALLA/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="RFID/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="SD/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="UART/src"/>

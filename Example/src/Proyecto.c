@@ -24,7 +24,13 @@
 #include "sdcard.h"
 #include "fat32.h"
 
+#include "GUI.h"
+#include "DIALOG.h"
+#include "GRAPH.h"
+#include "LCD_X_SPI.h"
 
+
+#include "Pantalla.h"
 
 
 #define DEBUGOUT1(...) //printf(__VA_ARGS__)
@@ -71,6 +77,9 @@ QueueHandle_t Cola_Inicio_Tarjetas;
 
 RINGBUFF_T txring1,txring2, rxring1,rxring2;								//Transmit and receive ring buffers
 static uint8_t rxbuff1[UART_RRB_SIZE], txbuff1[UART_SRB_SIZE],rxbuff2[UART_RRB_SIZE], txbuff2[UART_SRB_SIZE];	//Transmit and receive buffers
+
+extern const GUI_BITMAP bmutnlogo; /* declare external Bitmap */
+extern const GUI_BITMAP bmcontrol; /* declare external Bitmap */
 
 //volatile int HourGPS, MinuteGPS, DayGPS, MonthGPS, YearGPS;		//GPS: Variables que guardan informacion
 //volatile float LatGPS, LongGPS;									//GPS: Variables que guardan informacion
@@ -584,39 +593,27 @@ static void vTaskTarjetasGSM(void *pvParameters)
 /* xTaskPulsadores */
 static void xTaskPulsadores(void *pvParameters)
 {
-	uint8_t Send=OFF;
-
+	static uint8_t Send=OFF;
+	static uint8_t SendAnt=OFF;
 	while (1)
 	{
+		Send=0;
 
-		//PRUEBA BUZZER SONANDO CADA 100ms
-		/*Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
-		vTaskDelay(100/portTICK_RATE_MS);
-		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
-		vTaskDelay(1000/portTICK_RATE_MS);
-		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
-		vTaskDelay(100/portTICK_RATE_MS);
-		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
-		*/
-
-		/*if(Chip_GPIO_GetPinState(LPC_GPIO, SW1)==OFF)	//Si se presiona el SW1
+		if(Chip_GPIO_GetPinState(LPC_GPIO, SW1)==OFF)	//Si se presiona el SW1
 		{
-			Send=1;	//Para enviar SMS
-			xQueueSendToBack(Cola_Pulsadores, &Send, portMAX_DELAY);
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+			Send++;	//Envio a la cola que se presiono el SW1
 		}
 		if(Chip_GPIO_GetPinState(LPC_GPIO, SW2)==OFF)	//Si se presiona el SW2
 		{
-			Send=2;	//Para enviar datos por GPRS a ThingSpeak
-			xQueueSendToBack(Cola_Pulsadores, &Send, portMAX_DELAY);
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
+			Send=Send+10;
 		}
-		if(Chip_GPIO_GetPinState(LPC_GPIO, SW3)==OFF)	//Si se presiona el SW3
+		if(SendAnt==Send)
 		{
-			Send=3;	//Para enviar datos por GPRS a ThingSpeak
-			xQueueSendToBack(Cola_Pulsadores, &Send, portMAX_DELAY);
-			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-		}*/
+			xQueueOverwrite(Cola_Pulsadores, &Send);
+			while(Chip_GPIO_GetPinState(LPC_GPIO, SW2)==OFF || Chip_GPIO_GetPinState(LPC_GPIO, SW1)==OFF);
+		}
+		SendAnt=Send;
+		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
 	}
 	vTaskDelete(NULL);	//Borra la tarea
 }
@@ -693,6 +690,403 @@ static void xTaskWriteSD(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* vTaskPantalla */
+void vTaskPantalla(void *pvParameters)
+{
+	static uint8_t EstadoPantalla=0;
+	static uint8_t FlagEstado=ON;
+	uint8_t Receive=OFF;
+
+	/*
+	uint8_t op,menu,gananterior; //menu=EST_MEDICION
+	static uint8_t PC_config=0; // empieza en el menu de medicion
+	char cadena[16];
+
+	GUI_COLOR colorfondoboton;
+	BUTTON_Handle botona,botonb,botonc,botond,botone;
+	GRAPH_Handle grafico;
+	GRAPH_SCALE_Handle escalagrafh,escalagrafv;
+	GRAPH_DATA_Handle datagraf;
+	*/
+
+	short int array[250];
+	int i=250;
+
+	while(i!=0)
+	{
+		i--;
+		array[i]=0;
+	}
+
+	GUI_Init();
+
+	GUI_Clear();
+	GUI_DrawBitmap(&bmutnlogo, 0, 0);
+
+	vTaskDelay(1000/portTICK_PERIOD_MS);
+
+	GUI_Clear();
+	GUI_DrawBitmap(&bmcontrol, 0, 0);
+
+	vTaskDelay(1000/portTICK_PERIOD_MS);
+
+	GUI_SetBkColor(0x00000000); //gris claro 0x00D3D3D3
+	GUI_Clear();
+
+	/*
+	BUTTON_SetDefaultFont(GUI_FONT_COMIC18B_ASCII);
+	BUTTON_SetDefaultTextAlign(GUI_TA_HCENTER | GUI_TA_VCENTER);
+	GUI_SetFont(GUI_FONT_COMIC18B_ASCII);
+	botona=BUTTON_CreateEx(5,145,150,40,0,WM_CF_SHOW,0,GUI_ID_BUTTON0);
+	//BUTTON_SetTextAling(botona,GUI_TA_HCENTER | GUI_TA_VCENTER);
+	BUTTON_SetText(botona, "FAST/SLOW");
+	botonb=BUTTON_CreateEx(165,145,150,40,0,WM_CF_SHOW,0,GUI_ID_BUTTON1);
+	BUTTON_SetText(botonb, "A/C");
+	//GUI_SetTextAling(botona,GUI_TA_HCENTER | GUI_TA_VCENTER);
+	//GUI_SetFont(botona,GUI_FONT_COMIC18B_ASCII);
+	botonc=BUTTON_CreateEx(5,195,150,40,0,WM_CF_SHOW,0,GUI_ID_BUTTON2);
+	BUTTON_SetText(botonc, "GRAFICO");
+	botond=BUTTON_CreateEx(165,195,150,40,0,WM_CF_SHOW,0,GUI_ID_BUTTON3);
+	BUTTON_SetText(botond, "OPCIONES");
+	BUTTON_SetBkColor(botona,BUTTON_CI_UNPRESSED,0x00FFFF80);*/
+	/*
+	GUI_Exec();
+
+	colorfondoboton=BUTTON_GetDefaultBkColor(BUTTON_CI_UNPRESSED);
+
+	//borro pantalla
+	//GUI_SetBkColor(0x0080FF80);//Verde
+	//GUI_SetBkColor(0x00D3D3D3); //gris claro
+	//GUI_Clear();
+
+	grafico=GRAPH_CreateEx(0,5,310,180,0,WM_CF_HIDE,0,GUI_ID_GRAPH0);
+
+	*/
+
+	while(1)
+	{
+		Receive = 0;
+		xQueueReceive(Cola_Pulsadores, &Receive, 100);
+
+		switch(EstadoPantalla)
+		{
+			case 0:		//PANTALLA PRINCIPAL CON USUARIO REGISTRADO
+				if(FlagEstado==ON)
+				{
+					FlagEstado=OFF;
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("10/01/2019",160,10);
+
+					GUI_SetFont(GUI_FONT_D80);
+					GUI_DispDecAt(23,32,50,2);
+					GUI_DispDecAt(48,165,50,2);
+					GUI_SetFont(GUI_FONT_32B_ASCII);
+					GUI_DispStringAt(".",155,75);
+					GUI_DispStringAt(".",155,50);
+
+					GUI_SetFont(GUI_FONT_32B_ASCII);
+					GUI_DispStringHCenterAt("JUAN FERNANDEZ",160,150);
+
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("MENU",80,210);
+					GUI_DispStringHCenterAt("S.O.S.",240,210);
+
+					GUI_DrawHLine(195,0,320);
+					GUI_DrawHLine(200,0,320);
+				}
+				if(Receive==1)		//Paso al estado HORAS DE TRABAJO
+				{
+					EstadoPantalla=1;
+					FlagEstado=ON;
+					GUI_Clear();
+				}
+				else if(Receive==10)	//Paso al estado CONFIRMAR SMS
+				{
+					EstadoPantalla=10;
+					FlagEstado=ON;
+					GUI_Clear();
+				}
+			break;
+
+			case 1:		//HORAS DE TRABAJO
+				if(FlagEstado==ON)
+				{
+					FlagEstado=OFF;
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispDecAt(23,240,10,2);
+					GUI_DispStringAt(":",264,10);
+					GUI_DispDecAt(48,271,10,2);
+
+					GUI_DrawHLine(40,0,320);
+					GUI_DrawHLine(45,0,320);
+
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("HORAS DE TRABAJO",160,75);
+					GUI_SetFont(GUI_FONT_32B_ASCII);
+					GUI_DispStringHCenterAt(":",160,120);
+					GUI_SetFont(GUI_FONT_D48);
+					GUI_DispDecAt(6,80,115,2);
+					GUI_DispDecAt(15,165,115,2);
+
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("SIGUIENTE",80,210);
+
+					GUI_DrawHLine(195,0,320);
+					GUI_DrawHLine(200,0,320);
+				}
+				if(Receive==1)		//Paso al estado SMS CONTACTO
+				{
+					EstadoPantalla=2;
+					FlagEstado=ON;
+					GUI_Clear();
+				}
+				//Contar 10 seg, si no se presiona tecla -> EstadoPantalla=0;
+			break;
+
+			case 2:		//SMS CONTACTO
+				if(FlagEstado==ON)
+				{
+					FlagEstado=OFF;
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispDecAt(23,240,10,2);
+					GUI_DispStringAt(":",264,10);
+					GUI_DispDecAt(48,271,10,2);
+
+					GUI_DrawHLine(40,0,320);
+					GUI_DrawHLine(45,0,320);
+
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("PARA ENVIAR UN SMS A",160,75);
+					GUI_DispStringHCenterAt("LA CENTRAL, PRESIONE",160,110);
+					GUI_DispStringHCenterAt("CONFIRMAR...",160,145);
+
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("SIGUIENTE",80,210);
+					GUI_DispStringHCenterAt("CONFIRMAR",240,210);
+
+					GUI_DrawHLine(195,0,320);
+					GUI_DrawHLine(200,0,320);
+				}
+				if(Receive==1)		//Paso al estado SALIDA CONDUCTOR
+				{
+					EstadoPantalla=5;
+					FlagEstado=ON;
+					GUI_Clear();
+				}
+				else if(Receive==10)	//Paso al estado CONFIRMAR SMS
+				{
+					EstadoPantalla=10;
+					FlagEstado=ON;
+					GUI_Clear();
+				}
+				//Contar 10 seg, si no se presiona tecla -> EstadoPantalla=0;
+			break;
+
+			case 3:		//
+			break;
+
+			case 4:		//
+			break;
+
+			case 5:		//SALIDA CONDUCTOR
+				if(FlagEstado==ON)
+				{
+					FlagEstado=OFF;
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispDecAt(23,240,10,2);
+					GUI_DispStringAt(":",264,10);
+					GUI_DispDecAt(48,271,10,2);
+
+					GUI_DrawHLine(40,0,320);
+					GUI_DrawHLine(45,0,320);
+
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt(" PARA CONFIRMAR SALIDA",160,75);
+					GUI_DispStringHCenterAt(" DE CONDUCTOR, PRESIONE",160,110);
+					GUI_DispStringHCenterAt(" CONFIRMAR... ",160,145);
+
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("SIGUIENTE",80,210);
+					GUI_DispStringHCenterAt("CONFIRMAR",240,210);
+
+					GUI_DrawHLine(195,0,320);
+					GUI_DrawHLine(200,0,320);
+				}
+				if(Receive==1)		//Paso al estado PANTALLA PRINCIPAL
+				{
+					EstadoPantalla=1;
+					FlagEstado=ON;
+					GUI_Clear();
+				}
+				else if(Receive==10)		//Paso al estado CONFIRMAR SALIDA
+				{
+					EstadoPantalla=9;
+					FlagEstado=ON;
+					GUI_Clear();
+				}
+				//Contar 10 seg, si no se presiona tecla -> EstadoPantalla=0;
+			break;
+
+			case 6:		//ENVIAR MENSAJE
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispDecAt(23,240,10,2);
+				GUI_DispStringAt(":",264,10);
+				GUI_DispDecAt(48,271,10,2);
+
+				GUI_DrawHLine(40,0,320);
+				GUI_DrawHLine(45,0,320);
+
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("MENSAJE ENVIADO",160,110);
+
+				GUI_DrawHLine(195,0,320);
+				GUI_DrawHLine(200,0,320);
+
+				Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+				vTaskDelay(1000/portTICK_PERIOD_MS);
+				Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+
+				vTaskDelay(2000/portTICK_PERIOD_MS);
+				EstadoPantalla=0;
+				GUI_Clear();
+			break;
+
+			case 7:		//PANTALLA PRINCIPAL SIN USUARIO REGISTRADO
+				if(FlagEstado==ON)
+				{
+					FlagEstado=OFF;
+					GUI_SetFont(GUI_FONT_32B_ASCII);
+					GUI_DispStringHCenterAt("10/01/2019",160,10);
+
+					GUI_SetFont(GUI_FONT_D48);
+					GUI_DispDecAt(23,32,150,2);
+					GUI_DispDecAt(48,165,150,2);
+					GUI_SetFont(GUI_FONT_32B_ASCII);
+					GUI_DispStringAt(".",155,135);
+					GUI_DispStringAt(".",155,145);
+
+					GUI_SetFont(GUI_FONT_32B_ASCII);
+					GUI_DispStringHCenterAt("POR FAVOR",160,50);
+					GUI_DispStringHCenterAt("ACERQUE SU TARJETA",160,80);
+
+					GUI_DrawHLine(195,0,320);
+					GUI_DrawHLine(200,0,320);
+				}
+
+				//Si acerca la tarjeta correcta cambia al estado 0
+
+				//Por ahora para probar..
+				vTaskDelay(2000/portTICK_PERIOD_MS);
+				EstadoPantalla=0;
+				FlagEstado=ON;
+				GUI_Clear();
+			break;
+
+			case 9:		//CONFIRMAR SALIDA
+				if(FlagEstado==ON)
+				{
+					FlagEstado=OFF;
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispDecAt(23,240,10,2);
+					GUI_DispStringAt(":",264,10);
+					GUI_DispDecAt(48,271,10,2);
+
+					GUI_DrawHLine(40,0,320);
+					GUI_DrawHLine(45,0,320);
+
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt(" PARA CONFIRMAR LA SALIDA",160,60);
+					GUI_DispStringHCenterAt(" DE CONDUCTOR MANTENGA",160,90);
+					GUI_DispStringHCenterAt(" PRESIONADOS LOS",160,120);
+					GUI_DispStringHCenterAt(" DOS PULSADORES...",160,150);
+
+					GUI_DrawHLine(195,0,320);
+					GUI_DrawHLine(200,0,320);
+				}
+				if(Receive==11)		//Se presionaron ambos pulsadores
+				{
+					EstadoPantalla=11; //FALTA SACAR LA TARJETA
+					FlagEstado=ON;
+					GUI_Clear();
+				}
+				//Contar 10 seg, si no se presiona tecla -> EstadoPantalla=0;
+			break;
+
+			case 10:	//CONFIRMAR SMS
+				if(FlagEstado==ON)
+				{
+					FlagEstado=OFF;
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispDecAt(23,240,10,2);
+					GUI_DispStringAt(":",264,10);
+					GUI_DispDecAt(48,271,10,2);
+
+					GUI_DrawHLine(40,0,320);
+					GUI_DrawHLine(45,0,320);
+
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt(" SE ENVIARA UN SMS A LA",160,60);
+					GUI_DispStringHCenterAt(" CENTRAL. PARA CONFIRMAR",160,90);
+					GUI_DispStringHCenterAt(" MANTENGA APRETADO LOS",160,120);
+					GUI_DispStringHCenterAt(" DOS PULSADORES...",160,150);
+
+					GUI_DrawHLine(195,0,320);
+					GUI_DrawHLine(200,0,320);
+				}
+				if(Receive==11)		//Se presionaron ambos pulsadores
+				{
+					EstadoPantalla=6;
+					FlagEstado=ON;
+					GUI_Clear();
+				}
+				//Contar 10 seg, si no se presiona tecla -> EstadoPantalla=0;
+			break;
+
+			case 11:
+
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispDecAt(23,240,10,2);
+				GUI_DispStringAt(":",264,10);
+				GUI_DispDecAt(48,271,10,2);
+
+				GUI_DrawHLine(40,0,320);
+				GUI_DrawHLine(45,0,320);
+
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("SE DESLOGUEO",160,100);
+				GUI_DispStringHCenterAt("CORRECTAMENTE",160,130);
+				GUI_DrawHLine(195,0,320);
+				GUI_DrawHLine(200,0,320);
+
+				Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+				vTaskDelay(1000/portTICK_PERIOD_MS);
+				Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+
+				vTaskDelay(1000);
+
+				EstadoPantalla=0;
+				FlagEstado=ON;
+				GUI_Clear();
+
+				break;
+		}
+	}
+}
 
 
 
@@ -748,7 +1142,7 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
 
-	*/
+
 	xTaskCreate(vTaskRFID, (char *) "vTaskRFID",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
@@ -756,7 +1150,7 @@ int main (void)
 	xTaskCreate(xTaskRFIDConfig, (char *) "xTaskRFIDConfig",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 4UL),
 				(xTaskHandle *) NULL);
-
+	*/
 	/*
 	xTaskCreate(vTaskRTC, (char *) "vTaskRTC",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
@@ -800,12 +1194,12 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
-	/*
+
 	xTaskCreate(xTaskPulsadores, (char *) "vTaskPulsadores",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 
-	*/
+
 	xTaskCreate(vTaskAnalizarGPS, (char *) "vTaskAnalizarGPS",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
@@ -820,6 +1214,11 @@ int main (void)
 	xTaskCreate(vTaskTarjetasGSM, (char *) "vTaskTarjetasGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
+
+
+	xTaskCreate(vTaskPantalla, (char *) "vTaskPantalla",
+					( ( unsigned short ) 700), NULL, (tskIDLE_PRIORITY + 1UL),
+							(xTaskHandle *) NULL);
 
 
 	/* Start the scheduler */
