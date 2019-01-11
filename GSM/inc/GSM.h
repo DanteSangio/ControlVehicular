@@ -9,7 +9,7 @@ extern RINGBUFF_T txring1;
 #define APIKEY2				"VRMSAZ0CSI5VVHDM"
 
 void AnalizarTramaGSMenvio (uint8_t dato);
-void EnviarTramaGSM (char* latitud, char* longitud, char* rfid);
+void EnviarTramaGSM (char* latitud, char* longitud, char* rfid, int velocidad);
 void RecibirTramaGSM(void);
 void EnviarMensajeGSM (void);
 Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato);

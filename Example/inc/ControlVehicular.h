@@ -62,6 +62,7 @@ struct Datos_Nube
 {
 	char  	latitud[12],longitud[12];
 	char  	hora[6],fecha[9];
+	int		velocidad;
 };
 
 typedef struct
@@ -69,6 +70,13 @@ typedef struct
 	char  	tarjeta[11];
 	char	nombre [20];
 }Tarjetas_RFID;
+
+typedef struct
+{
+	uint8_t  	hora;
+	uint8_t		minutos;
+}Entrada_RFID;
+
 
 #endif /* EXAMPLE_INC_CONTROLVEHICULAR_H_ */
 

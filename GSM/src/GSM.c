@@ -43,6 +43,7 @@ char apiKey[] = "api_key=4IVCTNA39FY9U35C";		//Write API key from ThingSpeak: 4I
 char data1Original[10] = "&field1=";	//
 char data2Original[10] = "&field2=";	//
 char data3Original[10] = "&field3=";	//
+char data4Original[10] = "&field4=";	//
 int status;
 int datalen;
 
@@ -148,10 +149,10 @@ void EnviarMensajeGSM (void)
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "EMERGENCIA\032", sizeof("EMERGENCIA\032") - 1);
 }
 
-void EnviarTramaGSM (char* latitud, char* longitud, char* rfid)
+void EnviarTramaGSM (char* latitud, char* longitud, char* rfid,int velocidad)
 {
 	static uint8_t dato=0;
-	char auxRfid[16],data1[50],data2[50],data3[50];
+	char data1[50],data2[50],data3[50],data4[20], velocidadChar[10];
 
 	//if(dato==0)
 			//{
@@ -186,7 +187,8 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid)
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "184.106.153.149\",\"80\"\r", sizeof("184.106.153.149\",\"80\"\r") - 1); //
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 3s
 
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSEND=92\r", sizeof("AT+CIPSEND=92\r") - 1); //44 // 92 para los 3
+			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSEND=105\r", sizeof("AT+CIPSEND=105\r") - 1); //44 // 94 para los 3
+			//HAY QUE PONER 2 CARACTERES MAS DE LOS CONTADOS CON EL GET 105 para los 4
 			vTaskDelay(500/portTICK_RATE_MS);	//Espero 1s
 
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "GET ", sizeof("GET ") - 1); //	GET
@@ -216,11 +218,34 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid)
 			strcpy(data3, data3Original);
 			strcat(data3,rfid);
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)data3, strlen(data3)); //
+			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
+
+
+			//velocidad
+			itoa(velocidad,velocidadChar,10);
+			if(velocidadChar[1] == 0 )
+			{
+				velocidadChar[2] = velocidadChar[0];
+				velocidadChar[0] = '0';
+				velocidadChar[1] = '0';
+				velocidadChar[3] = 0;
+			}
+			else if(velocidadChar[2] == 0 )
+			{
+				velocidadChar[2] = velocidadChar[1];
+				velocidadChar[1] = velocidadChar[0];
+				velocidadChar[0] = '0';
+				velocidadChar[3] = 0;
+			}
+
+			strcpy(data4, data4Original);
+			strcat(data4,velocidadChar);
+			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)data4, strlen(data4)); //
 			vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 
 
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "\r\n\r\n", sizeof("\r\n\r\n") - 1); //
-			//vTaskDelay(10000/portTICK_RATE_MS);	//Espero 30s
+			//vTaskDelay(5000/portTICK_RATE_MS);	//Espero 30s
 
 
 			//analizo para verificar si hubo error, connect y/o closed
@@ -228,7 +253,7 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid)
 			while(LeerCola(RX_COLA_GSM,&dato,1))
 			{
 				AnalizarTramaGSMenvio(dato);
-				//DEBUGOUT("%c", dato);	//Imprimo en la consola
+				DEBUGOUT("%c", dato);	//Imprimo en la consola
 			}
 
 			xSemaphoreTake(Semaforo_GSM_Closed, 10000/portTICK_RATE_MS);

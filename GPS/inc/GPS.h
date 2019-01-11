@@ -16,7 +16,7 @@
 #define	INICIO_TRAMA	0
 #define CHEQUEO_FIN		1
 #define CHEQUEO_TRAMA	2
-#define TRAMA_CORRECTA	3
+#define VELOCIDAD		3
 #define HORA_FECHA		4
 #define LAT_LONG		5
 
