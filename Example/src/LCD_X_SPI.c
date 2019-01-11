@@ -378,7 +378,7 @@ void LCD_X_SPI_8_WriteM01 (U8 * pData, int NumWords)
 
 			 //pData++;				/* Write D0..D7 */
 		  }
-		  while(LPC_SSP1->SR & (1<<4));			//LPC_SSP0				/* wait until done */
+ 		  while(LPC_SSP1->SR & (1<<4));			//LPC_SSP0				/* wait until done */
 		  LCD_CS_HIGH;
 		  LCD_CD_LOW;
 }

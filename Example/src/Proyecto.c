@@ -621,10 +621,9 @@ extern const GUI_BITMAP bmcontrol; /* declare external Bitmap */
 
 void vTaskPantalla(void *pvParameters)
 {
-
-
 	uint8_t op,menu,gananterior; //menu=EST_MEDICION
 	static uint8_t PC_config=0; // empieza en el menu de medicion
+	static EstadoPantalla=0;
 	char cadena[16];
 
 	GUI_COLOR colorfondoboton;
@@ -641,55 +640,29 @@ void vTaskPantalla(void *pvParameters)
 	while(i!=0)
 	{
 		i--;
-
 			array[i]=0;
-
 	}
-
-
 
 	GUI_Init();
 
 	GUI_Clear();
 	GUI_DrawBitmap(&bmutnlogo, 0, 0);
 
-	vTaskDelay( 5000 / portTICK_PERIOD_MS );
+	vTaskDelay( 1000 / portTICK_PERIOD_MS );
 
 	GUI_Clear();
 	GUI_DrawBitmap(&bmcontrol, 0, 0);
 
-	vTaskDelay( 5000 / portTICK_PERIOD_MS );
+	vTaskDelay( 1000 / portTICK_PERIOD_MS );
 
 	GUI_SetBkColor(0x00000000); //gris claro 0x00D3D3D3
 	GUI_Clear();
-
-
-
-	GUI_SetFont(GUI_FONT_COMIC18B_ASCII);
-	GUI_DispStringAt("T.P. Tecnicas Digitales 2 UTN FRBA",20,0);
-	GUI_DispStringAt("Control Vehicular",95,25);
-	GUI_DrawHLine(50,0,320);
-	GUI_SetFont(GUI_FONT_D80);
-	//GUI_DispStringAt("Sanata Romeo",50,75);
-
-	// Display time as minutes and seconds
-	//GUI_DispString("Min:");
-	GUI_DispDecAt(23, 35, 100, 2);
-	//GUI_DispString(" Sec:");
-	GUI_DispDecAt(48, 160, 100, 2);
-
 
 
 	//GUI_DispStringAt("Ponderacion en tiempo:",10,95);
 	//GUI_DispStringAt("Ponderacion en frecuencia:",10,115);
 	//GUI_DispStringAt("Slow",175,95);
 	//GUI_DispStringAt("A",203,115);
-
-
-
-
-
-
 
 
 	//dibujo linea que separa la medicion de las opciones
@@ -710,6 +683,7 @@ void vTaskPantalla(void *pvParameters)
 	botond=BUTTON_CreateEx(165,195,150,40,0,WM_CF_SHOW,0,GUI_ID_BUTTON3);
 	BUTTON_SetText(botond, "OPCIONES");
 	BUTTON_SetBkColor(botona,BUTTON_CI_UNPRESSED,0x00FFFF80);*/
+	/*
 	GUI_Exec();
 
 	colorfondoboton=BUTTON_GetDefaultBkColor(BUTTON_CI_UNPRESSED);
@@ -721,11 +695,170 @@ void vTaskPantalla(void *pvParameters)
 
 	grafico=GRAPH_CreateEx(0,5,310,180,0,WM_CF_HIDE,0,GUI_ID_GRAPH0);
 
+	*/
+	GUI_Clear();
 
-		while(1)
+	while(1)
+	{
+		switch(EstadoPantalla)
 		{
+			case 0:		//PRINCIPAL
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("10/01/2019",160,10);
 
+				GUI_SetFont(GUI_FONT_D80);
+				GUI_DispDecAt(23,32,50,2);
+				GUI_DispDecAt(48,165,50,2);
+				GUI_SetFont(GUI_FONT_32B_ASCII);
+				GUI_DispStringAt(".",155,75);
+				GUI_DispStringAt(".",155,50);
+
+				GUI_SetFont(GUI_FONT_32B_ASCII);
+				GUI_DispStringHCenterAt("JUAN FERNANDEZ",160,150);
+
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("MENU",80,210);
+				GUI_DispStringHCenterAt("S.O.S.",240,210);
+
+				GUI_DrawHLine(195,0,320);
+				GUI_DrawHLine(200,0,320);
+
+				vTaskDelay(5000/portTICK_PERIOD_MS);
+				EstadoPantalla++;
+				GUI_Clear();
+				//Si se presiona MENU -> EstadoPantalla=1
+				//Si se presiona EMERGENCIA -> EstadoPantalla=2
+			break;
+
+			case 1:		//MENU
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispDecAt(23,240,10,2);
+				GUI_DispStringAt(":",264,10);
+				GUI_DispDecAt(48,271,10,2);
+
+				GUI_DrawHLine(40,0,320);
+				GUI_DrawHLine(45,0,320);
+
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("MENU",80,210);
+				GUI_DispStringHCenterAt("S.O.S.",240,210);
+
+				GUI_DrawHLine(195,0,320);
+				GUI_DrawHLine(200,0,320);
+
+				vTaskDelay(5000/portTICK_PERIOD_MS);
+				EstadoPantalla++;
+				GUI_Clear();
+			break;
+
+			case 2:		//SMS S.O.S.
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispDecAt(23,240,10,2);
+				GUI_DispStringAt(":",264,10);
+				GUI_DispDecAt(48,271,10,2);
+
+				GUI_DrawHLine(40,0,320);
+				GUI_DrawHLine(45,0,320);
+
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringAt(" SE ENVIARA UN SMS A LA",0,60);
+				GUI_DispStringAt(" CENTRAL. PARA CONFIRMAR",0,90);
+				GUI_DispStringAt(" MANTENGA APRETADO LOS",0,120);
+				GUI_DispStringAt(" DOS PULSADORES...",0,150);
+
+				GUI_DrawHLine(195,0,320);
+				GUI_DrawHLine(200,0,320);
+
+				vTaskDelay(5000/portTICK_PERIOD_MS);
+				EstadoPantalla++;
+				GUI_Clear();
+			break;
+
+			case 3:		//HORAS DE TRABAJO
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispDecAt(23,240,10,2);
+				GUI_DispStringAt(":",264,10);
+				GUI_DispDecAt(48,271,10,2);
+
+				GUI_DrawHLine(40,0,320);
+				GUI_DrawHLine(45,0,320);
+
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("HORAS DE TRABAJO",160,75);
+				GUI_SetFont(GUI_FONT_32B_ASCII);
+				GUI_DispStringHCenterAt(":",160,120);
+				GUI_SetFont(GUI_FONT_D48);
+				GUI_DispDecAt(6,80,115,2);
+				GUI_DispDecAt(15,165,115,2);
+
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("SIGUIENTE",80,210);
+
+				GUI_DrawHLine(195,0,320);
+				GUI_DrawHLine(200,0,320);
+
+				vTaskDelay(5000/portTICK_PERIOD_MS);
+				EstadoPantalla++;
+				GUI_Clear();
+			break;
+
+			case 4:		//SMS CONTACTO
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispDecAt(23,240,10,2);
+				GUI_DispStringAt(":",264,10);
+				GUI_DispDecAt(48,271,10,2);
+
+				GUI_DrawHLine(40,0,320);
+				GUI_DrawHLine(45,0,320);
+
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringAt("SE ENVIARA UN SMS A LA",0,60);
+				GUI_DispStringAt("CENTRAL. PARA CONFIRMAR",0,90);
+				GUI_DispStringAt("MANTENGA APRETADO LOS",0,120);
+				GUI_DispStringAt("DOS PULSADORES...",0,150);
+
+				GUI_DrawHLine(195,0,320);
+				GUI_DrawHLine(200,0,320);
+
+				vTaskDelay(5000/portTICK_PERIOD_MS);
+				EstadoPantalla++;
+				GUI_Clear();
+			break;
+
+			case 5:		//SALIDA CONDUCTOR
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringHCenterAt("Juan Fernandez",100,10);
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispDecAt(23,240,10,2);
+				GUI_DispStringAt(":",264,10);
+				GUI_DispDecAt(48,271,10,2);
+
+				GUI_DrawHLine(40,0,320);
+				GUI_DrawHLine(45,0,320);
+
+				GUI_SetFont(GUI_FONT_24B_ASCII);
+				GUI_DispStringAt(" PARA CONFIRMAR SALIDA",0,60);
+				GUI_DispStringAt(" DE CONDUCTOR MANTENGA ",0,90);
+				GUI_DispStringAt(" APRETADO LOS DOS ",0,120);
+				GUI_DispStringAt(" PULSADORES...",0,150);
+
+				GUI_DrawHLine(195,0,320);
+				GUI_DrawHLine(200,0,320);
+
+				vTaskDelay(5000/portTICK_PERIOD_MS);
+				EstadoPantalla=0;
+				GUI_Clear();
+			break;
 		}
+	}
 
 }
 

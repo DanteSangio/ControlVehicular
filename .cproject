@@ -105,7 +105,6 @@
 									<listOptionValue builtIn="false" value="lpc_chip_175x_6x"/>
 								</option>
 								<option id="gnu.c.link.option.paths.799045718" name="Library search path (-L)" superClass="gnu.c.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CMSIS_DSPLIB_CM3/lib}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/PANTALLA/src/GUI}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/Example/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/PANTALLA/inc}&quot;"/>
