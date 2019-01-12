@@ -7,6 +7,10 @@
  Description : main definition
 ===============================================================================
 */
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* Includes */
 #include "chip.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -23,45 +27,45 @@
 #include <cr_section_macros.h>
 #include "sdcard.h"
 #include "fat32.h"
-
 #include "GUI.h"
+#include "LCD_X_SPI.h"
+#include "Pantalla.h"
 //#include "DIALOG.h"
 //#include "GRAPH.h"
-#include "LCD_X_SPI.h"
 
 
-#include "Pantalla.h"
-
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* Defines */
 #define DEBUGOUT1(...) //printf(__VA_ARGS__)
 #define DEBUGOUT(...)  //printf(__VA_ARGS__)
 #define DEBUGSTR(...) //printf(__VA_ARGS__)
 
-/*****************************************************************************
- * Private types/enumerations/variables
- ****************************************************************************/
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* Declaraciones globales */
 static volatile bool fIntervalReached;
 static volatile bool fAlarmTimeMatched;
 static volatile bool On0, On1;
 
-// RFID structs
-MFRC522Ptr_t mfrcInstance;
+MFRC522Ptr_t mfrcInstance;	// RFID structs
 
 int last_balance = 0;
 unsigned int last_user_ID;
 
-
 uint8_t	ReceivePulsadores;
-
 uint8_t j=0;
 uint8_t Flag10sPantalla=OFF;
-uint8_t Flag30sPantalla=OFF;
 
-/*****************************************************************************
- * Public types/enumerations/variables
- ****************************************************************************/
+RINGBUFF_T txring1,txring2, rxring1,rxring2;					//Transmit and receive ring buffers
+static uint8_t 	rxbuff1[UART_RRB_SIZE], txbuff1[UART_SRB_SIZE],
+				rxbuff2[UART_RRB_SIZE], txbuff2[UART_SRB_SIZE];
 
+extern const GUI_BITMAP bmutnlogo; //declare external Bitmap
+extern const GUI_BITMAP bmcontrol; //declare external Bitmap
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* Semaforos */
 SemaphoreHandle_t Semaforo_RFID;
 SemaphoreHandle_t Semaforo_RTCgsm;
 SemaphoreHandle_t Semaforo_RX1;
@@ -73,6 +77,8 @@ SemaphoreHandle_t Semaforo_RTCsd;
 SemaphoreHandle_t Semaforo_YaHayTarj;
 
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* Colas */
 QueueHandle_t Cola_RX1,Cola_RX2;
 QueueHandle_t Cola_TX1,Cola_TX2;
 QueueHandle_t Cola_Pulsadores;
@@ -84,18 +90,9 @@ QueueHandle_t Cola_Inicio_Tarjetas;
 QueueHandle_t HoraEntrada;
 
 
-RINGBUFF_T txring1,txring2, rxring1,rxring2;								//Transmit and receive ring buffers
-static uint8_t rxbuff1[UART_RRB_SIZE], txbuff1[UART_SRB_SIZE],rxbuff2[UART_RRB_SIZE], txbuff2[UART_SRB_SIZE];	//Transmit and receive buffers
-
-extern const GUI_BITMAP bmutnlogo; /* declare external Bitmap */
-extern const GUI_BITMAP bmcontrol; /* declare external Bitmap */
-
-
-
-/*****************************************************************************
- * Private functions
- ****************************************************************************/
-/* Gets and shows the current time and date */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* showTime
+ * Gets and shows the current time and date */
 static void showTime(RTC_TIME_T *pTime)
 {
 	DEBUGOUT("Time: %.2d:%.2d %.2d/%.2d/%.4d\r\n",
@@ -107,11 +104,8 @@ static void showTime(RTC_TIME_T *pTime)
 }
 
 
-/*******************************************************************************
- *  System routine functions
- ******************************************************************************/
-
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* RTC_IRQHandler */
 void RTC_IRQHandler(void)
 {
 	BaseType_t Testigo=pdFALSE;
@@ -144,8 +138,10 @@ void RTC_IRQHandler(void)
 		}
 	}
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* UART1_IRQHandler */
 void UART1_IRQHandler(void)
 {
 	BaseType_t Testigo=pdFALSE;
@@ -175,6 +171,7 @@ void UART1_IRQHandler(void)
 		portYIELD_FROM_ISR(Testigo);					//Si testigo es TRUE -> ejecuta el scheduler
 	}
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* UART2_IRQHandler */
@@ -209,11 +206,8 @@ void UART2_IRQHandler(void)
 }
 
 
-/*****************************************************************************
- * Public functions
- ****************************************************************************/
-
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* xTaskRFIDConfig */
 static void xTaskRFIDConfig(void *pvParameters)
 {
 	//SystemCoreClockUpdate();
@@ -232,6 +226,8 @@ static void xTaskRFIDConfig(void *pvParameters)
 
 	vTaskDelete(NULL);	//Borra la tarea
 }
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskRTConfig */
 static void xTaskRTConfig(void *pvParameters)
@@ -291,7 +287,7 @@ static void xTaskRTConfig(void *pvParameters)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/* xTaskUART1Config */
 static void xTaskUART1Config(void *pvParameters)
 {
 	DEBUGOUT("Configurando la UART1..\n");	//Imprimo en la consola
@@ -327,6 +323,7 @@ static void xTaskUART1Config(void *pvParameters)
 
 	vTaskDelete(NULL);	//Borra la tarea
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* xTaskUART2Config */
@@ -365,6 +362,7 @@ static void xTaskUART2Config(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskGSMConfig */
 static void vTaskGSMConfig(void *pvParameters)
@@ -382,6 +380,8 @@ static void vTaskGSMConfig(void *pvParameters)
 
 	vTaskDelete(NULL);	//Borra la tarea
 }
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskCargarAnillo */
 //Encargada de cargar el anillo a partir de la cola
@@ -395,6 +395,7 @@ static void vTaskCargarAnillo1(void *pvParameters)
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskLeerAnillo */
@@ -417,6 +418,7 @@ static void vTaskLeerAnillo1(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskCargarAnillo */
 //Encargada de cargar el anillo a partir de la cola
@@ -430,6 +432,7 @@ static void vTaskCargarAnillo2(void *pvParameters)
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskLeerAnillo */
@@ -460,13 +463,14 @@ static void vTaskLeerAnillo2(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskRFID */
 static void vTaskRFID(void *pvParameters)
 {
 	static uint8_t FlagBorrar=0;
 	struct Datos_Nube informacion;
-	Entrada_RFID	Entrada;
+	Entrada_RFID Entrada;
 	char pepe[4];
 
 	//xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que ya se hayan cargado las tarjetas
@@ -482,7 +486,7 @@ static void vTaskRFID(void *pvParameters)
 			// Select one of the cards
 			if (PICC_ReadCardSerial(mfrcInstance))
 			{
-//				int status = writeCardBalance(mfrcInstance, 100000); // used to recharge the card
+				//int status = writeCardBalance(mfrcInstance, 100000); // used to recharge the card
 				userTapIn();
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, RFID_SS);
 
@@ -505,6 +509,7 @@ static void vTaskRFID(void *pvParameters)
 
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskAnalizarGPS */
@@ -530,6 +535,7 @@ static void vTaskAnalizarGPS(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskEnviarGSM */
 static void vTaskEnviarGSM(void *pvParameters)
@@ -549,16 +555,16 @@ static void vTaskEnviarGSM(void *pvParameters)
 		EnviarMensajeGSM();
 		*/
 
-
 		//Para enviar datos por GPRS a ThingSpeak
 		xSemaphoreTake(Semaforo_RTCgsm,portMAX_DELAY);//hago que envie cada medio min la informacion
 		xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 		xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
 		EnviarTramaGSM(informacion.latitud,informacion.longitud, informacionRFID.tarjeta, informacion.velocidad);
-
 	}
 	vTaskDelete(NULL);	//Borra la tarea
 }
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskTarjetasGSM*/
 static void vTaskTarjetasGSM(void *pvParameters)
@@ -585,9 +591,10 @@ static void vTaskTarjetasGSM(void *pvParameters)
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
 	xSemaphoreGive(Semaforo_GSM_Enviado);
 
-
 	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
 }
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* xTaskPulsadores */
 static void xTaskPulsadores(void *pvParameters)
@@ -695,6 +702,7 @@ static void xTaskWriteSD(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskTFT */
 void vTaskTFT(void *pvParameters)
@@ -703,9 +711,11 @@ void vTaskTFT(void *pvParameters)
 	static uint8_t FlagEstado=ON;
 	uint8_t ReceiveRFID=OFF;
 	struct Datos_Nube	ReceiveGPS;
-	uint32_t dia, mes, ano, hora, minutos;
-	char pepe[4];
+	uint32_t dia, mes, ano, hora, minutos, aux;
+	static uint8_t minConductor=0;
+	static uint8_t horaConductor=0;
 	RTC_TIME_T pFullTime;
+
 	/*
 	uint8_t op,menu,gananterior; //menu=EST_MEDICION
 	static uint8_t PC_config=0; // empieza en el menu de medicion
@@ -720,7 +730,7 @@ void vTaskTFT(void *pvParameters)
 
 	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 	GUI_Init();
-/*
+	/*
 	GUI_Clear();
 	GUI_DrawBitmap(&bmutnlogo, 0, 0);
 
@@ -728,12 +738,10 @@ void vTaskTFT(void *pvParameters)
 
 	GUI_Clear();
 	GUI_DrawBitmap(&bmcontrol, 0, 0);
-*/
-	//vTaskDelay(1000/portTICK_PERIOD_MS);
+	 */
 
 	GUI_SetBkColor(0x00000000); //gris claro 0x00D3D3D3
 	xSemaphoreGive(Semaforo_SSP);
-	//GUI_Clear();
 
 	/*
 	BUTTON_SetDefaultFont(GUI_FONT_COMIC18B_ASCII);
@@ -762,7 +770,6 @@ void vTaskTFT(void *pvParameters)
 	//GUI_Clear();
 
 	grafico=GRAPH_CreateEx(0,5,310,180,0,WM_CF_HIDE,0,GUI_ID_GRAPH0);
-
 	*/
 
 	while(1)
@@ -787,8 +794,8 @@ void vTaskTFT(void *pvParameters)
 					xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 
 					GUI_Clear();
+					aux=minutos;
 					FlagEstado=OFF;
-
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringAt("/     /",127,10);
 					GUI_DispDecAt(dia,101,10,2);
@@ -829,6 +836,16 @@ void vTaskTFT(void *pvParameters)
 				{
 					ReceivePulsadores = 0;
 				}
+				if(aux!=minutos)
+				{
+					FlagEstado=ON;
+					minConductor++;
+					if(minConductor==60)
+					{
+						minConductor=0;
+						horaConductor++;
+					}
+				}
 			break;
 
 			case 1:		//HORAS DE TRABAJO
@@ -855,8 +872,8 @@ void vTaskTFT(void *pvParameters)
 					GUI_SetFont(GUI_FONT_32B_ASCII);
 					GUI_DispStringHCenterAt(":",160,120);
 					GUI_SetFont(GUI_FONT_D48);
-					GUI_DispDecAt(6,80,115,2);
-					GUI_DispDecAt(15,165,115,2);
+					GUI_DispDecAt(horaConductor,80,115,2);
+					GUI_DispDecAt(minConductor,165,115,2);
 
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt("SIGUIENTE",80,210);
@@ -1035,7 +1052,7 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_Clear();
 					FlagEstado=OFF;
-
+					aux=minutos;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringAt("/     /",127,10);
 					GUI_DispDecAt(dia,101,10,2);
@@ -1065,6 +1082,10 @@ void vTaskTFT(void *pvParameters)
 					vTaskDelay(250/portTICK_PERIOD_MS);
 					Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
 				}
+				if(aux!=minutos)
+				{
+					FlagEstado=ON;
+				}
 			break;
 
 			case 9:		//CONFIRMAR SALIDA
@@ -1087,7 +1108,7 @@ void vTaskTFT(void *pvParameters)
 					GUI_DrawHLine(45,0,320);
 
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringHCenterAt(" PARA CONFIRMAR LA SALIDA",160,60);
+					GUI_DispStringHCenterAt(" PARA CONFIRMAR SALIDA",160,60);
 					GUI_DispStringHCenterAt(" DE CONDUCTOR MANTENGA",160,90);
 					GUI_DispStringHCenterAt(" PRESIONADOS LOS",160,120);
 					GUI_DispStringHCenterAt(" DOS PULSADORES...",160,150);
@@ -1188,6 +1209,8 @@ void vTaskTFT(void *pvParameters)
 				vTaskDelay(1000/portTICK_RATE_MS);
 
 				EstadoPantalla=7;
+				minConductor=0;
+				horaConductor=0;
 				FlagEstado=ON;
 				xSemaphoreGive(Semaforo_YaHayTarj);
 				break;
@@ -1196,10 +1219,8 @@ void vTaskTFT(void *pvParameters)
 }
 
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* main
-*/
+/* main */
 int main (void)
 {
 	uint8_t aux=0;
@@ -1249,7 +1270,7 @@ int main (void)
 	xTaskCreate(xTaskPulsadores, (char *) "vTaskPulsadores",
 			(( unsigned short ) 16), NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-/*
+	/*
 	xTaskCreate(xTaskWriteSD, (char *) "xTaskWriteSD",
 					configMINIMAL_STACK_SIZE * 2, NULL, (tskIDLE_PRIORITY + 2UL),
 					(xTaskHandle *) NULL);
@@ -1257,7 +1278,7 @@ int main (void)
 	xTaskCreate(vTaskInicSD, (char *) "vTaskInicSD",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
-*/
+ 	*/
 
 	xTaskCreate(vTaskRFID, (char *) "vTaskRFID",
 			(( unsigned short ) 150), NULL, (tskIDLE_PRIORITY + 1UL),
@@ -1267,15 +1288,14 @@ int main (void)
 			configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 4UL),
 				(xTaskHandle *) NULL);
 
-
 	xTaskCreate(xTaskRTConfig, (char *) "xTaskRTConfig",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
-/*
+	/*
 	xTaskCreate(vTaskLeerAnillo1, (char *) "vTaskLeerAnillo1",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
- */
+	*/
 	xTaskCreate(vTaskLeerAnillo2, (char *) "vTaskLeerAnillo2",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
@@ -1300,21 +1320,18 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
 
-
 	xTaskCreate(vTaskEnviarGSM, (char *) "vTaskEnviarGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-
-*/
+	 */
 	xTaskCreate(vTaskAnalizarGPS, (char *) "vTaskAnalizarGPS",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-/*
-
+	/*
 	xTaskCreate(vTaskTarjetasGSM, (char *) "vTaskTarjetasGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-*/
+	*/
 
 	/* Start the scheduler */
 	vTaskStartScheduler();
