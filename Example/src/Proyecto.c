@@ -54,6 +54,10 @@ unsigned int last_user_ID;
 
 uint8_t	ReceivePulsadores;
 
+uint8_t j=0;
+uint8_t Flag10sPantalla=OFF;
+uint8_t Flag30sPantalla=OFF;
+
 /*****************************************************************************
  * Public types/enumerations/variables
  ****************************************************************************/
@@ -108,10 +112,8 @@ static void showTime(RTC_TIME_T *pTime)
  ******************************************************************************/
 
 
-
 void RTC_IRQHandler(void)
 {
-
 	BaseType_t Testigo=pdFALSE;
 	static uint8_t i=0;
 
@@ -120,6 +122,19 @@ void RTC_IRQHandler(void)
 	{
 		/* Clear pending interrupt */
 		Chip_RTC_ClearIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE);
+		if(Flag10sPantalla==ON)
+		{
+			j++;
+			if(j==10)
+			{
+				Flag10sPantalla=OFF;
+				j=0;
+			}
+		}
+		else
+		{
+			j=0;
+		}
 		i++;
 		if(i==30)
 		{
@@ -248,10 +263,10 @@ static void xTaskRTConfig(void *pvParameters)
 	FullTime.time[RTC_TIMETYPE_DAYOFMONTH]  = aux;
 	FullTime.time[RTC_TIMETYPE_DAYOFWEEK]   = 4;
 	FullTime.time[RTC_TIMETYPE_DAYOFYEAR]   = 207;
-	pepe[0] = informacion.fecha[3]; pepe[1] = informacion.fecha[4]; pepe[2] =0;
+	pepe[0] = informacion.fecha[3]; pepe[1] = 0; pepe[2] =0;
 	aux = atoi (pepe);
 	FullTime.time[RTC_TIMETYPE_MONTH]   = aux;
-	pepe[0] = informacion.fecha[6]; pepe[1] = informacion.fecha[7]; pepe[2] =0;
+	pepe[0] = informacion.fecha[5]; pepe[1] = informacion.fecha[6]; pepe[2] =0;
 	aux = atoi (pepe);
 	aux = aux + 2000;
 	FullTime.time[RTC_TIMETYPE_YEAR]= aux;
@@ -687,7 +702,10 @@ void vTaskTFT(void *pvParameters)
 	static uint8_t EstadoPantalla=7;
 	static uint8_t FlagEstado=ON;
 	uint8_t ReceiveRFID=OFF;
-
+	struct Datos_Nube	ReceiveGPS;
+	uint32_t dia, mes, ano, hora, minutos;
+	char pepe[4];
+	RTC_TIME_T pFullTime;
 	/*
 	uint8_t op,menu,gananterior; //menu=EST_MEDICION
 	static uint8_t PC_config=0; // empieza en el menu de medicion
@@ -751,6 +769,16 @@ void vTaskTFT(void *pvParameters)
 	{
 		//xQueueReceive(Cola_Pulsadores, &Receive, 300);
 		vTaskDelay(50/portTICK_RATE_MS);
+
+		//xQueuePeek(Cola_Datos_GPS,&ReceiveGPS,portMAX_DELAY);
+
+		Chip_RTC_GetFullTime(LPC_RTC, &pFullTime);
+		minutos=pFullTime.time[1];
+		hora=pFullTime.time[2];
+		dia=pFullTime.time[3];
+		mes=pFullTime.time[6];
+		ano=pFullTime.time[7];
+
 		switch(EstadoPantalla)
 		{
 			case 0:		//PANTALLA PRINCIPAL CON USUARIO REGISTRADO
@@ -760,15 +788,19 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_Clear();
 					FlagEstado=OFF;
+
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringHCenterAt("10/01/2019",160,10);
+					GUI_DispStringAt("/     /",127,10);
+					GUI_DispDecAt(dia,101,10,2);
+					GUI_DispDecAt(mes,137,10,2);
+					GUI_DispDecAt(ano,172,10,4);
 
 					GUI_SetFont(GUI_FONT_D80);
-					GUI_DispDecAt(23,32,50,2);
-					GUI_DispDecAt(48,165,50,2);
+					GUI_DispDecAt(hora,32,50,2);
+					GUI_DispDecAt(minutos,165,50,2);
 					GUI_SetFont(GUI_FONT_32B_ASCII);
-					GUI_DispStringAt(".",155,75);
-					GUI_DispStringAt(".",155,50);
+					GUI_DispStringAt(".",155,80);
+					GUI_DispStringAt(".",155,55);
 
 					GUI_SetFont(GUI_FONT_32B_ASCII);
 					GUI_DispStringHCenterAt("JUAN FERNANDEZ",160,150);
@@ -805,13 +837,15 @@ void vTaskTFT(void *pvParameters)
 					xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 
 					GUI_Clear();
+					j=0;
 					FlagEstado=OFF;
+					Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt("Juan Fernandez",100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispDecAt(23,240,10,2);
+					GUI_DispDecAt(hora,240,10,2);
 					GUI_DispStringAt(":",264,10);
-					GUI_DispDecAt(48,271,10,2);
+					GUI_DispDecAt(minutos,271,10,2);
 
 					GUI_DrawHLine(40,0,320);
 					GUI_DrawHLine(45,0,320);
@@ -841,7 +875,11 @@ void vTaskTFT(void *pvParameters)
 				{
 					ReceivePulsadores = 0;
 				}
-				//Contar 10 seg, si no se presiona tecla -> EstadoPantalla=0;
+				if(Flag10sPantalla==OFF)
+				{
+					EstadoPantalla=0;
+					FlagEstado=ON;
+				}
 			break;
 
 			case 2:		//SMS CONTACTO
@@ -851,12 +889,14 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_Clear();
 					FlagEstado=OFF;
+					j=0;
+					Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt("Juan Fernandez",100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispDecAt(23,240,10,2);
+					GUI_DispDecAt(hora,240,10,2);
 					GUI_DispStringAt(":",264,10);
-					GUI_DispDecAt(48,271,10,2);
+					GUI_DispDecAt(minutos,271,10,2);
 
 					GUI_DrawHLine(40,0,320);
 					GUI_DrawHLine(45,0,320);
@@ -890,7 +930,11 @@ void vTaskTFT(void *pvParameters)
 				{
 					ReceivePulsadores = 0;
 				}
-				//Contar 10 seg, si no se presiona tecla -> EstadoPantalla=0;
+				if(Flag10sPantalla==OFF)
+				{
+					EstadoPantalla=0;
+					FlagEstado=ON;
+				}
 			break;
 
 			case 3:		//
@@ -906,12 +950,14 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_Clear();
 					FlagEstado=OFF;
+					j=0;
+					Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt("Juan Fernandez",100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispDecAt(23,240,10,2);
+					GUI_DispDecAt(hora,240,10,2);
 					GUI_DispStringAt(":",264,10);
-					GUI_DispDecAt(48,271,10,2);
+					GUI_DispDecAt(minutos,271,10,2);
 
 					GUI_DrawHLine(40,0,320);
 					GUI_DrawHLine(45,0,320);
@@ -945,7 +991,11 @@ void vTaskTFT(void *pvParameters)
 				{
 					ReceivePulsadores = 0;
 				}
-				//Contar 10 seg, si no se presiona tecla -> EstadoPantalla=0;
+				if(Flag10sPantalla==OFF)
+				{
+					EstadoPantalla=0;
+					FlagEstado=ON;
+				}
 			break;
 
 			case 6:		//ENVIAR MENSAJE
@@ -955,9 +1005,9 @@ void vTaskTFT(void *pvParameters)
 				GUI_SetFont(GUI_FONT_24B_ASCII);
 				GUI_DispStringHCenterAt("Juan Fernandez",100,10);
 				GUI_SetFont(GUI_FONT_24B_ASCII);
-				GUI_DispDecAt(23,240,10,2);
+				GUI_DispDecAt(hora,240,10,2);
 				GUI_DispStringAt(":",264,10);
-				GUI_DispDecAt(48,271,10,2);
+				GUI_DispDecAt(minutos,271,10,2);
 
 				GUI_DrawHLine(40,0,320);
 				GUI_DrawHLine(45,0,320);
@@ -985,22 +1035,24 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_Clear();
 					FlagEstado=OFF;
+
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringAt("/     /",127,10);
+					GUI_DispDecAt(dia,101,10,2);
+					GUI_DispDecAt(mes,137,10,2);
+					GUI_DispDecAt(ano,172,10,4);
+
 					GUI_SetFont(GUI_FONT_32B_ASCII);
-					GUI_DispStringHCenterAt("10/01/2019",160,10);
+					GUI_DispStringHCenterAt("POR FAVOR",160,60);
+					GUI_DispStringHCenterAt("ACERQUE SU TARJETA",160,100);
 
 					GUI_SetFont(GUI_FONT_D48);
-					GUI_DispDecAt(23,32,150,2);
-					GUI_DispDecAt(48,165,150,2);
+					GUI_DispDecAt(hora,82,155,2);
+					GUI_DispDecAt(minutos,170,155,2);
 					GUI_SetFont(GUI_FONT_32B_ASCII);
-					GUI_DispStringAt(".",155,135);
-					GUI_DispStringAt(".",155,145);
+					GUI_DispStringAt(".",158,145);
+					GUI_DispStringAt(".",158,170);
 
-					GUI_SetFont(GUI_FONT_32B_ASCII);
-					GUI_DispStringHCenterAt("POR FAVOR",160,50);
-					GUI_DispStringHCenterAt("ACERQUE SU TARJETA",160,80);
-
-					GUI_DrawHLine(195,0,320);
-					GUI_DrawHLine(200,0,320);
 					xSemaphoreGive(Semaforo_SSP);
 				}
 				if(uxQueueMessagesWaiting(Cola_Datos_RFID)!=0)
@@ -1009,13 +1061,10 @@ void vTaskTFT(void *pvParameters)
 					EstadoPantalla=0;
 					xSemaphoreTake(Semaforo_YaHayTarj, portMAX_DELAY);
 					ReceivePulsadores=0;
+					Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+					vTaskDelay(250/portTICK_PERIOD_MS);
+					Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
 				}
-				//Si acerca la tarjeta correcta cambia al estado 0
-
-				//Por ahora para probar..
-				//vTaskDelay(2000/portTICK_PERIOD_MS);
-				//EstadoPantalla=0;
-				//FlagEstado=ON;
 			break;
 
 			case 9:		//CONFIRMAR SALIDA
@@ -1025,12 +1074,14 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_Clear();
 					FlagEstado=OFF;
+					j=0;
+					Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt("Juan Fernandez",100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispDecAt(23,240,10,2);
+					GUI_DispDecAt(hora,240,10,2);
 					GUI_DispStringAt(":",264,10);
-					GUI_DispDecAt(48,271,10,2);
+					GUI_DispDecAt(minutos,271,10,2);
 
 					GUI_DrawHLine(40,0,320);
 					GUI_DrawHLine(45,0,320);
@@ -1056,7 +1107,11 @@ void vTaskTFT(void *pvParameters)
 				{
 					ReceivePulsadores = 0;
 				}
-				//Contar 10 seg, si no se presiona tecla -> EstadoPantalla=0;
+				if(Flag10sPantalla==OFF)
+				{
+					EstadoPantalla=0;
+					FlagEstado=ON;
+				}
 			break;
 
 			case 10:	//CONFIRMAR SMS
@@ -1066,12 +1121,14 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_Clear();
 					FlagEstado=OFF;
+					j=0;
+					Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt("Juan Fernandez",100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispDecAt(23,240,10,2);
+					GUI_DispDecAt(hora,240,10,2);
 					GUI_DispStringAt(":",264,10);
-					GUI_DispDecAt(48,271,10,2);
+					GUI_DispDecAt(minutos,271,10,2);
 
 					GUI_DrawHLine(40,0,320);
 					GUI_DrawHLine(45,0,320);
@@ -1096,19 +1153,23 @@ void vTaskTFT(void *pvParameters)
 				{
 					ReceivePulsadores = 0;
 				}
-				//Contar 10 seg, si no se presiona tecla -> EstadoPantalla=0;
+				if(Flag10sPantalla==OFF)
+				{
+					EstadoPantalla=0;
+					FlagEstado=ON;
+				}
 			break;
 
-			case 11:
+			case 11:	//DESLOGUEO CONFIRMADO
 				xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 
 				GUI_Clear();
 				GUI_SetFont(GUI_FONT_24B_ASCII);
 				GUI_DispStringHCenterAt("Juan Fernandez",100,10);
 				GUI_SetFont(GUI_FONT_24B_ASCII);
-				GUI_DispDecAt(23,240,10,2);
+				GUI_DispDecAt(hora,240,10,2);
 				GUI_DispStringAt(":",264,10);
-				GUI_DispDecAt(48,271,10,2);
+				GUI_DispDecAt(minutos,271,10,2);
 
 				GUI_DrawHLine(40,0,320);
 				GUI_DrawHLine(45,0,320);
@@ -1206,11 +1267,11 @@ int main (void)
 			configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 4UL),
 				(xTaskHandle *) NULL);
 
-/*
+
 	xTaskCreate(xTaskRTConfig, (char *) "xTaskRTConfig",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
-
+/*
 	xTaskCreate(vTaskLeerAnillo1, (char *) "vTaskLeerAnillo1",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
