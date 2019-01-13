@@ -551,8 +551,7 @@ static void vTaskEnviarGSM(void *pvParameters)
 		/*
 		xQueueReceive(Cola_Pulsadores, &Receive, portMAX_DELAY);
 		Faltaria el semaforo de los pulsadores o algo que tome una decision
-		//Para enviar SMS
-		EnviarMensajeGSM();
+
 		*/
 
 		//Para enviar datos por GPRS a ThingSpeak
@@ -567,6 +566,7 @@ static void vTaskEnviarGSM(void *pvParameters)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* vTaskTarjetasGSM*/
+//Lee las tarjetas de Thingspeak y las almacena en un vector estatico
 static void vTaskTarjetasGSM(void *pvParameters)
 {
 	Tarjetas_RFID* InicioTarjetas=NULL;//Puntero al inicio del vector de tarjetas
@@ -577,7 +577,7 @@ static void vTaskTarjetasGSM(void *pvParameters)
     while (InicioTarjetas == NULL)
 	{
     	RecibirTramaGSM();
-    	vTaskDelay(5000/portTICK_RATE_MS);//espero 10 seg para asegurarme que llego tod o
+    	vTaskDelay(5000/portTICK_RATE_MS);//espero 5 seg para asegurarme que llego tod o
 		while(LeerCola(RX_COLA_GSM,&dato,1))
 		{
 			InicioTarjetas = AnalizarTramaGSMrecibido(dato);
@@ -599,11 +599,8 @@ static void vTaskTarjetasGSM(void *pvParameters)
 /* xTaskPulsadores */
 static void xTaskPulsadores(void *pvParameters)
 {
-	static uint8_t Send=OFF;
-	static uint8_t SendAnt=OFF;
 	while (1)
 	{
-		//ReceivePulsadores=0;
 
 		if(ReceivePulsadores == 0)
 		{
@@ -618,14 +615,7 @@ static void xTaskPulsadores(void *pvParameters)
 			while(Chip_GPIO_GetPinState(LPC_GPIO, SW2)==OFF || Chip_GPIO_GetPinState(LPC_GPIO, SW1)==OFF)
 			{				vTaskDelay(1000/portTICK_RATE_MS);}
 		}
-		/*
-		if(SendAnt==Send)
-		{
-			//xQueueOverwrite(Cola_Pulsadores, &Send);
-		}
-		SendAnt=Send;
-		*/
-		vTaskDelay(500/portTICK_RATE_MS);	//Espero 1s
+		vTaskDelay(500/portTICK_RATE_MS);	//Espero medio seg
 	}
 	vTaskDelete(NULL);	//Borra la tarea
 }
@@ -716,17 +706,6 @@ void vTaskTFT(void *pvParameters)
 	static uint8_t horaConductor=0;
 	RTC_TIME_T pFullTime;
 
-	/*
-	uint8_t op,menu,gananterior; //menu=EST_MEDICION
-	static uint8_t PC_config=0; // empieza en el menu de medicion
-	char cadena[16];
-
-	GUI_COLOR colorfondoboton;
-	BUTTON_Handle botona,botonb,botonc,botond,botone;
-	GRAPH_Handle grafico;
-	GRAPH_SCALE_Handle escalagrafh,escalagrafv;
-	GRAPH_DATA_Handle datagraf;
-	*/
 
 	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 	GUI_Init();
@@ -1166,6 +1145,11 @@ void vTaskTFT(void *pvParameters)
 				}
 				if(ReceivePulsadores==11)		//Se presionaron ambos pulsadores
 				{
+					/*
+					//Para enviar SMS
+					EnviarMensajeGSM(); pasar como parametro el mensaje PREDEFINIDO a enviar NO PISARSE CON EL ENVIO NORMAL (usar semaforo)
+					podria usarse como parametro el estado anterior
+					*/
 					EstadoPantalla=6;
 					FlagEstado=ON;
 					ReceivePulsadores = 0;

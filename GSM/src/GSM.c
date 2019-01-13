@@ -29,23 +29,11 @@
 /*****************************************************************************
  * Types/enumerations/variables
  ****************************************************************************/
-//#define DEBUGOUT(...) printf(__VA_ARGS__)
-
 
 extern SemaphoreHandle_t Semaforo_GSM_Closed;
 extern QueueHandle_t Cola_Connect;
 extern QueueHandle_t Cola_RX1;
 
-//ThingSpeak
-char http_cmd[80];
-char url_string[] = "api.thingspeak.com/update?";	//URL
-char apiKey[] = "api_key=4IVCTNA39FY9U35C";		//Write API key from ThingSpeak: 4IVCTNA39FY9U35C
-char data1Original[10] = "&field1=";	//
-char data2Original[10] = "&field2=";	//
-char data3Original[10] = "&field3=";	//
-char data4Original[10] = "&field4=";	//
-int status;
-int datalen;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* funcion para analizar la trama GSM */
@@ -153,6 +141,11 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid,int velocidad)
 {
 	static uint8_t dato=0;
 	char data1[50],data2[50],data3[50],data4[20], velocidadChar[10];
+	const char data1Original[10] = "&field1=";	//
+	const char data2Original[10] = "&field2=";	//
+	const char data3Original[10] = "&field3=";	//
+	const char data4Original[10] = "&field4=";	//
+
 
 	//if(dato==0)
 			//{
@@ -187,8 +180,8 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid,int velocidad)
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "184.106.153.149\",\"80\"\r", sizeof("184.106.153.149\",\"80\"\r") - 1); //
 			vTaskDelay(1000/portTICK_RATE_MS);	//Espero 3s
 
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSEND=105\r", sizeof("AT+CIPSEND=105\r") - 1); //44 // 94 para los 3
-			//HAY QUE PONER 2 CARACTERES MAS DE LOS CONTADOS CON EL GET 105 para los 4
+			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSEND=105\r", sizeof("AT+CIPSEND=105\r") - 1); //44 // 94 para los 3//105 para los 4
+			//HAY QUE PONER 2 CARACTERES MAS DE LOS CONTADOS CON EL GET
 			vTaskDelay(500/portTICK_RATE_MS);	//Espero 1s
 
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "GET ", sizeof("GET ") - 1); //	GET
@@ -197,7 +190,7 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid,int velocidad)
 			vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 
 
-			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)apiKey, sizeof(apiKey) - 1); //
+			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, (void*)APIKEY, sizeof(APIKEY) - 1); //
 			vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 
 			//latitud
@@ -256,7 +249,7 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid,int velocidad)
 				DEBUGOUT("%c", dato);	//Imprimo en la consola
 			}
 
-			xSemaphoreTake(Semaforo_GSM_Closed, 10000/portTICK_RATE_MS);
+			xSemaphoreTake(Semaforo_GSM_Closed, 1000/portTICK_RATE_MS);//estaba en 10 seg
 
 
 			xQueuePeek(Cola_Connect, &dato, portMAX_DELAY);			//Para chequear si dio un error
@@ -293,7 +286,7 @@ void RecibirTramaGSM(void)
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSTART=\"TCP\",\"", sizeof("AT+CIPSTART=\"TCP\",\"") - 1); //
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "184.106.153.149\",\"80\"\r", sizeof("184.106.153.149\",\"80\"\r") - 1); //
-	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 3s
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 
 	//61  GET /channels/648303/fields/1.json?api_key=VRMSAZ0CSI5VVHDM
 	//58  GET /channels/648303/feeds.json?api_key=VRMSAZ0CSI5VVHDM
@@ -329,7 +322,7 @@ Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato)
 	static char Trama[2048];
 	static uint16_t i, k=0;
 	static uint16_t j ,z;
-	static Tarjetas_RFID tarjetas[30];//creo 100 struct de tarjetas
+	static Tarjetas_RFID tarjetas[30];//creo 30 struct de tarjetas
 
 	if(dato=='[')		//Inicio de la trama de datos de tarjetas
 	{
@@ -397,3 +390,6 @@ Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato)
 	}
 	return (NULL);//me aseguro que si no finalizo
 }
+/* EJEMPLO DE TRAMA
+ * [{"created_at":"2018-12-11T18:48:11Z","entry_id":1,"field1":"4266702969","field2":"Pepe"},{"created_at":"2018-12-11T18:48:37Z","entry_id":2,"field1":"2266752969","field2":"Franco"},{"created_at":"2018-12-14T15:08:29Z","entry_id":3,"field1":"9264502969","field2":"Nelly"}]}
+ */

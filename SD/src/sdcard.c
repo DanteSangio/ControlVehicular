@@ -30,7 +30,7 @@ http://www.tavi.co.uk/phobos/fat.html
 #include "ControlVehicular.h"
 #include "queue.h"
 #include "string.h"
-
+#include "stdlib.h"
 
 #define LPC_SSP                             LPC_SSP1
 
@@ -439,6 +439,7 @@ void InfoSd(char* Receive)
 {
 	struct Datos_Nube informacion;
 	Tarjetas_RFID informacionRFID;
+	char	velocidadCar[5];
 
 	xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 	xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
@@ -450,6 +451,9 @@ void InfoSd(char* Receive)
 	strcat(Receive,informacion.latitud);
 	strcat(Receive,",");
 	strcat(Receive,informacion.longitud);
+	strcat(Receive,",");
+	itoa (informacion.velocidad,velocidadCar,10);
+	strcat(Receive,velocidadCar);
 	strcat(Receive,",");
 	strcat(Receive,informacionRFID.tarjeta);
 	strcat(Receive,",");

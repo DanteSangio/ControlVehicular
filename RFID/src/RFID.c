@@ -27,14 +27,6 @@ void userTapIn()
 	Tarjetas_RFID Tarj_actual;
 	//uint32_t	ultTarjeta;
 
-//	show card UID
-	//DEBUGOUT("\nCard uid bytes: ");
-	//for (uint8_t i = 0; i < mfrcInstance->uid.size; i++)
-	//{
-		//DEBUGOUT(" %X", mfrcInstance->uid.uidByte[i]);
-	//}
-	//DEBUGOUT("\n\r");
-
 
 	// Convert the uid bytes to an integer, byte[0] is the MSB
 	last_user_ID =
@@ -125,7 +117,7 @@ void Comparar(unsigned int tarjeta) //devuelvo la tarjeta que se esta utilizando
 	}
 	else
 	{
-		xQueueReset(Cola_Datos_RFID);//si se  ingreso una tarjeta no registrada no coloco ninguna
+		//xQueueReset(Cola_Datos_RFID);//si se  ingreso una tarjeta no registrada no coloco ninguna
 		DEBUGOUT("Tarjeta NO Registrada\n\r");
 		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
