@@ -31,7 +31,6 @@
  ****************************************************************************/
 
 extern SemaphoreHandle_t Semaforo_GSM_Closed;
-extern QueueHandle_t Cola_Connect;
 extern QueueHandle_t Cola_RX1;
 
 
@@ -43,7 +42,6 @@ void AnalizarTramaGSMenvio (uint8_t dato)
 	static int EstadoTrama=10;
 	static char Trama[256];
 	static int i;
-	uint8_t aux;
 
 	if(dato=='C')		//Inicio de la trama para closed o connect
 	{
@@ -83,26 +81,26 @@ void AnalizarTramaGSMenvio (uint8_t dato)
 		case CHEQUEO_TRAMA:		//CHEQUEO_TRAMA
 			Trama[i]=dato;
 			i++;
+			/*
 			if(Trama[0]=='C' && Trama[1]=='O' && Trama[2]=='N')			//CONNECT
 			{
-				aux=1;
-				xQueueOverwrite(Cola_Connect, &aux);
 				EstadoTrama=6;	//Trama correcta
 			}
-			else if(Trama[0]=='C' && Trama[1]=='L' && Trama[2]=='O')	//CLOSED
+			*/
+			if(Trama[0]=='C' && Trama[1]=='L' && Trama[2]=='O')	//CLOSED
 			{
 				xSemaphoreGive(Semaforo_GSM_Closed);
-				EstadoTrama=6;	//Trama correcta
+				//EstadoTrama=6;	//Trama correcta
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 				vTaskDelay(150/portTICK_RATE_MS);	//Espero 1s
 				Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
 			}
+			/*
 			else if(Trama[0]=='E' && Trama[1]=='R' && Trama[2]=='R')	//ERROR
 			{
-				aux=0;
-				xQueueOverwrite(Cola_Connect, &aux);
 				EstadoTrama=6;	//Trama correcta
 			}
+			*/
 			EstadoTrama=6;	//Trama correcta
 		break;
 
@@ -114,7 +112,7 @@ void AnalizarTramaGSMenvio (uint8_t dato)
 	}
 }
 
-void EnviarMensajeGSM (void)
+void EnviarMensajeGSM (uint8_t	mensaje)
 {
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
@@ -124,17 +122,25 @@ void EnviarMensajeGSM (void)
 	vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
 
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CNMI=2,2,0,0\r", sizeof("AT+CNMI=2,2,0,0\r") - 1); //No guardo los mensajes en memoria, los envio directamente por UART cuando llegan
-	vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 5s
 
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CMGF=1\r", sizeof("AT+CMGF=1\r") - 1); //Activo modo texto. ALT+CMGF = 1 (texto). ALT + CMGF = 0 (PDU)
-	vTaskDelay(5000/portTICK_RATE_MS);	//Espero 5s
+	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 5s
 
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CSCS=\"GSM\"\r", sizeof("AT+CSCS=\"GSM\"\r") - 1);
-	vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
+	vTaskDelay(500/portTICK_RATE_MS);	//Espero 3s
 
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CMGS=\"+5491137863836\"\r", sizeof("AT+CMGS=\"+5491137863836\"\r") - 1);
-	vTaskDelay(3000/portTICK_RATE_MS);	//Espero 3s
-	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "EMERGENCIA\032", sizeof("EMERGENCIA\032") - 1);
+	vTaskDelay(500/portTICK_RATE_MS);	//Espero 3s
+
+	if(mensaje == 1)
+	{
+		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "EMERGENCIA\032", sizeof("EMERGENCIA\032") - 1);
+	}
+	else if(mensaje == 2)
+	{
+		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "COMUNICARSE CON EL CONDUCTOR\032", sizeof("COMUNICARSE CON EL CONDUCTOR\032") - 1);
+	}
 }
 
 void EnviarTramaGSM (char* latitud, char* longitud, char* rfid,int velocidad)
@@ -147,8 +153,6 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid,int velocidad)
 	const char data4Original[10] = "&field4=";	//
 
 
-	//if(dato==0)
-			//{
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
 				vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
@@ -173,7 +177,7 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid,int velocidad)
 
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIFSR\r", sizeof("AT+CIFSR\r") - 1); //
 				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
-			//}
+
 
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSTART=\"TCP\",\"", sizeof("AT+CIPSTART=\"TCP\",\"") - 1); //
 			vTaskDelay(100/portTICK_RATE_MS);	//Espero 100ms
@@ -238,8 +242,6 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid,int velocidad)
 
 
 			Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "\r\n\r\n", sizeof("\r\n\r\n") - 1); //
-			//vTaskDelay(5000/portTICK_RATE_MS);	//Espero 30s
-
 
 			//analizo para verificar si hubo error, connect y/o closed
 
@@ -251,8 +253,6 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid,int velocidad)
 
 			xSemaphoreTake(Semaforo_GSM_Closed, 1000/portTICK_RATE_MS);//estaba en 10 seg
 
-
-			xQueuePeek(Cola_Connect, &dato, portMAX_DELAY);			//Para chequear si dio un error
 }
 
 void RecibirTramaGSM(void)

@@ -71,37 +71,22 @@ SemaphoreHandle_t Semaforo_RTCgsm;
 SemaphoreHandle_t Semaforo_RX1;
 SemaphoreHandle_t Semaforo_RX2;
 SemaphoreHandle_t Semaforo_GSM_Closed;
-SemaphoreHandle_t Semaforo_GSM_Enviado;
+SemaphoreHandle_t Semaforo_GSM_Recibido;
 SemaphoreHandle_t Semaforo_SSP;
 SemaphoreHandle_t Semaforo_RTCsd;
 SemaphoreHandle_t Semaforo_YaHayTarj;
-
+SemaphoreHandle_t Semaforo_GSM_Enviar;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Colas */
 QueueHandle_t Cola_RX1,Cola_RX2;
 QueueHandle_t Cola_TX1,Cola_TX2;
 QueueHandle_t Cola_Pulsadores;
-QueueHandle_t Cola_Connect;
 QueueHandle_t Cola_SD;
 QueueHandle_t Cola_Datos_GPS;
 QueueHandle_t Cola_Datos_RFID;
 QueueHandle_t Cola_Inicio_Tarjetas;
 QueueHandle_t HoraEntrada;
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* showTime
- * Gets and shows the current time and date */
-static void showTime(RTC_TIME_T *pTime)
-{
-	DEBUGOUT("Time: %.2d:%.2d %.2d/%.2d/%.4d\r\n",
-			 pTime->time[RTC_TIMETYPE_HOUR],
-			 pTime->time[RTC_TIMETYPE_MINUTE],
-			 pTime->time[RTC_TIMETYPE_DAYOFMONTH],
-			 pTime->time[RTC_TIMETYPE_MONTH],
-			 pTime->time[RTC_TIMETYPE_YEAR]);
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -207,7 +192,9 @@ void UART2_IRQHandler(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* xTaskRFIDConfig */
+/* xTaskRFIDConfig
+ * Inicializacion del RFID
+ */
 static void xTaskRFIDConfig(void *pvParameters)
 {
 	//SystemCoreClockUpdate();
@@ -229,7 +216,9 @@ static void xTaskRFIDConfig(void *pvParameters)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskRTConfig */
+/* vTaskRTConfig
+ * Inicializacion del RTC utilizando la hora provista por el GPS
+ * */
 static void xTaskRTConfig(void *pvParameters)
 {
 	RTC_TIME_T FullTime;
@@ -364,7 +353,9 @@ static void xTaskUART2Config(void *pvParameters)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskGSMConfig */
+/* vTaskGSMConfig
+ * Inicializacion del GSM
+ * */
 static void vTaskGSMConfig(void *pvParameters)
 {
 	//Inicializacion del reset del GSM
@@ -451,30 +442,20 @@ static void vTaskLeerAnillo2(void *pvParameters)
 			xSemaphoreGive(Semaforo_RX2);
 			xQueueSendToBack(Cola_RX2, &Receive, portMAX_DELAY);
 		}
-		/*
-		//leo la cola de rercepcion y lo muestro en pantalla
-		if(LeerCola(Cola_RX2,&dato,1))
-		{
-			AnalizarTramaGPS(dato);
-			//DEBUGOUT("%c", dato);	//Imprimo en la consola
-		}
-		*/
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskRFID */
+/* vTaskRFID
+ * Se leen las tarjetas RFID, se las compara con las descargadas y se almacena la actual en la cola Cola_Datos_RFID
+ * */
 static void vTaskRFID(void *pvParameters)
 {
-	static uint8_t FlagBorrar=0;
-	struct Datos_Nube informacion;
-	Entrada_RFID Entrada;
-	char pepe[4];
 
-	//xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que ya se hayan cargado las tarjetas
-	//xSemaphoreGive(Semaforo_GSM_Enviado);
+	//xSemaphoreTake(Semaforo_GSM_Recibido,portMAX_DELAY);//me aseguro que ya se hayan cargado las tarjetas
+	//xSemaphoreGive(Semaforo_GSM_Recibido);
 	while (1)
 	{
 		xSemaphoreTake(Semaforo_YaHayTarj, portMAX_DELAY);
@@ -490,16 +471,6 @@ static void vTaskRFID(void *pvParameters)
 				userTapIn();
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, RFID_SS);
 
-				/*
-				//Grabo hora de entrada
-				xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
-
-				pepe[0] = informacion.hora[3]; pepe[1] = informacion.hora[4]; pepe[2] =0;
-				Entrada.minutos = atoi (pepe);
-				pepe[0] = informacion.hora[0]; pepe[1] = informacion.hora[1]; pepe[2] =0;
-				Entrada.hora = atoi (pepe);
-				xQueueOverwrite(HoraEntrada,&Entrada);
-				*/
 			}
 		}
 		Chip_GPIO_SetPinOutHigh(LPC_GPIO, RFID_SS);
@@ -512,7 +483,9 @@ static void vTaskRFID(void *pvParameters)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskAnalizarGPS */
+/* vTaskAnalizarGPS
+ * Leo lo que me manda el GPS CADA 5 seg, los datos intermedios los desecho. Los datos se cargan en Cola_Datos_GPS
+ * */
 static void vTaskAnalizarGPS(void *pvParameters)
 {
 	uint8_t dato=0;
@@ -537,28 +510,25 @@ static void vTaskAnalizarGPS(void *pvParameters)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskEnviarGSM */
+/* vTaskEnviarGSM
+ * Envia periodicamente (semaforo dado por la interrupcion del RTC) mensajes a thingspeak con lat long vel y usuario
+ * */
 static void vTaskEnviarGSM(void *pvParameters)
 {
 	struct Datos_Nube informacion;
 	Tarjetas_RFID informacionRFID;
 
-	xSemaphoreTake(Semaforo_GSM_Enviado,portMAX_DELAY);//me aseguro que ya se hayan cargado las tarjetas
-	xSemaphoreGive(Semaforo_GSM_Enviado);
+	xSemaphoreTake(Semaforo_GSM_Recibido,portMAX_DELAY);//me aseguro que ya se hayan cargado las tarjetas
+	xSemaphoreGive(Semaforo_GSM_Recibido);
 	while(1)
 	{
-
-		/*
-		xQueueReceive(Cola_Pulsadores, &Receive, portMAX_DELAY);
-		Faltaria el semaforo de los pulsadores o algo que tome una decision
-
-		*/
-
 		//Para enviar datos por GPRS a ThingSpeak
 		xSemaphoreTake(Semaforo_RTCgsm,portMAX_DELAY);//hago que envie cada medio min la informacion
 		xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 		xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
+		xSemaphoreTake(Semaforo_GSM_Enviar,portMAX_DELAY);//Me aseguro de estar enviando solo esta tarea
 		EnviarTramaGSM(informacion.latitud,informacion.longitud, informacionRFID.tarjeta, informacion.velocidad);
+		xSemaphoreGive(Semaforo_GSM_Enviar);
 	}
 	vTaskDelete(NULL);	//Borra la tarea
 }
@@ -589,14 +559,16 @@ static void vTaskTarjetasGSM(void *pvParameters)
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
-	xSemaphoreGive(Semaforo_GSM_Enviado);
+	xSemaphoreGive(Semaforo_GSM_Recibido);
 
 	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* xTaskPulsadores */
+/* xTaskPulsadores
+ * Lectura de los pulsadores mediante una variable global
+ * */
 static void xTaskPulsadores(void *pvParameters)
 {
 	while (1)
@@ -622,7 +594,9 @@ static void xTaskPulsadores(void *pvParameters)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskInicSD */
+/* vTaskInicSD
+ * Inicializacion de la tarjeta SD
+ * */
 static void vTaskInicSD(void *pvParameters)
 {
     uint8_t returnStatus,sdcardType;
@@ -655,7 +629,9 @@ static void vTaskInicSD(void *pvParameters)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* xTaskWriteSD*/
+/* xTaskWriteSD
+ * Escritura periodica de la tarjeta SD (semaforo dado por la interrupcion del RTC)
+ * */
 static void xTaskWriteSD(void *pvParameters)
 {
     uint8_t returnStatus,i=0;
@@ -673,9 +649,7 @@ static void xTaskWriteSD(void *pvParameters)
         	srcFilePtr = FILE_Open("datalog.txt",WRITE,&returnStatus);
         }while(srcFilePtr == 0);
 
-		//xQueuePeek(Cola_SD,&Receive,portMAX_DELAY);	//Para recibir los datos a guardar
-        InfoSd(Receive);
-
+        InfoSd(Receive);//En la funcion se reciben los datos a guardar y se los coloca en una trama
 
 		for(i=0;Receive[i];)
 		{
@@ -683,18 +657,22 @@ static void xTaskWriteSD(void *pvParameters)
 		}
         FILE_PutCh(srcFilePtr,EOF);
         FILE_Close(srcFilePtr);
+    	xSemaphoreGive(Semaforo_SSP);
+
         for(i=0;Receive[i] != 0 || i<100;i++)//limpio el vector
         {
         	Receive[i]=0;
         }
-    	xSemaphoreGive(Semaforo_SSP);
+
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* vTaskTFT */
+/* vTaskTFT
+ *  Encargada del manejo de lo que se muestra en pantalla como asi las decisiones que se toman en la misma
+ * */
 void vTaskTFT(void *pvParameters)
 {
 	static uint8_t EstadoPantalla=7;
@@ -702,10 +680,9 @@ void vTaskTFT(void *pvParameters)
 	uint8_t ReceiveRFID=OFF;
 	struct Datos_Nube	ReceiveGPS;
 	uint32_t dia, mes, ano, hora, minutos, aux;
-	static uint8_t minConductor=0;
-	static uint8_t horaConductor=0;
+	static uint8_t minConductor=0, horaConductor=0;
+	static uint8_t mensaje=0;
 	RTC_TIME_T pFullTime;
-
 
 	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 	GUI_Init();
@@ -755,8 +732,6 @@ void vTaskTFT(void *pvParameters)
 	{
 		//xQueueReceive(Cola_Pulsadores, &Receive, 300);
 		vTaskDelay(50/portTICK_RATE_MS);
-
-		//xQueuePeek(Cola_Datos_GPS,&ReceiveGPS,portMAX_DELAY);
 
 		Chip_RTC_GetFullTime(LPC_RTC, &pFullTime);
 		minutos=pFullTime.time[1];
@@ -810,6 +785,7 @@ void vTaskTFT(void *pvParameters)
 					EstadoPantalla=10;
 					FlagEstado=ON;
 					ReceivePulsadores = 0;
+					mensaje = 1; //Debe enviarse el mensaje de emergencia
 				}
 				else
 				{
@@ -921,6 +897,7 @@ void vTaskTFT(void *pvParameters)
 					EstadoPantalla=10;
 					FlagEstado=ON;
 					ReceivePulsadores = 0;
+					mensaje=2; // Mensaje para comunicarse con el conductor
 				}
 				else
 				{
@@ -994,7 +971,7 @@ void vTaskTFT(void *pvParameters)
 				}
 			break;
 
-			case 6:		//ENVIAR MENSAJE
+			case 6:		//MENSAJE ENVIADO
 				xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 
 				GUI_Clear();
@@ -1145,10 +1122,13 @@ void vTaskTFT(void *pvParameters)
 				}
 				if(ReceivePulsadores==11)		//Se presionaron ambos pulsadores
 				{
+
 					/*
 					//Para enviar SMS
-					EnviarMensajeGSM(); pasar como parametro el mensaje PREDEFINIDO a enviar NO PISARSE CON EL ENVIO NORMAL (usar semaforo)
-					podria usarse como parametro el estado anterior
+					xSemaphoreTake(Semaforo_GSM_Enviar,portMAX_DELAY);//Me aseguro de estar enviando solo esta tarea
+					EnviarMensajeGSM(mensaje); //Se pasa como parametro el mensaje PREDEFINIDO a enviar
+					xSemaphoreGive(Semaforo_GSM_Enviar);
+					mensaje=0;
 					*/
 					EstadoPantalla=6;
 					FlagEstado=ON;
@@ -1162,6 +1142,7 @@ void vTaskTFT(void *pvParameters)
 				{
 					EstadoPantalla=0;
 					FlagEstado=ON;
+					mensaje=0;
 				}
 			break;
 
@@ -1207,8 +1188,6 @@ void vTaskTFT(void *pvParameters)
 /* main */
 int main (void)
 {
-	uint8_t aux=0;
-
 	SystemCoreClockUpdate();
 
 	/* Initializes GPIO */
@@ -1216,21 +1195,22 @@ int main (void)
 
 	uC_StartUp();
 
-	vSemaphoreCreateBinary(Semaforo_RX1);			//Creamos el semaforo
-	vSemaphoreCreateBinary(Semaforo_RX2);			//Creamos el semaforo
-	vSemaphoreCreateBinary(Semaforo_RFID);
-	xSemaphoreTake(Semaforo_RFID, portMAX_DELAY); 	//semaforo de inicializacion de rfid
-	vSemaphoreCreateBinary(Semaforo_RTCgsm);			//Semaforo que permite guardar cada 30 seg
+	vSemaphoreCreateBinary(Semaforo_RX1);			//Semaforo para indicar que hay algo para leer
+	vSemaphoreCreateBinary(Semaforo_RX2);			//Semaforo para indicar que hay algo para leer
+	vSemaphoreCreateBinary(Semaforo_RFID);			//semaforo de inicializacion de rfid
+	xSemaphoreTake(Semaforo_RFID, portMAX_DELAY);
+	vSemaphoreCreateBinary(Semaforo_RTCgsm);		//Semaforo que permite guardar cada 30 seg
 	xSemaphoreTake(Semaforo_RTCgsm, portMAX_DELAY);
 	vSemaphoreCreateBinary(Semaforo_RTCsd);			//Semaforo que permite guardar cada 30 seg
 	xSemaphoreTake(Semaforo_RTCsd, portMAX_DELAY);
-	vSemaphoreCreateBinary(Semaforo_GSM_Closed);			//Creamos el semaforo
+	vSemaphoreCreateBinary(Semaforo_GSM_Closed);	//Semaforo para ver si recibi closed
 	xSemaphoreTake(Semaforo_GSM_Closed, portMAX_DELAY);
-	vSemaphoreCreateBinary(Semaforo_GSM_Enviado);			//Creamos el semaforo
-	xSemaphoreTake(Semaforo_GSM_Enviado, portMAX_DELAY);
-	vSemaphoreCreateBinary(Semaforo_SSP);			//Creamos el semaforo
-	//xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
-	vSemaphoreCreateBinary(Semaforo_YaHayTarj);
+	vSemaphoreCreateBinary(Semaforo_GSM_Recibido);	//Semaforo para asegurarse que se cargaron las tarjetas
+	xSemaphoreTake(Semaforo_GSM_Recibido, portMAX_DELAY);
+	vSemaphoreCreateBinary(Semaforo_SSP);			//Semaforo para la utilizacion del ssp
+	vSemaphoreCreateBinary(Semaforo_YaHayTarj);		//Semaforo para indicar si ya hay colocada una tarjeta
+	vSemaphoreCreateBinary(Semaforo_GSM_Enviar);		//Semaforo para indicar si se esta mandando algo por gsm
+
 
 
 	Cola_RX1 = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
@@ -1238,8 +1218,6 @@ int main (void)
 	Cola_RX2 = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_TX2 = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_Pulsadores = xQueueCreate(1, sizeof(uint32_t));		//Creamos una cola
-	Cola_Connect = xQueueCreate(1, sizeof(uint8_t));			//Creamos una cola
-	xQueueOverwrite(Cola_Connect, &aux); //cargo con 0 para que realice toda la secuencia por primera vez
 	Cola_SD = xQueueCreate(4, sizeof(char) * 100);	//Creamos una cola para mandar una trama completa
 	Cola_Datos_GPS = xQueueCreate(1, sizeof(struct Datos_Nube));
 	Cola_Datos_RFID = xQueueCreate(1, sizeof(Tarjetas_RFID));

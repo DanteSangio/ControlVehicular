@@ -12,5 +12,5 @@ extern RINGBUFF_T txring1;
 void AnalizarTramaGSMenvio (uint8_t dato);
 void EnviarTramaGSM (char* latitud, char* longitud, char* rfid, int velocidad);
 void RecibirTramaGSM(void);
-void EnviarMensajeGSM (void);
+void EnviarMensajeGSM (uint8_t	mensaje);
 Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato);
