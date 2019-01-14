@@ -1250,31 +1250,32 @@ int main (void)
 	xTaskCreate(xTaskRTConfig, (char *) "xTaskRTConfig",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
-	/*
+
 	xTaskCreate(vTaskLeerAnillo1, (char *) "vTaskLeerAnillo1",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-	*/
+
 	xTaskCreate(vTaskLeerAnillo2, (char *) "vTaskLeerAnillo2",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-	/*
+
 	xTaskCreate(vTaskCargarAnillo1, (char *) "vTaskCargarAnillo1",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-
+	/*
+	//NO SE DEBERIA USAR
 	xTaskCreate(vTaskCargarAnillo2, (char *) "vTaskCargarAnillo2",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-
+	*/
 	xTaskCreate(xTaskUART1Config, (char *) "xTaskUART1Config",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
-	*/
+
 	xTaskCreate(xTaskUART2Config, (char *) "xTaskUART2Config",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
-	/*
+
 	xTaskCreate(vTaskGSMConfig, (char *) "vTaskGSMConfig",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
@@ -1282,15 +1283,15 @@ int main (void)
 	xTaskCreate(vTaskEnviarGSM, (char *) "vTaskEnviarGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-	 */
+
 	xTaskCreate(vTaskAnalizarGPS, (char *) "vTaskAnalizarGPS",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
-	/*
+
 	xTaskCreate(vTaskTarjetasGSM, (char *) "vTaskTarjetasGSM",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
-	*/
+
 
 	/* Start the scheduler */
 	vTaskStartScheduler();
