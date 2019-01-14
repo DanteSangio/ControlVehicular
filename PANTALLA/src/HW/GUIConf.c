@@ -27,7 +27,7 @@ Purpose     : Display controller initialization
 //
 // Define the available number of bytes available for the GUI
 //
-#define GUI_NUMBYTES  1024 * 16  // x KByte
+#define GUI_NUMBYTES  1024 * 8  // estaba en *16 	x KByte
 
 //
 // Define the average block size

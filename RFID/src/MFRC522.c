@@ -5,6 +5,8 @@
 */
 
 #include "MFRC522.h"
+#include <cr_section_macros.h>
+
 
 #define DEBUGOUT(...) //printf(__VA_ARGS__)
 #define DEBUGSTR(...) //printf(__VA_ARGS__)
@@ -56,8 +58,8 @@ void SSP_Init_PINES(LPC_SSP_T *pSSP)
  */
 MFRC522Ptr_t MFRC522_Init() {
 	// allocate instance struct array
-	static struct MFRC522_T mfrc_Instances[MFRC_MAX_INSTANCES];
-	static Chip_SSP_DATA_SETUP_T dataSetup_Instances[MFRC_MAX_INSTANCES];
+	__DATA(RAM2)	static struct MFRC522_T mfrc_Instances[MFRC_MAX_INSTANCES];
+	__DATA(RAM2)	static Chip_SSP_DATA_SETUP_T dataSetup_Instances[MFRC_MAX_INSTANCES];
 	//		struct MFRC522_T mfrc_struct;
 	//		Chip_SSP_DATA_SETUP_T data_setup;
 

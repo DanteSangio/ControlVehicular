@@ -47,18 +47,18 @@ static volatile bool fIntervalReached;
 static volatile bool fAlarmTimeMatched;
 static volatile bool On0, On1;
 
-MFRC522Ptr_t mfrcInstance;	// RFID structs
+__DATA(RAM2)	MFRC522Ptr_t mfrcInstance;	// RFID structs
 
-int last_balance = 0;
-unsigned int last_user_ID;
+__DATA(RAM2)	int last_balance = 0;
+__DATA(RAM2)	unsigned int last_user_ID;
 
-uint8_t	ReceivePulsadores;
-uint8_t j=0;
-uint8_t Flag10sPantalla=OFF;
+__DATA(RAM2)	uint8_t	ReceivePulsadores;
+__DATA(RAM2)	uint8_t j=0;
+__DATA(RAM2)	uint8_t Flag10sPantalla=OFF;
 
-RINGBUFF_T txring1,txring2, rxring1,rxring2;					//Transmit and receive ring buffers
-static uint8_t 	rxbuff1[UART_RRB_SIZE], txbuff1[UART_SRB_SIZE],
-				rxbuff2[UART_RRB_SIZE], txbuff2[UART_SRB_SIZE];
+__DATA(RAM2) 	RINGBUFF_T txring1,txring2, rxring1,rxring2;					//Transmit and receive ring buffers
+__DATA(RAM2)	static uint8_t 	rxbuff1[UART_RRB_SIZE], txbuff1[UART_SRB_SIZE],
+								rxbuff2[UART_RRB_SIZE], txbuff2[UART_SRB_SIZE];
 
 extern const GUI_BITMAP bmutnlogo; //declare external Bitmap
 extern const GUI_BITMAP bmcontrol; //declare external Bitmap
@@ -66,27 +66,27 @@ extern const GUI_BITMAP bmcontrol; //declare external Bitmap
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Semaforos */
-SemaphoreHandle_t Semaforo_RFID;
-SemaphoreHandle_t Semaforo_RTCgsm;
-SemaphoreHandle_t Semaforo_RX1;
-SemaphoreHandle_t Semaforo_RX2;
-SemaphoreHandle_t Semaforo_GSM_Closed;
-SemaphoreHandle_t Semaforo_GSM_Recibido;
-SemaphoreHandle_t Semaforo_SSP;
-SemaphoreHandle_t Semaforo_RTCsd;
-SemaphoreHandle_t Semaforo_YaHayTarj;
-SemaphoreHandle_t Semaforo_GSM_Enviar;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_RFID;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_RTCgsm;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_RX1;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_RX2;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_GSM_Closed;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_GSM_Recibido;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_SSP;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_RTCsd;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_YaHayTarj;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_GSM_Enviar;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Colas */
-QueueHandle_t Cola_RX1,Cola_RX2;
-QueueHandle_t Cola_TX1,Cola_TX2;
-QueueHandle_t Cola_Pulsadores;
-QueueHandle_t Cola_SD;
-QueueHandle_t Cola_Datos_GPS;
-QueueHandle_t Cola_Datos_RFID;
-QueueHandle_t Cola_Inicio_Tarjetas;
-QueueHandle_t HoraEntrada;
+__DATA(RAM2)	QueueHandle_t Cola_RX1,Cola_RX2;
+__DATA(RAM2)	QueueHandle_t Cola_TX1,Cola_TX2;
+__DATA(RAM2)	QueueHandle_t Cola_Pulsadores;
+__DATA(RAM2)	QueueHandle_t Cola_SD;
+__DATA(RAM2)	QueueHandle_t Cola_Datos_GPS;
+__DATA(RAM2)	QueueHandle_t Cola_Datos_RFID;
+__DATA(RAM2)	QueueHandle_t Cola_Inicio_Tarjetas;
+__DATA(RAM2)	QueueHandle_t HoraEntrada;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -197,7 +197,6 @@ void UART2_IRQHandler(void)
  */
 static void xTaskRFIDConfig(void *pvParameters)
 {
-	//SystemCoreClockUpdate();
 
 	//vTaskDelay(5000/portTICK_RATE_MS);
 
@@ -225,8 +224,6 @@ static void xTaskRTConfig(void *pvParameters)
 	struct Datos_Nube informacion;
 	uint16_t	aux;
 	char pepe[4];
-
-	SystemCoreClockUpdate();
 
 	//DEBUGOUT("PRUEBA RTC..\n");	//Imprimo en la consola
 

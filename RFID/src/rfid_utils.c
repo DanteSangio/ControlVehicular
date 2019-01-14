@@ -5,6 +5,8 @@
 */
 #include "rfid_utils.h"
 #include "ControlVehicular.h"
+#include <cr_section_macros.h>
+
 
 #define DEBUGOUT(...) //printf(__VA_ARGS__)
 #define DEBUGSTR(...) //printf(__VA_ARGS__)
@@ -16,11 +18,11 @@
 
 // auxBuffer used to store the read end write data, each block have 16 bytes,
 // auxBuffer must have 18 slots, see MIFARE_Read()
-static uint8_t auxBuffer[18];
-static uint8_t size = sizeof(auxBuffer);
+__DATA(RAM2)	static uint8_t auxBuffer[18];
+__DATA(RAM2)	static uint8_t size = sizeof(auxBuffer);
 
 // return status from MFRC522 functions
-static StatusCode status;
+__DATA(RAM2)	static StatusCode status;
 
 
 /****************************************

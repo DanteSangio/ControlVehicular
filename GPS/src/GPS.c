@@ -80,19 +80,20 @@ void uC_StartUp (void)
 //Analiza la trama GPS y guarda los datos deseados en las variables globales de GPS
 void AnalizarTramaGPS (uint8_t dato)
 {
-	static int i=0,j;
-	static int EstadoTrama=0;
-	static char Trama[100];
-	static char HourMinute[4];
-	static char Date[6];
-	static char Lat1[14];
-	static char Lat2[6];
-	static char Long1[14];
-	static char Long2[6];
+	__DATA(RAM2)	static int i=0,j;
+	__DATA(RAM2)	static int EstadoTrama=0;
+	__DATA(RAM2)	static char Trama[100];
+	__DATA(RAM2)	static char HourMinute[4];
+	__DATA(RAM2)	static char Date[6];
+	__DATA(RAM2)	static char Lat1[14];
+	__DATA(RAM2)	static char Lat2[6];
+	__DATA(RAM2)	static char Long1[14];
+	__DATA(RAM2)	static char Long2[6];
+	__DATA(RAM2)	static struct Datos_Nube valor;
 	char aux[11];
 	char aux2[11];
 	char aux3[11];
-	static struct Datos_Nube valor;
+
 
 	char	velocidad[10];
 	int		velocidadNum;

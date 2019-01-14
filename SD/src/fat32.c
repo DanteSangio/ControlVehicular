@@ -30,6 +30,7 @@ http://www.tavi.co.uk/phobos/fat.html
 //#include "uart.h"
 #include "sdcard.h"
 #include "lpc_types.h"
+#include <cr_section_macros.h>
 
 
 
@@ -52,7 +53,7 @@ fileConfig_st fatMappingTable[C_MaxFilesOpening_U8];
 #define GlobalBuffer fatMappingTable[0].fileBuffer
 #else
 fileConfig_st fatMappingTable[C_MaxFilesOpening_U8];
-char  GlobalBuffer[512];
+__DATA(RAM2) char  GlobalBuffer[512];
 #endif
 
 /***************************************************************************************/

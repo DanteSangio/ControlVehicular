@@ -39,9 +39,9 @@ extern QueueHandle_t Cola_RX1;
 //Analiza la trama GSM para la verificacion de envio
 void AnalizarTramaGSMenvio (uint8_t dato)
 {
-	static int EstadoTrama=10;
-	static char Trama[256];
-	static int i;
+	__DATA(RAM2)	static uint8_t EstadoTrama=10;
+	__DATA(RAM2)	static char Trama[256];
+	__DATA(RAM2)	static uint16_t i;
 
 	if(dato=='C')		//Inicio de la trama para closed o connect
 	{
@@ -318,11 +318,11 @@ void RecibirTramaGSM(void)
 //Analiza la trama GSM para la verificacion de envio
 Tarjetas_RFID* AnalizarTramaGSMrecibido (uint8_t dato)
 {
-	static int EstadoTrama=10;
-	static char Trama[2048];
-	static uint16_t i, k=0;
-	static uint16_t j ,z;
-	static Tarjetas_RFID tarjetas[30];//creo 30 struct de tarjetas
+	__DATA(RAM2)	static int EstadoTrama=10;
+	__DATA(RAM2)	static char Trama[2048];
+	__DATA(RAM2)	static uint16_t i, k=0;
+	__DATA(RAM2)	static uint16_t j ,z;
+	__DATA(RAM2)	static Tarjetas_RFID tarjetas[30];//creo 30 struct de tarjetas
 
 	if(dato=='[')		//Inicio de la trama de datos de tarjetas
 	{
