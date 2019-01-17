@@ -154,11 +154,11 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid,int velocidad)
 
 
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-				vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
+				vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-				vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
+				vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT\r\n", sizeof("AT\r\n") - 1); //Enviamos "AT"
-				vTaskDelay(500/portTICK_RATE_MS);	//Espero 100ms
+				vTaskDelay(200/portTICK_RATE_MS);	//Espero 100ms
 
 				Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CIPSHUT\r", sizeof("AT+CIPSHUT\r") - 1); //
 				vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s

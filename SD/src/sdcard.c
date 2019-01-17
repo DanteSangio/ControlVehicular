@@ -331,6 +331,7 @@ uint8_t init_SdCard(uint8_t *cardType)
     uint8_t  i, response, sd_version,aux;
     uint16_t retry=0 ;
 
+    SSP_EnableChipSelect(SDCS);
 
     for(i=0;i<10;i++)
     {
@@ -338,7 +339,6 @@ uint8_t init_SdCard(uint8_t *cardType)
     	Chip_SSP_WriteFrames_Blocking(LPC_SSP1, &aux, 1);//80 clock pulses spent before sending the first command
     }
 
-    SSP_EnableChipSelect(SDCS);
     do
     {
 

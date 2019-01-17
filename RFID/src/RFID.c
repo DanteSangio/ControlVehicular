@@ -20,7 +20,7 @@ extern int last_balance;
 extern unsigned int last_user_ID;
 extern MFRC522Ptr_t mfrcInstance;
 extern QueueHandle_t Cola_Datos_RFID, Cola_Inicio_Tarjetas;
-
+extern SemaphoreHandle_t Semaforo_Tarjeta_Incorrecta;
 
 void userTapIn()
 {
@@ -37,10 +37,10 @@ void userTapIn()
 
 	//DEBUGOUT("\nCard Read user ID: %u \n\r",last_user_ID);
 
-	//Comparar(last_user_ID);
-	ConvIntaChar(last_user_ID, Tarj_actual.tarjeta);
+	Comparar(last_user_ID);
+	//ConvIntaChar(last_user_ID, Tarj_actual.tarjeta);
 
-	xQueueOverwrite(Cola_Datos_RFID, &Tarj_actual); // cargo en la cola la estructura actual
+	//xQueueOverwrite(Cola_Datos_RFID, &Tarj_actual); // cargo en la cola la estructura actual
 
 
 	// Read the user balance NO BORRAR SINO NO DETECTA CUANDO HAY TARJETA NUEVA
@@ -130,6 +130,7 @@ void Comparar(unsigned int tarjeta) //devuelvo la tarjeta que se esta utilizando
 		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
 		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+		xSemaphoreGive(Semaforo_Tarjeta_Incorrecta);
 	}
 
 	return ;
