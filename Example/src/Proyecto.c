@@ -645,6 +645,7 @@ static void xTaskWriteSD(void *pvParameters)
     while (1)
 	{
     	xSemaphoreTake(Semaforo_Sist_Inic, portMAX_DELAY);// me fijo que este inicializada el resto del sistema
+    	xSemaphoreGive(Semaforo_Sist_Inic);
         //xSemaphoreTake(Semaforo_RTCsd, portMAX_DELAY);//grabo cada medio seg
     	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);// me fijo que este disponible el canal ssp
         /* PARA ESCRIBIR ARCHIVO */
@@ -655,10 +656,11 @@ static void xTaskWriteSD(void *pvParameters)
 
         InfoSd(Receive);//En la funcion se reciben los datos a guardar y se los coloca en una trama
 
-		for(i=0;Receive[i];)
+        i=0;
+		do
 		{
 		   FILE_PutCh(srcFilePtr,Receive[i++]);
-		}
+		}while((Receive[i] != 0));
         FILE_PutCh(srcFilePtr,EOF);
         FILE_Close(srcFilePtr);
     	xSemaphoreGive(Semaforo_SSP);
@@ -1408,7 +1410,7 @@ int main (void)
 			(( unsigned short ) 16), NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
-	/*
+
 	xTaskCreate(xTaskWriteSD, (char *) "xTaskWriteSD",
 					configMINIMAL_STACK_SIZE * 2, NULL, (tskIDLE_PRIORITY + 2UL),
 					(xTaskHandle *) NULL);
@@ -1416,7 +1418,7 @@ int main (void)
 	xTaskCreate(vTaskInicSD, (char *) "vTaskInicSD",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3UL),
 				(xTaskHandle *) NULL);
-	*/
+
 
 	xTaskCreate(vTaskRFID, (char *) "vTaskRFID",
 			(( unsigned short ) 150), NULL, (tskIDLE_PRIORITY + 1UL),
