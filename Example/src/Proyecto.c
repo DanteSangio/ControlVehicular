@@ -646,7 +646,7 @@ static void xTaskWriteSD(void *pvParameters)
 	{
     	xSemaphoreTake(Semaforo_Sist_Inic, portMAX_DELAY);// me fijo que este inicializada el resto del sistema
     	xSemaphoreGive(Semaforo_Sist_Inic);
-        //xSemaphoreTake(Semaforo_RTCsd, portMAX_DELAY);//grabo cada medio seg
+        xSemaphoreTake(Semaforo_RTCsd, portMAX_DELAY);//grabo cada medio seg
     	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);// me fijo que este disponible el canal ssp
         /* PARA ESCRIBIR ARCHIVO */
         do
@@ -683,9 +683,9 @@ void vTaskTFT(void *pvParameters)
 {
 	static uint8_t EstadoPantalla=3;
 	static uint8_t FlagEstado=ON;
-	uint8_t ReceiveRFID=OFF;
+	//uint8_t ReceiveRFID=OFF;
 	uint8_t primeraEntrada=ON;
-	struct Datos_Nube	ReceiveGPS;
+	//struct Datos_Nube	ReceiveGPS;
 	uint32_t dia, mes, ano, hora, minutos, aux, velocidad;
 	char nombre [20];
 	static uint8_t minConductor=0, horaConductor=0;
@@ -753,7 +753,7 @@ void vTaskTFT(void *pvParameters)
 					GUI_DispStringAt(".",155,55);
 
 					GUI_SetFont(GUI_FONT_32B_ASCII);
-					GUI_DispStringHCenterAt(&nombre,160,150);
+					GUI_DispStringHCenterAt(nombre,160,150);
 
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt("MENU",80,210);
@@ -761,6 +761,7 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_DrawHLine(195,0,320);
 					GUI_DrawHLine(200,0,320);
+					Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 					xSemaphoreGive(Semaforo_SSP);
 				}
 				if(ReceivePulsadores==1)		//Paso al estado HORAS DE TRABAJO
@@ -811,7 +812,7 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=OFF;
 					Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringHCenterAt(&nombre,100,10);
+					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispDecAt(hora,240,10,2);
 					GUI_DispStringAt(":",264,10);
@@ -833,6 +834,7 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_DrawHLine(195,0,320);
 					GUI_DrawHLine(200,0,320);
+					Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 					xSemaphoreGive(Semaforo_SSP);
 				}
 				if(ReceivePulsadores==1)		//Paso al estado SMS CONTACTO
@@ -866,7 +868,7 @@ void vTaskTFT(void *pvParameters)
 					j=0;
 					Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringHCenterAt(&nombre,100,10);
+					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispDecAt(hora,240,10,2);
 					GUI_DispStringAt(":",264,10);
@@ -886,6 +888,7 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_DrawHLine(195,0,320);
 					GUI_DrawHLine(200,0,320);
+					Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 					xSemaphoreGive(Semaforo_SSP);
 				}
 				if(ReceivePulsadores==1)		//Paso al estado SALIDA CONDUCTOR
@@ -921,7 +924,7 @@ void vTaskTFT(void *pvParameters)
 				GUI_SetFont(GUI_FONT_32B_ASCII);
 				GUI_DispStringHCenterAt("INICIALIZANDO",160,90);
 				GUI_DispStringHCenterAt("SISTEMA...",160,120);
-
+				Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 				xSemaphoreGive(Semaforo_SSP);
 
 				xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
@@ -953,6 +956,7 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_DrawHLine(195,0,320);
 					GUI_DrawHLine(200,0,320);
+					Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 					xSemaphoreGive(Semaforo_SSP);
 				}
 				vTaskDelay(2000/portTICK_PERIOD_MS);
@@ -973,7 +977,7 @@ void vTaskTFT(void *pvParameters)
 					j=0;
 					Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringHCenterAt(&nombre,100,10);
+					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispDecAt(hora,240,10,2);
 					GUI_DispStringAt(":",264,10);
@@ -993,6 +997,7 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_DrawHLine(195,0,320);
 					GUI_DrawHLine(200,0,320);
+					Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 					xSemaphoreGive(Semaforo_SSP);
 				}
 				if(ReceivePulsadores==1)		//Paso al estado PANTALLA PRINCIPAL
@@ -1029,7 +1034,7 @@ void vTaskTFT(void *pvParameters)
 				xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 				GUI_Clear();
 				GUI_SetFont(GUI_FONT_24B_ASCII);
-				GUI_DispStringHCenterAt(&nombre,100,10);
+				GUI_DispStringHCenterAt(nombre,100,10);
 				GUI_SetFont(GUI_FONT_24B_ASCII);
 				GUI_DispDecAt(hora,240,10,2);
 				GUI_DispStringAt(":",264,10);
@@ -1043,6 +1048,7 @@ void vTaskTFT(void *pvParameters)
 
 				GUI_DrawHLine(195,0,320);
 				GUI_DrawHLine(200,0,320);
+				Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 				xSemaphoreGive(Semaforo_SSP);
 
 
@@ -1059,7 +1065,7 @@ void vTaskTFT(void *pvParameters)
 				xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 				GUI_Clear();
 				GUI_SetFont(GUI_FONT_24B_ASCII);
-				GUI_DispStringHCenterAt(&nombre,100,10);
+				GUI_DispStringHCenterAt(nombre,100,10);
 				GUI_SetFont(GUI_FONT_24B_ASCII);
 				GUI_DispDecAt(hora,240,10,2);
 				GUI_DispStringAt(":",264,10);
@@ -1073,6 +1079,7 @@ void vTaskTFT(void *pvParameters)
 
 				GUI_DrawHLine(195,0,320);
 				GUI_DrawHLine(200,0,320);
+				Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 				xSemaphoreGive(Semaforo_SSP);
 
 
@@ -1105,7 +1112,7 @@ void vTaskTFT(void *pvParameters)
 					GUI_SetFont(GUI_FONT_32B_ASCII);
 					GUI_DispStringAt(".",158,145);
 					GUI_DispStringAt(".",158,170);
-
+					Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 					xSemaphoreGive(Semaforo_SSP);
 				}
 				if(uxQueueMessagesWaiting(Cola_Datos_RFID)!=0)
@@ -1168,7 +1175,7 @@ void vTaskTFT(void *pvParameters)
 					}
 
 					GUI_SetFont(GUI_FONT_32B_ASCII);
-					GUI_DispStringHCenterAt(&nombre,160,150);
+					GUI_DispStringHCenterAt(nombre,160,150);
 
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt("MENU",80,210);
@@ -1191,6 +1198,7 @@ void vTaskTFT(void *pvParameters)
 					GUI_SetFont(GUI_FONT_32B_ASCII);
 					GUI_DispStringHCenterAt("Km/h",300,80);
 				}
+				Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 				xSemaphoreGive(Semaforo_SSP);
 
 
@@ -1231,7 +1239,7 @@ void vTaskTFT(void *pvParameters)
 					j=0;
 					Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringHCenterAt(&nombre,100,10);
+					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispDecAt(hora,240,10,2);
 					GUI_DispStringAt(":",264,10);
@@ -1248,14 +1256,16 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_DrawHLine(195,0,320);
 					GUI_DrawHLine(200,0,320);
+					Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 					xSemaphoreGive(Semaforo_SSP);
 				}
 				if(ReceivePulsadores==11)		//Se presionaron ambos pulsadores
 				{
 					xQueueReset(Cola_Datos_RFID);
-					EstadoPantalla=11; //FALTA SACAR LA TARJETA
+					EstadoPantalla=11;
 					FlagEstado=ON;
 					ReceivePulsadores = 0;
+					xSemaphoreTake(Semaforo_Sist_Inic, portMAX_DELAY);//Indico para que la SD no guarde datos mientras no hay RFID
 				}
 				else if(Flag10sPantalla==OFF)
 				{
@@ -1281,7 +1291,7 @@ void vTaskTFT(void *pvParameters)
 					j=0;
 					Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringHCenterAt(&nombre,100,10);
+					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispDecAt(hora,240,10,2);
 					GUI_DispStringAt(":",264,10);
@@ -1298,6 +1308,7 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_DrawHLine(195,0,320);
 					GUI_DrawHLine(200,0,320);
+					Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 					xSemaphoreGive(Semaforo_SSP);
 				}
 				if(ReceivePulsadores==11)		//Se presionaron ambos pulsadores
@@ -1337,6 +1348,7 @@ void vTaskTFT(void *pvParameters)
 				GUI_DispStringHCenterAt("CORRECTAMENTE",160,130);
 				GUI_DrawHLine(195,0,320);
 				GUI_DrawHLine(200,0,320);
+				Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 				xSemaphoreGive(Semaforo_SSP);
 
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);

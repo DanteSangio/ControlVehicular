@@ -65,8 +65,8 @@ void uC_StartUp (void)
 
 
 	//Set the chipSelectPin as digital output, do not select the slave yet
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, SDCS);
-	Chip_GPIO_SetPinOutHigh(LPC_GPIO, SDCS);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, SD_CS);
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, SD_CS);
 
 	//Salidas apagadas
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_STICK);

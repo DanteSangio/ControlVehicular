@@ -24,7 +24,7 @@ extern SemaphoreHandle_t Semaforo_Tarjeta_Incorrecta;
 
 void userTapIn()
 {
-	Tarjetas_RFID Tarj_actual;
+	//Tarjetas_RFID Tarj_actual;
 	//uint32_t	ultTarjeta;
 
 

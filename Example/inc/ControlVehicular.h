@@ -28,7 +28,7 @@
 
 #define	SW1			PORT(2),PIN(10)
 #define SW2			PORT(2),PIN(11)
-#define	SW3			PORT(2),PIN(12)
+//#define	SW3			PORT(2),PIN(12)
 
 #define GPS_TX		PORT(0),PIN(10)
 #define GPS_RX		PORT(0),PIN(11)
@@ -54,7 +54,7 @@
 #define RFID_IRQ	PORT(0),PIN(2)
 #define RFID_RST	PORT(0),PIN(3)
 
-#define SD_CS		PORT(0),PIN(27)
+#define SD_CS		PORT(2),PIN(12)
 
 #define F_CS		PORT(0),PIN(28)
 

@@ -128,7 +128,7 @@ unsigned char SD_sendCommand(unsigned char cmd, uint32_t arg)
     }
 
 
-    SSP_EnableChipSelect(SDCS);
+    SSP_EnableChipSelect(SD_CS);
 
     aux = cmd | 0x40;
     Chip_SSP_WriteFrames_Blocking(LPC_SSP1, &aux, 1); //send command, first two bits always '01'
@@ -178,7 +178,7 @@ unsigned char SD_sendCommand(unsigned char cmd, uint32_t arg)
     }
 
     Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);//extra 8 CLK
-    SSP_DisableChipSelect(SDCS);
+    SSP_DisableChipSelect(SD_CS);
 
     return response; //return state
 }
@@ -227,7 +227,7 @@ unsigned char SD_readSingleBlock(char *inputbuffer,uint32_t startBlock)
         return response; //check for SD status: 0x00 - OK (No flags set)
     }
 
-    SSP_EnableChipSelect(SDCS);
+    SSP_EnableChipSelect(SD_CS);
 
     retry = 0;
     Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
@@ -235,7 +235,7 @@ unsigned char SD_readSingleBlock(char *inputbuffer,uint32_t startBlock)
     {
         if(retry++ > 0xfffe)
         {
-          SSP_DisableChipSelect(SDCS);
+          SSP_DisableChipSelect(SD_CS);
             return 1; //return if time-out
         }
         Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
@@ -247,7 +247,7 @@ unsigned char SD_readSingleBlock(char *inputbuffer,uint32_t startBlock)
     Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1); //receive incoming CRC (16-bit), CRC is ignored here
     Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
     Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1); //extra 8 clock pulses
-    SSP_DisableChipSelect(SDCS);
+    SSP_DisableChipSelect(SD_CS);
 
     return 0;
 }
@@ -268,7 +268,7 @@ unsigned char SD_writeSingleBlock(char *inputbuffer,uint32_t startBlock)
 
     if(response != 0x00) return response; //check for SD status: 0x00 - OK (No flags set)
 
-    SSP_EnableChipSelect(SDCS);
+    SSP_EnableChipSelect(SD_CS);
 	aux = 0xfe;
 	Chip_SSP_WriteFrames_Blocking(LPC_SSP1, &aux, 1);//Send start block token 0xfe (0x11111110)
 
@@ -288,7 +288,7 @@ unsigned char SD_writeSingleBlock(char *inputbuffer,uint32_t startBlock)
 
     if( (response & 0x1f) != 0x05) //response= 0xXXX0AAA1 ; AAA='010' - data accepted
     {                              //AAA='101'-data rejected due to CRC error
-      SSP_DisableChipSelect(SDCS);              //AAA='110'-data rejected due to write error
+      SSP_DisableChipSelect(SD_CS);              //AAA='110'-data rejected due to write error
         return response;
     }
 
@@ -297,29 +297,29 @@ unsigned char SD_writeSingleBlock(char *inputbuffer,uint32_t startBlock)
     {
         if(retry++ > 0xfffe)
         {
-          SSP_DisableChipSelect(SDCS);
+          SSP_DisableChipSelect(SD_CS);
             return 1;
         }
         Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
     }
 
-    SSP_DisableChipSelect(SDCS);
+    SSP_DisableChipSelect(SD_CS);
 	aux = 0xff;
 	Chip_SSP_WriteFrames_Blocking(LPC_SSP1, &aux, 1);//just spend 8 clock cycle delay before reasserting the CS line
-    SSP_EnableChipSelect(SDCS);         //re-asserting the CS line to verify if card is still busy
+    SSP_EnableChipSelect(SD_CS);         //re-asserting the CS line to verify if card is still busy
 
     Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
     while(!aux) //wait for SD card to complete writing and get idle
     {
         if(retry++ > 0xfffe)
         {
-          SSP_DisableChipSelect(SDCS);
+          SSP_DisableChipSelect(SD_CS);
             return 1;
         }
         Chip_SSP_ReadFrames_Blocking(LPC_SSP1, &aux, 1);
     }
 
-    SSP_DisableChipSelect(SDCS);
+    SSP_DisableChipSelect(SD_CS);
 
 
     return 0;
@@ -331,7 +331,7 @@ uint8_t init_SdCard(uint8_t *cardType)
     uint8_t  i, response, sd_version,aux;
     uint16_t retry=0 ;
 
-    SSP_EnableChipSelect(SDCS);
+    SSP_EnableChipSelect(SD_CS);
 
     for(i=0;i<10;i++)
     {
@@ -349,7 +349,7 @@ uint8_t init_SdCard(uint8_t *cardType)
 
     } while(response != 0x01);
 
-    SSP_EnableChipSelect(SDCS);
+    SSP_EnableChipSelect(SD_CS);
 
 	aux = 0xff;
 	Chip_SSP_WriteFrames_Blocking(LPC_SSP1, &aux, 1);//80 clock pulses spent before sending the first command
