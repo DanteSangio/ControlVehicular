@@ -706,6 +706,7 @@ void vTaskTFT(void *pvParameters)
 	 */
 
 	GUI_SetBkColor(0x00000000); //gris claro 0x00D3D3D3
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 	xSemaphoreGive(Semaforo_SSP);
 
 	while(1)
