@@ -648,7 +648,8 @@ static void xTaskWriteSD(void *pvParameters)
     	xSemaphoreGive(Semaforo_Sist_Inic);
         xSemaphoreTake(Semaforo_RTCsd, portMAX_DELAY);//grabo cada medio seg
     	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);// me fijo que este disponible el canal ssp
-        /* PARA ESCRIBIR ARCHIVO */
+
+    	/* PARA ESCRIBIR ARCHIVO */
         do
         {
         	srcFilePtr = FILE_Open("datalog.txt",WRITE,&returnStatus);
@@ -695,6 +696,7 @@ void vTaskTFT(void *pvParameters)
 	Tarjetas_RFID informacionRFID;
 
 	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
+	Chip_GPIO_SetPinOutLow(LPC_GPIO, TFT_CS);
 	GUI_Init();
 
 	/*
