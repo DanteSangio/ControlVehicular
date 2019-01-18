@@ -95,7 +95,7 @@ __DATA(RAM2)	QueueHandle_t HoraEntrada;
 /* RTC_IRQHandler */
 void RTC_IRQHandler(void)
 {
-	BaseType_t Testigo=pdFALSE;
+	BaseType_t Testigo=pdFALSE,Testigo2=pdFALSE;
 	static uint8_t i=0;
 
 	/* Interrupcion cada 1 seg */
@@ -121,7 +121,11 @@ void RTC_IRQHandler(void)
 		{
 			i=0;
 			xSemaphoreGiveFromISR(Semaforo_RTCgsm, &Testigo);	//Devuelve si una de las tareas bloqueadas tiene mayor prioridad que la actual
+			xSemaphoreGiveFromISR(Semaforo_RTCsd, &Testigo2);//grabo cada medio seg
+
 			portYIELD_FROM_ISR(Testigo);					//Si testigo es TRUE -> ejecuta el scheduler
+			portYIELD_FROM_ISR(Testigo2);					//Si testigo es TRUE -> ejecuta el scheduler
+
 		}
 	}
 }
