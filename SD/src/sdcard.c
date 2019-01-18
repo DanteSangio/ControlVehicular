@@ -458,7 +458,6 @@ void InfoSd(char* Receive)
 	strcat(Receive,informacionRFID.tarjeta);
 	strcat(Receive,",");
 	strcat(Receive,informacionRFID.nombre);
-	strcat(Receive,".\r\n");
-
+	strcat(Receive,".\n");
 }
 

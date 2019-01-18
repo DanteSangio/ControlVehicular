@@ -662,12 +662,14 @@ static void xTaskWriteSD(void *pvParameters)
         InfoSd(Receive);//En la funcion se reciben los datos a guardar y se los coloca en una trama
 
         i=0;
-		do
+
+        do
 		{
 		   FILE_PutCh(srcFilePtr,Receive[i++]);
 		}while((Receive[i] != 0));
         FILE_PutCh(srcFilePtr,EOF);
         FILE_Close(srcFilePtr);
+
     	xSemaphoreGive(Semaforo_SSP);
 
         for(i=0;Receive[i] != 0 || i<100;i++)//limpio el vector

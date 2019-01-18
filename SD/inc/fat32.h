@@ -143,7 +143,7 @@ typedef struct dir_Structure{
 #define GET_LIST     0
 #define GET_FILE     1
 #define DELETE		 2
-#define EOF     26u
+#define EOF     	26u
 
 
 #define FAT32_FILE_OPEN_SUCCESSFUL                   0
