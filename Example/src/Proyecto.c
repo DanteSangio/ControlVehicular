@@ -237,28 +237,30 @@ static void xTaskRTConfig(void *pvParameters)
 
 	/* Seteo el tiempo con la hora brindada por el GPS */
 
-	xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
+	do
+		{
+		xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 
-	FullTime.time[RTC_TIMETYPE_SECOND]  = 0;
-	pepe[0] = informacion.hora[3]; pepe[1] = informacion.hora[4]; pepe[2] =0;
-	aux = atoi (pepe);
-	FullTime.time[RTC_TIMETYPE_MINUTE]  = aux;
-	pepe[0] = informacion.hora[0]; pepe[1] = informacion.hora[1]; pepe[2] =0;
-	aux = atoi (pepe);
-	FullTime.time[RTC_TIMETYPE_HOUR]    = aux;
-	pepe[0] = informacion.fecha[0]; pepe[1] = informacion.fecha[1]; pepe[2] =0;
-	aux = atoi (pepe);
-	FullTime.time[RTC_TIMETYPE_DAYOFMONTH]  = aux;
-	FullTime.time[RTC_TIMETYPE_DAYOFWEEK]   = 4;
-	FullTime.time[RTC_TIMETYPE_DAYOFYEAR]   = 207;
-	pepe[0] = informacion.fecha[3]; pepe[1] = 0; pepe[2] =0;
-	aux = atoi (pepe);
-	FullTime.time[RTC_TIMETYPE_MONTH]   = aux;
-	pepe[0] = informacion.fecha[5]; pepe[1] = informacion.fecha[6]; pepe[2] =0;
-	aux = atoi (pepe);
-	aux = aux + 2000;
-	FullTime.time[RTC_TIMETYPE_YEAR]= aux;
-
+		FullTime.time[RTC_TIMETYPE_SECOND]  = 0;
+		pepe[0] = informacion.hora[3]; pepe[1] = informacion.hora[4]; pepe[2] =0;
+		aux = atoi (pepe);
+		FullTime.time[RTC_TIMETYPE_MINUTE]  = aux;
+		pepe[0] = informacion.hora[0]; pepe[1] = informacion.hora[1]; pepe[2] =0;
+		aux = atoi (pepe);
+		FullTime.time[RTC_TIMETYPE_HOUR]    = aux;
+		pepe[0] = informacion.fecha[0]; pepe[1] = informacion.fecha[1]; pepe[2] =0;
+		aux = atoi (pepe);
+		FullTime.time[RTC_TIMETYPE_DAYOFMONTH]  = aux;
+		FullTime.time[RTC_TIMETYPE_DAYOFWEEK]   = 4;
+		FullTime.time[RTC_TIMETYPE_DAYOFYEAR]   = 207;
+		pepe[0] = informacion.fecha[3]; pepe[1] = 0; pepe[2] =0;
+		aux = atoi (pepe);
+		FullTime.time[RTC_TIMETYPE_MONTH]   = aux;
+		pepe[0] = informacion.fecha[5]; pepe[1] = informacion.fecha[6]; pepe[2] =0;
+		aux = atoi (pepe);
+		aux = aux + 2000;
+		FullTime.time[RTC_TIMETYPE_YEAR]= aux;
+		}while(aux < 2015);
 	Chip_RTC_SetFullTime(LPC_RTC, &FullTime);
 	//
 
@@ -550,7 +552,7 @@ static void vTaskTarjetasGSM(void *pvParameters)
     while (InicioTarjetas == NULL)
 	{
     	RecibirTramaGSM();
-    	vTaskDelay(5000/portTICK_RATE_MS);//espero 5 seg para asegurarme que llego tod o
+    	vTaskDelay(3000/portTICK_RATE_MS);//espero 5 seg para asegurarme que llego tod o
 		while(LeerCola(RX_COLA_GSM,&dato,1))
 		{
 			InicioTarjetas = AnalizarTramaGSMrecibido(dato);
@@ -559,10 +561,11 @@ static void vTaskTarjetasGSM(void *pvParameters)
 	}
 
 	xQueueOverwrite(Cola_Inicio_Tarjetas,&InicioTarjetas);// envio a una cola el comienzo del vector de tarjetas
+	xSemaphoreGive(Semaforo_GSM_Recibido);
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 	vTaskDelay(1000/portTICK_RATE_MS);	//Espero 1s
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
-	xSemaphoreGive(Semaforo_GSM_Recibido);
+
 
 	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
 }
@@ -606,7 +609,9 @@ static void vTaskInicSD(void *pvParameters)
 
 	/* PARA COMPROBAR SI LA SD ESTA CONECTADA */
 	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
-    do //if(returnStatus)
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_DC);
+
+	do //if(returnStatus)
     {
         returnStatus = SD_Init(&sdcardType);
         if(returnStatus == SDCARD_NOT_DETECTED)
@@ -625,6 +630,7 @@ static void vTaskInicSD(void *pvParameters)
 
     DEBUGOUT("\n\rSD Card Detected!");
 
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_DC);
 	xSemaphoreGive(Semaforo_SSP);
 
 	xSemaphoreGive(Semaforo_SD);// me fijo que este inicializada la SD
@@ -651,7 +657,9 @@ static void xTaskWriteSD(void *pvParameters)
     	xSemaphoreTake(Semaforo_Sist_Inic, portMAX_DELAY);// me fijo que este inicializada el resto del sistema
     	xSemaphoreGive(Semaforo_Sist_Inic);
         xSemaphoreTake(Semaforo_RTCsd, portMAX_DELAY);//grabo cada medio seg
-    	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);// me fijo que este disponible el canal ssp
+
+        xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);// me fijo que este disponible el canal ssp
+    	Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_DC);//Para que no se resetie la pantalla
 
     	/* PARA ESCRIBIR ARCHIVO */
         do
@@ -663,6 +671,7 @@ static void xTaskWriteSD(void *pvParameters)
 
         i=0;
 
+
         do
 		{
 		   FILE_PutCh(srcFilePtr,Receive[i++]);
@@ -671,11 +680,13 @@ static void xTaskWriteSD(void *pvParameters)
         FILE_Close(srcFilePtr);
 
     	xSemaphoreGive(Semaforo_SSP);
+    	Chip_GPIO_SetPinOutLow(LPC_GPIO, TFT_DC);
 
         for(i=0;Receive[i] != 0 || i<100;i++)//limpio el vector
         {
         	Receive[i]=0;
         }
+
 
 	}
 	vTaskDelete(NULL);	//Borra la tarea si sale del while 1
@@ -728,6 +739,17 @@ void vTaskTFT(void *pvParameters)
 		dia=pFullTime.time[3];
 		mes=pFullTime.time[6];
 		ano=pFullTime.time[7];
+
+		if(aux!=minutos)
+		{
+			aux=minutos;
+			minConductor++;
+			if(minConductor==60)
+			{
+				minConductor=0;
+				horaConductor++;
+			}
+		}
 
 		switch(EstadoPantalla)
 		{
@@ -790,16 +812,7 @@ void vTaskTFT(void *pvParameters)
 				{
 					ReceivePulsadores = 0;
 				}
-				if(aux!=minutos)
-				{
-					aux=minutos;
-					minConductor++;
-					if(minConductor==60)
-					{
-						minConductor=0;
-						horaConductor++;
-					}
-				}
+
 				if(Flag10sPantalla==OFF)
 				{
 					EstadoPantalla=8;
