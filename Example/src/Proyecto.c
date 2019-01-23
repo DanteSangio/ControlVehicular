@@ -43,18 +43,17 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Declaraciones globales */
-static volatile bool fIntervalReached;
-static volatile bool fAlarmTimeMatched;
-static volatile bool On0, On1;
+//static volatile bool fIntervalReached;
+//static volatile bool fAlarmTimeMatched;
+//static volatile bool On0, On1;
 
 __DATA(RAM2)	MFRC522Ptr_t mfrcInstance;	// RFID structs
 
-__DATA(RAM2)	int last_balance = 0;
+//__DATA(RAM2)	int last_balance = 0;
 __DATA(RAM2)	unsigned int last_user_ID;
 
 __DATA(RAM2)	uint8_t	ReceivePulsadores;
-__DATA(RAM2)	uint8_t j=0;
-__DATA(RAM2)	uint8_t Flag10sPantalla=OFF;
+//__DATA(RAM2)	uint8_t Flag10sPantalla=OFF;
 
 __DATA(RAM2) 	RINGBUFF_T txring1,txring2, rxring1,rxring2;					//Transmit and receive ring buffers
 __DATA(RAM2)	static uint8_t 	rxbuff1[UART_RRB_SIZE], txbuff1[UART_SRB_SIZE],
@@ -79,6 +78,11 @@ __DATA(RAM2)	SemaphoreHandle_t Semaforo_GSM_Enviar;
 __DATA(RAM2)	SemaphoreHandle_t Semaforo_Tarjeta_Incorrecta;
 __DATA(RAM2)	SemaphoreHandle_t Semaforo_SD;
 __DATA(RAM2)	SemaphoreHandle_t Semaforo_Sist_Inic;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_Reset10Seg;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_Flag10Seg;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_Habilitacion10Seg;
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Colas */
 __DATA(RAM2)	QueueHandle_t Cola_RX1,Cola_RX2;
@@ -95,27 +99,38 @@ __DATA(RAM2)	QueueHandle_t HoraEntrada;
 /* RTC_IRQHandler */
 void RTC_IRQHandler(void)
 {
-	BaseType_t Testigo=pdFALSE,Testigo2=pdFALSE;
-	static uint8_t i=0;
+	BaseType_t Testigo=pdFALSE,Testigo2=pdFALSE, Testigo3=pdFALSE, Testigo4=pdFALSE;
+	static uint8_t i=0, j=0;;
 
 	/* Interrupcion cada 1 seg */
 	if (Chip_RTC_GetIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE))
 	{
 		/* Clear pending interrupt */
 		Chip_RTC_ClearIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE);
-		if(Flag10sPantalla==ON)
+
+
+
+		if(xSemaphoreTakeFromISR(Semaforo_Reset10Seg, &Testigo3) == pdTRUE )
 		{
+			j=0;
+			//xSemaphoreTakeFromISR(Semaforo_Habilitacion10Seg, &Testigo3);
+		}
+
+
+		if(xSemaphoreTakeFromISR(Semaforo_Habilitacion10Seg, &Testigo4) == pdTRUE)// si puedo tomar el semaforo significa q esta en on
+		{
+			xSemaphoreGiveFromISR(Semaforo_Habilitacion10Seg,&Testigo4);
 			j++;
 			if(j==10)
 			{
-				Flag10sPantalla=OFF;
+				xSemaphoreGiveFromISR(Semaforo_Flag10Seg,&Testigo4);//significa que hay que cambiar pantalla
+				//Flag10sPantalla=OFF;
 				j=0;
 			}
 		}
-		else
-		{
-			j=0;
-		}
+
+
+
 		i++;
 		if(i==30)
 		{
@@ -239,6 +254,7 @@ static void xTaskRTConfig(void *pvParameters)
 
 	do
 		{
+		vTaskDelay(100/portTICK_RATE_MS);
 		xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
 
 		FullTime.time[RTC_TIMETYPE_SECOND]  = 0;
@@ -551,6 +567,7 @@ static void vTaskTarjetasGSM(void *pvParameters)
 
     while (InicioTarjetas == NULL)
 	{
+    	//xQueueReset(RX_COLA_GSM);
     	RecibirTramaGSM();
     	vTaskDelay(3000/portTICK_RATE_MS);//espero 5 seg para asegurarme que llego tod o
 		while(LeerCola(RX_COLA_GSM,&dato,1))
@@ -728,6 +745,15 @@ void vTaskTFT(void *pvParameters)
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 	xSemaphoreGive(Semaforo_SSP);
 
+	Chip_RTC_GetFullTime(LPC_RTC, &pFullTime);
+	minutos=pFullTime.time[1];
+	hora=pFullTime.time[2];
+	dia=pFullTime.time[3];
+	mes=pFullTime.time[6];
+	ano=pFullTime.time[7];
+
+	aux=minutos;
+
 	while(1)
 	{
 		//xQueueReceive(Cola_Pulsadores, &Receive, 300);
@@ -769,7 +795,9 @@ void vTaskTFT(void *pvParameters)
 					GUI_Clear();
 					aux=minutos;
 					FlagEstado=OFF;
-					j=0;
+					xSemaphoreGive(Semaforo_Reset10Seg);
+					xSemaphoreGive(Semaforo_Habilitacion10Seg);
+					//				j=0;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringAt("/     /",127,10);
 					GUI_DispDecAt(dia,101,10,2);
@@ -808,17 +836,26 @@ void vTaskTFT(void *pvParameters)
 					ReceivePulsadores = 0;
 					mensaje = 1; //Debe enviarse el mensaje de emergencia
 				}
-				else
-				{
-					ReceivePulsadores = 0;
-				}
 
+				else if(xSemaphoreTake(Semaforo_Flag10Seg,10 / portTICK_PERIOD_MS) == pdTRUE)
+				{
+					EstadoPantalla=8;
+					FlagEstado=ON;
+					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
+				}
+				/*
 				if(Flag10sPantalla==OFF)
 				{
 					EstadoPantalla=8;
 					FlagEstado=ON;
 					Flag10sPantalla=ON;
 				}
+				*/
+				else
+				{
+					ReceivePulsadores = 0;
+				}
+
 			break;
 
 			case 1:		//HORAS DE TRABAJO
@@ -830,9 +867,11 @@ void vTaskTFT(void *pvParameters)
 
 					xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 					GUI_Clear();
-					j=0;
+					xSemaphoreGive(Semaforo_Reset10Seg);//reseteo cuenta
+					xSemaphoreGive(Semaforo_Habilitacion10Seg); //habilito conteo
+//					j=0;
 					FlagEstado=OFF;
-					Flag10sPantalla=ON;
+					//Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
@@ -865,15 +904,25 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=ON;
 					ReceivePulsadores = 0;
 				}
-				else
+
+
+				else if(xSemaphoreTake(Semaforo_Flag10Seg,10 / portTICK_PERIOD_MS) == pdTRUE)
 				{
-					ReceivePulsadores = 0;
+					EstadoPantalla=0;
+					FlagEstado=ON;
+					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
 				}
+				/*
 				if(Flag10sPantalla==OFF)
 				{
 					EstadoPantalla=0;
 					FlagEstado=ON;
 					Flag10sPantalla=ON;
+				}*/
+
+				else
+				{
+					ReceivePulsadores = 0;
 				}
 			break;
 
@@ -887,8 +936,10 @@ void vTaskTFT(void *pvParameters)
 					xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 					GUI_Clear();
 					FlagEstado=OFF;
-					j=0;
-					Flag10sPantalla=ON;
+					xSemaphoreGive(Semaforo_Reset10Seg);
+					xSemaphoreGive(Semaforo_Habilitacion10Seg);
+					//j=0;
+					//Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
@@ -926,16 +977,27 @@ void vTaskTFT(void *pvParameters)
 					ReceivePulsadores = 0;
 					mensaje=2; // Mensaje para comunicarse con el conductor
 				}
-				else
+
+				else if(xSemaphoreTake(Semaforo_Flag10Seg,10 / portTICK_PERIOD_MS) == pdTRUE)
 				{
-					ReceivePulsadores = 0;
+					EstadoPantalla=0;
+					FlagEstado=ON;
+					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
 				}
+
+				/*
 				if(Flag10sPantalla==OFF)
 				{
 					EstadoPantalla=0;
 					FlagEstado=ON;
 					Flag10sPantalla=ON;
+				}*/
+
+				else
+				{
+					ReceivePulsadores = 0;
 				}
+
 			break;
 
 			case 3:		//INICIALIZANDO SISTEMA
@@ -963,8 +1025,10 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_Clear();
 					FlagEstado=OFF;
-					j=0;
-					Flag10sPantalla=ON;
+					//xSemaphoreGive(Semaforo_Reset10Seg);
+					//xSemaphoreGive(Semaforo_Habilitacion10Seg);
+					//j=0;
+					//Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispDecAt(hora,240,10,2);
 					GUI_DispStringAt(":",264,10);
@@ -996,8 +1060,10 @@ void vTaskTFT(void *pvParameters)
 					xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 					GUI_Clear();
 					FlagEstado=OFF;
-					j=0;
-					Flag10sPantalla=ON;
+					xSemaphoreGive(Semaforo_Reset10Seg);
+					xSemaphoreGive(Semaforo_Habilitacion10Seg);
+					//j=0;
+					//Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
@@ -1027,21 +1093,29 @@ void vTaskTFT(void *pvParameters)
 					EstadoPantalla=1;
 					FlagEstado=ON;
 					ReceivePulsadores = 0;
-					Flag10sPantalla=ON;
+					//Flag10sPantalla=ON;
 				}
 				else if(ReceivePulsadores==10)		//Paso al estado CONFIRMAR SALIDA
 				{
 					EstadoPantalla=9;
 					FlagEstado=ON;
 					ReceivePulsadores = 0;
-					Flag10sPantalla=ON;
+					//Flag10sPantalla=ON;
 				}
+
+				else if(xSemaphoreTake(Semaforo_Flag10Seg,10 / portTICK_PERIOD_MS) == pdTRUE)
+				{
+					EstadoPantalla=0;
+					FlagEstado=ON;
+					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
+				}
+				/*
 				else if(Flag10sPantalla==OFF)
 				{
 					EstadoPantalla=0;
 					FlagEstado=ON;
 					Flag10sPantalla=ON;
-				}
+				}*/
 				else
 				{
 					ReceivePulsadores = 0;
@@ -1107,7 +1181,7 @@ void vTaskTFT(void *pvParameters)
 
 				vTaskDelay(2000/portTICK_PERIOD_MS);
 				EstadoPantalla=0;
-				Flag10sPantalla=ON;
+				//Flag10sPantalla=ON;
 			break;
 
 			case 7:		//PANTALLA PRINCIPAL SIN USUARIO REGISTRADO
@@ -1141,7 +1215,9 @@ void vTaskTFT(void *pvParameters)
 				{
 					FlagEstado=ON;
 					EstadoPantalla=0;
-					Flag10sPantalla=ON;
+					//Flag10sPantalla=ON;
+					xSemaphoreGive(Semaforo_Reset10Seg);
+					xSemaphoreGive(Semaforo_Habilitacion10Seg);
 					xSemaphoreTake(Semaforo_YaHayTarj, portMAX_DELAY);
 					xSemaphoreGive(Semaforo_Sist_Inic);
 					ReceivePulsadores=0;
@@ -1174,7 +1250,9 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_Clear();
 					FlagEstado=OFF;
-					j=0;
+					xSemaphoreGive(Semaforo_Reset10Seg);
+					xSemaphoreGive(Semaforo_Habilitacion10Seg);
+					//j=0;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringAt("/     /",127,10);
 					GUI_DispDecAt(dia,101,10,2);
@@ -1237,11 +1315,18 @@ void vTaskTFT(void *pvParameters)
 					ReceivePulsadores = 0;
 					mensaje = 1; //Debe enviarse el mensaje de emergencia
 				}
+				/*
 				else if(Flag10sPantalla==OFF)
 				{
 					EstadoPantalla=0;
 					FlagEstado=ON;
 					Flag10sPantalla=ON;
+				}*/
+				else if(xSemaphoreTake(Semaforo_Flag10Seg,10 / portTICK_PERIOD_MS) == pdTRUE)
+				{
+					EstadoPantalla=0;
+					FlagEstado=ON;
+					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
 				}
 				else
 				{
@@ -1258,8 +1343,10 @@ void vTaskTFT(void *pvParameters)
 					xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 					GUI_Clear();
 					FlagEstado=OFF;
-					j=0;
-					Flag10sPantalla=ON;
+					xSemaphoreGive(Semaforo_Reset10Seg);
+					xSemaphoreGive(Semaforo_Habilitacion10Seg);
+					//j=0;
+					//Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
@@ -1289,12 +1376,20 @@ void vTaskTFT(void *pvParameters)
 					ReceivePulsadores = 0;
 					xSemaphoreTake(Semaforo_Sist_Inic, portMAX_DELAY);//Indico para que la SD no guarde datos mientras no hay RFID
 				}
+
+				else if(xSemaphoreTake(Semaforo_Flag10Seg,10 / portTICK_PERIOD_MS) == pdTRUE)
+				{
+					EstadoPantalla=0;
+					FlagEstado=ON;
+					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
+				}
+				/*
 				else if(Flag10sPantalla==OFF)
 				{
 					EstadoPantalla=0;
 					FlagEstado=ON;
 					Flag10sPantalla=ON;
-				}
+				}*/
 				else
 				{
 					ReceivePulsadores = 0;
@@ -1310,8 +1405,10 @@ void vTaskTFT(void *pvParameters)
 					xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 					GUI_Clear();
 					FlagEstado=OFF;
-					j=0;
-					Flag10sPantalla=ON;
+					xSemaphoreGive(Semaforo_Reset10Seg);
+					xSemaphoreGive(Semaforo_Habilitacion10Seg);
+					//j=0;
+					//Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
@@ -1340,12 +1437,19 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=ON;
 					ReceivePulsadores = 0;
 				}
+				/*
 				else if(Flag10sPantalla==OFF)
 				{
 					EstadoPantalla=0;
 					FlagEstado=ON;
 					Flag10sPantalla=ON;
 					mensaje=0;
+				}*/
+				else if(xSemaphoreTake(Semaforo_Flag10Seg,10 / portTICK_PERIOD_MS) == pdTRUE)
+				{
+					EstadoPantalla=0;
+					FlagEstado=ON;
+					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
 				}
 				else
 				{
@@ -1422,6 +1526,13 @@ int main (void)
 	xSemaphoreTake(Semaforo_SD, portMAX_DELAY);
 	vSemaphoreCreateBinary(Semaforo_Sist_Inic);			//Semaforo de inicializacion de sistema
 	xSemaphoreTake(Semaforo_Sist_Inic, portMAX_DELAY);
+	vSemaphoreCreateBinary(Semaforo_Flag10Seg);			//Semaforo de inicializacion de sistema
+	vSemaphoreCreateBinary(Semaforo_Habilitacion10Seg);			//Semaforo de inicializacion de sistema
+	vSemaphoreCreateBinary(Semaforo_Reset10Seg);			//Semaforo de inicializacion de sistema
+	xSemaphoreTake(Semaforo_Flag10Seg, portMAX_DELAY);
+	xSemaphoreTake(Semaforo_Habilitacion10Seg, portMAX_DELAY);
+	xSemaphoreTake(Semaforo_Reset10Seg, portMAX_DELAY);
+
 
 
 	Cola_RX1 = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola

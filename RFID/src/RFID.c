@@ -16,7 +16,7 @@
 #include "RFID.h"
 #include "GSM.h"
 
-extern int last_balance;
+//extern int last_balance;
 extern unsigned int last_user_ID;
 extern MFRC522Ptr_t mfrcInstance;
 extern QueueHandle_t Cola_Datos_RFID, Cola_Inicio_Tarjetas;
