@@ -26,7 +26,7 @@ void userTapIn()
 {
 	//Tarjetas_RFID Tarj_actual;
 	//uint32_t	ultTarjeta;
-
+	int last_balance = 0;
 
 	// Convert the uid bytes to an integer, byte[0] is the MSB
 	last_user_ID =
@@ -44,7 +44,8 @@ void userTapIn()
 
 
 	// Read the user balance NO BORRAR SINO NO DETECTA CUANDO HAY TARJETA NUEVA
-	//last_balance = readCardBalance(mfrcInstance);
+
+	last_balance = readCardBalance(mfrcInstance);
 
 }
 
@@ -110,7 +111,7 @@ void Comparar(unsigned int tarjeta) //devuelvo la tarjeta que se esta utilizando
 
 	if(iguales == TRUE)
 	{
-		DEBUGOUT("Tarjeta Registrada\n\r");
+		//DEBUGOUT("Tarjeta Registrada\n\r");
 		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 		vTaskDelay(500/portTICK_RATE_MS);	//Espero 1s
 		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
@@ -118,7 +119,7 @@ void Comparar(unsigned int tarjeta) //devuelvo la tarjeta que se esta utilizando
 	else
 	{
 		//xQueueReset(Cola_Datos_RFID);//si se  ingreso una tarjeta no registrada no coloco ninguna
-		DEBUGOUT("Tarjeta NO Registrada\n\r");
+		//DEBUGOUT("Tarjeta NO Registrada\n\r");
 		Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 		vTaskDelay(100/portTICK_RATE_MS);	//Espero 1s
 		Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);

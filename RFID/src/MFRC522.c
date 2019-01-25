@@ -8,8 +8,8 @@
 #include <cr_section_macros.h>
 
 
-#define DEBUGOUT(...) //printf(__VA_ARGS__)
-#define DEBUGSTR(...) //printf(__VA_ARGS__)
+//#define DEBUGOUT(...) //printf(__VA_ARGS__)
+//#define DEBUGSTR(...) //printf(__VA_ARGS__)
 
 
 // ADT object allocation counter
@@ -1704,31 +1704,30 @@ void PCD_DumpVersionToSerial(MFRC522Ptr_t mfrc) {
 	char string[2];
 	// Get the MFRC522 firmware version
 	uint8_t v = PCD_ReadRegister(mfrc, VersionReg);
-	DEBUGOUT("Firmware Version: 0x");
+	//DEBUGOUT("Firmware Version: 0x");
 	// print the hexa value of a unsigned char
 	sprintf(string, "%02X", (char)v);
-	DEBUGOUT(string);
+	//DEBUGOUT(string);
 	// Lookup which version
 	switch (v) {
 	case 0x88:
-		DEBUGOUT(" = (clone)\r\n");
+	{}//DEBUGOUT(" = (clone)\r\n");
 		break;
 	case 0x90:
-		DEBUGOUT(" = v0.0\r\n");
+	{}//DEBUGOUT(" = v0.0\r\n");
 		break;
 	case 0x91:
-		DEBUGOUT(" = v1.0\r\n");
+	{}//DEBUGOUT(" = v1.0\r\n");
 		break;
 	case 0x92:
-		DEBUGOUT(" = v2.0\r\n");
+	{}//DEBUGOUT(" = v2.0\r\n");
 		break;
 	default:
-		DEBUGOUT(" = (unknown)\r\n");
+	{}//DEBUGOUT(" = (unknown)\r\n");
 	}
 	// When 0x00 or 0xFF is returned, communication probably failed
 	if ((v == 0x00) || (v == 0xFF))
-		DEBUGOUT("WARNING: Communication failure, is the MFRC522 properly "
-				 "connected?\r\n");
+	{}	//DEBUGOUT("WARNING: Communication failure, is the MFRC522 properly ""connected?\r\n");
 } // End PCD_DumpVersionToSerial()
 
 /**
@@ -1766,8 +1765,7 @@ void PICC_DumpToSerial(MFRC522Ptr_t mfrc, Uid *uid ///< Pointer to Uid struct
 	case PICC_TYPE_ISO_18092:
 	case PICC_TYPE_MIFARE_PLUS:
 	case PICC_TYPE_TNP3XXX:
-		DEBUGOUT(
-			"Dumping memory contents not implemented for that PICC type.\r\n");
+		//DEBUGOUT("Dumping memory contents not implemented for that PICC type.\r\n");
 		break;
 
 	case PICC_TYPE_UNKNOWN:
@@ -1776,7 +1774,7 @@ void PICC_DumpToSerial(MFRC522Ptr_t mfrc, Uid *uid ///< Pointer to Uid struct
 		break; // No memory dump here
 	}
 
-	DEBUGOUT("\r\n");
+	//DEBUGOUT("\r\n");
 	PICC_HaltA(mfrc); // Already done if it was a MIFARE Classic PICC.
 } // End PICC_DumpToSerial()
 
@@ -1788,32 +1786,34 @@ void PICC_DumpDetailsToSerial(Uid *uid ///< Pointer to Uid struct returned from
 							  ) {
 	char string[2];
 	// UID
-	DEBUGOUT("Card UID:");
+	//DEBUGOUT("Card UID:");
 	for (uint8_t i = 0; i < uid->size; i++) {
 		if (uid->uidByte[i] < 0x10)
-			DEBUGOUT(" 0");
+		{}
+		//DEBUGOUT(" 0");
 		else
-			DEBUGOUT(" ");
+		{}
+			//DEBUGOUT(" ");
 
 		// print the hexa value of a unsigned char
 		sprintf(string, "%02X", (char)uid->uidByte[i]);
-		DEBUGOUT(string);
+		//DEBUGOUT(string);
 	}
-	DEBUGOUT("\r\n");
+	//DEBUGOUT("\r\n");
 
 	// SAK
-	DEBUGOUT("Card SAK: ");
+	//DEBUGOUT("Card SAK: ");
 	if (uid->sak < 0x10)
-		DEBUGOUT("0");
+	{}	//DEBUGOUT("0");
 
 	// print the hexa value of a unsigned char
 	sprintf(string, "%02X", (char)uid->sak);
-	DEBUGOUT(string);
+	//DEBUGOUT(string);
 
 	// (suggested) PICC type
 	PICC_Type piccType = PICC_GetType(uid->sak);
-	DEBUGOUT(" PICC type: ");
-	DEBUGOUT(PICC_GetTypeName(piccType));
+	//DEBUGOUT(" PICC type: ");
+	//DEBUGOUT(PICC_GetTypeName(piccType));
 } // End PICC_DumpDetailsToSerial()
 
 /**
@@ -1851,8 +1851,7 @@ void PICC_DumpMifareClassicToSerial(
 
 	// Dump sectors, highest address first.
 	if (no_of_sectors) {
-		DEBUGOUT("Sector Block   0  1  2  3   4  5  6  7   8  9 10 11  12 13 "
-				 "14 15  AccessBits\r\n");
+		//DEBUGOUT("Sector Block   0  1  2  3   4  5  6  7   8  9 10 11  12 13 ""14 15  AccessBits\r\n");
 		for (int8_t i = no_of_sectors - 1; i >= 0; i--) {
 			PICC_DumpMifareClassicSectorToSerial(mfrc, uid, key, i);
 		}
@@ -1926,35 +1925,35 @@ void PICC_DumpMifareClassicSectorToSerial(
 		// Sector number - only on first line
 		if (isSectorTrailer) {
 			if (sector < 10)
-				DEBUGOUT("   "); // Pad with spaces
+			{}//DEBUGOUT("   "); // Pad with spaces
 			else
-				DEBUGOUT("  "); // Pad with spaces
+			{}	//DEBUGOUT("  "); // Pad with spaces
 			sprintf(string, "%u", sector);
-			DEBUGOUT(string);
-			DEBUGOUT("   ");
+			//DEBUGOUT(string);
+			//DEBUGOUT("   ");
 		} else {
-			DEBUGOUT("       ");
+			//DEBUGOUT("       ");
 		}
 		// Block number
 		if (blockAddr < 10)
-			DEBUGOUT("   "); // Pad with spaces
+		{}//DEBUGOUT("   "); // Pad with spaces
 		else {
 			if (blockAddr < 100)
-				DEBUGOUT("  "); // Pad with spaces
+			{}//DEBUGOUT("  "); // Pad with spaces
 			else
-				DEBUGOUT(" "); // Pad with spaces
+			{}//DEBUGOUT(" "); // Pad with spaces
 		}
 		sprintf(string, "%u", blockAddr);
-		DEBUGOUT(string);
-		DEBUGOUT("  ");
+		//DEBUGOUT(string);
+		//DEBUGOUT("  ");
 		// Establish encrypted communications before reading the first block
 		if (isSectorTrailer) {
 			status = PCD_Authenticate(mfrc, PICC_CMD_MF_AUTH_KEY_A, firstBlock,
 									  key, uid);
 			if (status != STATUS_OK) {
-				DEBUGOUT("PCD_Authenticate() failed: ");
-				DEBUGOUT(GetStatusCodeName(status));
-				DEBUGOUT("\n");
+				//DEBUGOUT("PCD_Authenticate() failed: ");
+				//DEBUGOUT(GetStatusCodeName(status));
+				//DEBUGOUT("\n");
 				return;
 			}
 		}
@@ -1962,22 +1961,22 @@ void PICC_DumpMifareClassicSectorToSerial(
 		uint8_tCount = sizeof(buffer);
 		status = MIFARE_Read(mfrc, blockAddr, buffer, &uint8_tCount);
 		if (status != STATUS_OK) {
-			DEBUGOUT("MIFARE_Read() failed: ");
-			DEBUGOUT(GetStatusCodeName(status));
+			//DEBUGOUT("MIFARE_Read() failed: ");
+			//DEBUGOUT(GetStatusCodeName(status));
 			continue;
 		}
 		// Dump data
 		for (uint8_t index = 0; index < 16; index++) {
 			if (buffer[index] < 0x10)
-				DEBUGOUT(" 0");
+			{}	//DEBUGOUT(" 0");
 			else
-				DEBUGOUT(" ");
+			{}//DEBUGOUT(" ");
 
 			// print the hexa value of a unsigned char
 			sprintf(string, "%02X", (char)buffer[index]);
-			DEBUGOUT(string);
+			//DEBUGOUT(string);
 			if ((index % 4) == 3) {
-				DEBUGOUT(" ");
+				//DEBUGOUT(" ");
 			}
 		}
 		// Parse sector trailer data
@@ -2008,25 +2007,25 @@ void PICC_DumpMifareClassicSectorToSerial(
 
 		if (firstInGroup) {
 			// Print access bits
-			DEBUGOUT(" [ ");
+			//DEBUGOUT(" [ ");
 
 			acces_bit = (g[group] >> 2) & 1;
 			sprintf(string, "%u", acces_bit);
-			DEBUGOUT(string);
-			DEBUGOUT(" ");
+			//DEBUGOUT(string);
+			//DEBUGOUT(" ");
 
 			acces_bit = (g[group] >> 1) & 1;
 			sprintf(string, "%u", acces_bit);
-			DEBUGOUT(string);
-			DEBUGOUT(" ");
+			//DEBUGOUT(string);
+			//DEBUGOUT(" ");
 
 			acces_bit = (g[group] >> 0) & 1;
 			sprintf(string, "%u", acces_bit);
-			DEBUGOUT(string);
+			//DEBUGOUT(string);
 
-			DEBUGOUT(" ] ");
+			//DEBUGOUT(" ] ");
 			if (invertedError) {
-				DEBUGOUT(" Inverted access bits did not match! ");
+				//DEBUGOUT(" Inverted access bits did not match! ");
 			}
 		}
 
@@ -2035,18 +2034,18 @@ void PICC_DumpMifareClassicSectorToSerial(
 			 g[group] == 6)) { // Not a sector trailer, a value block
 			long value = ((long)(buffer[3]) << 24) | ((long)(buffer[2]) << 16) |
 						 ((long)(buffer[1]) << 8) | (long)(buffer[0]);
-			DEBUGOUT(" Value=0x");
+			//DEBUGOUT(" Value=0x");
 
 			// print the hexa value of a unsigned char
 			sprintf(string, "%02X", (char)value);
-			DEBUGOUT(string);
-			DEBUGOUT(" Adr=0x");
+			//DEBUGOUT(string);
+			//DEBUGOUT(" Adr=0x");
 
 			// print the hexa value of a unsigned char
 			sprintf(string, "%02X", (char)buffer[12]);
-			DEBUGOUT(string);
+			//DEBUGOUT(string);
 		}
-		DEBUGOUT("\r\n");
+		//DEBUGOUT("\r\n");
 	}
 
 	return;
@@ -2062,7 +2061,7 @@ void PICC_DumpMifareUltralightToSerial(MFRC522Ptr_t mfrc) {
 	uint8_t buffer[18];
 	uint8_t i;
 
-	DEBUGOUT("Page  0  1  2  3\r\n");
+	//DEBUGOUT("Page  0  1  2  3\r\n");
 	// Try the mpages of the original Ultralight. Ultralight C has more pages.
 	for (uint8_t page = 0; page < 16;
 		 page += 4) { // Read returns data for 4 pages at a time.
@@ -2070,32 +2069,32 @@ void PICC_DumpMifareUltralightToSerial(MFRC522Ptr_t mfrc) {
 		uint8_tCount = sizeof(buffer);
 		status = MIFARE_Read(mfrc, page, buffer, &uint8_tCount);
 		if (status != STATUS_OK) {
-			DEBUGOUT("MIFARE_Read() failed: ");
-			DEBUGOUT(GetStatusCodeName(status));
+			//DEBUGOUT("MIFARE_Read() failed: ");
+			//DEBUGOUT(GetStatusCodeName(status));
 			break;
 		}
 		// Dump data
 		for (uint8_t offset = 0; offset < 4; offset++) {
 			i = page + offset;
 			if (i < 10)
-				DEBUGOUT("  "); // Pad with spaces
+			{}//DEBUGOUT("  "); // Pad with spaces
 			else
-				DEBUGOUT(" "); // Pad with spaces
+			{}	//DEBUGOUT(" "); // Pad with spaces
 			sprintf(string, "%u", i);
-			DEBUGOUT(string);
-			DEBUGOUT("  ");
+			//DEBUGOUT(string);
+			//DEBUGOUT("  ");
 			for (uint8_t index = 0; index < 4; index++) {
 				i = 4 * offset + index;
 				if (buffer[i] < 0x10)
-					DEBUGOUT(" 0");
+				{}//DEBUGOUT(" 0");
 				else
-					DEBUGOUT(" ");
+				{}//DEBUGOUT(" ");
 
 				// print the hexa value of a unsigned char
 				sprintf(string, "%02X", (char)buffer[i]);
-				DEBUGOUT(string);
+				//DEBUGOUT(string);
 			}
-			DEBUGOUT("\r\n");
+			//DEBUGOUT("\r\n");
 		}
 	}
 } // End PICC_DumpMifareUltralightToSerial()
@@ -2164,24 +2163,23 @@ bool MIFARE_OpenUidBackdoor(MFRC522Ptr_t mfrc, bool logErrors) {
 						   &validBits, (uint8_t)0, false); // 40
 	if (status != STATUS_OK) {
 		if (logErrors) {
-			DEBUGOUT("Card did not respond to 0x40 after HALT command. Are you "
-					 "sure it is a UID changeable one?\r\n");
-			DEBUGOUT("Error name: ");
-			DEBUGOUT(GetStatusCodeName(status));
+			//DEBUGOUT("Card did not respond to 0x40 after HALT command. Are you " "sure it is a UID changeable one?\r\n");
+			//DEBUGOUT("Error name: ");
+			//DEBUGOUT(GetStatusCodeName(status));
 		}
 		return false;
 	}
 	if (received != 1 || response[0] != 0x0A) {
 		if (logErrors) {
-			DEBUGOUT("Got bad response on backdoor 0x40 command: ");
+			//DEBUGOUT("Got bad response on backdoor 0x40 command: ");
 
 			// print the hexa value of a unsigned char
 			sprintf(string, "%02X", (char)response[0]);
-			DEBUGOUT(string);
-			DEBUGOUT(" (");
+			//DEBUGOUT(string);
+			//DEBUGOUT(" (");
 			sprintf(string, "%u", validBits);
-			DEBUGOUT(string);
-			DEBUGOUT(" valid bits)\r\n");
+			//DEBUGOUT(string);
+			//DEBUGOUT(" valid bits)\r\n");
 		}
 		return false;
 	}
@@ -2192,24 +2190,23 @@ bool MIFARE_OpenUidBackdoor(MFRC522Ptr_t mfrc, bool logErrors) {
 								&validBits, (uint8_t)0, false); // 43
 	if (status != STATUS_OK) {
 		if (logErrors) {
-			DEBUGOUT("Error in communication at command 0x43, after "
-					 "successfully executing 0x40\r\n");
-			DEBUGOUT("Error name: ");
-			DEBUGOUT(GetStatusCodeName(status));
+			//DEBUGOUT("Error in communication at command 0x43, after ""successfully executing 0x40\r\n");
+			//DEBUGOUT("Error name: ");
+			//DEBUGOUT(GetStatusCodeName(status));
 		}
 		return false;
 	}
 	if (received != 1 || response[0] != 0x0A) {
 		if (logErrors) {
-			DEBUGOUT("Got bad response on backdoor 0x43 command: ");
+			//DEBUGOUT("Got bad response on backdoor 0x43 command: ");
 
 			// print the hexa value of a unsigned char
 			sprintf(string, "%02X", (char)response[0]);
-			DEBUGOUT(string);
-			DEBUGOUT(" (");
+			//DEBUGOUT(string);
+			//DEBUGOUT(" (");
 			sprintf(string, "%u", validBits);
-			DEBUGOUT(string);
-			DEBUGOUT(" valid bits)\r\n");
+			//DEBUGOUT(string);
+			//DEBUGOUT(" valid bits)\r\n");
 		}
 		return false;
 	}
@@ -2234,7 +2231,7 @@ bool MIFARE_SetUid(MFRC522Ptr_t mfrc, uint8_t *newUid, uint8_t uidSize,
 	// UID + BCC uint8_t can not be larger than 16 together
 	if (!newUid || !uidSize || uidSize > 15) {
 		if (logErrors) {
-			DEBUGOUT("New UID buffer empty, size 0, or size > 15 given\r\n");
+			//DEBUGOUT("New UID buffer empty, size 0, or size > 15 given\r\n");
 		}
 		return false;
 	}
@@ -2255,8 +2252,7 @@ bool MIFARE_SetUid(MFRC522Ptr_t mfrc, uint8_t *newUid, uint8_t uidSize,
 			//			  PICC_WakeupA(atqa_answer, &atqa_size);
 
 			if (!PICC_IsNewCardPresent(mfrc) || !PICC_ReadCardSerial(mfrc)) {
-				DEBUGOUT("No card was previously selected, and none are "
-						 "available. Failed to set UID.\r\n");
+				//DEBUGOUT("No card was previously selected, and none are ""available. Failed to set UID.\r\n");
 				return false;
 			}
 
@@ -2265,17 +2261,16 @@ bool MIFARE_SetUid(MFRC522Ptr_t mfrc, uint8_t *newUid, uint8_t uidSize,
 			if (status != STATUS_OK) {
 				// We tried, time to give up
 				if (logErrors) {
-					DEBUGOUT("Failed to authenticate to card for reading, "
-							 "could not set UID: \r\n");
-					DEBUGOUT(GetStatusCodeName(status));
+					//DEBUGOUT("Failed to authenticate to card for reading, ""could not set UID: \r\n");
+					//DEBUGOUT(GetStatusCodeName(status));
 				}
 				return false;
 			}
 		} else {
 			if (logErrors) {
-				DEBUGOUT("PCD_Authenticate() failed: ");
-				DEBUGOUT(GetStatusCodeName(status));
-				DEBUGOUT("\n");
+				//DEBUGOUT("PCD_Authenticate() failed: ");
+				//DEBUGOUT(GetStatusCodeName(status));
+				//DEBUGOUT("\n");
 			}
 			return false;
 		}
@@ -2287,10 +2282,9 @@ bool MIFARE_SetUid(MFRC522Ptr_t mfrc, uint8_t *newUid, uint8_t uidSize,
 	status = MIFARE_Read(mfrc, (uint8_t)0, block0_buffer, &uint8_tCount);
 	if (status != STATUS_OK) {
 		if (logErrors) {
-			DEBUGOUT("MIFARE_Read() failed: ");
-			DEBUGOUT(GetStatusCodeName(status));
-			DEBUGOUT(
-				"Are you sure your KEY A for sector 0 is 0xFFFFFFFFFFFF?\r\n");
+			//DEBUGOUT("MIFARE_Read() failed: ");
+			//DEBUGOUT(GetStatusCodeName(status));
+			//DEBUGOUT("Are you sure your KEY A for sector 0 is 0xFFFFFFFFFFFF?\r\n");
 		}
 		return false;
 	}
@@ -2311,7 +2305,7 @@ bool MIFARE_SetUid(MFRC522Ptr_t mfrc, uint8_t *newUid, uint8_t uidSize,
 	// Activate UID backdoor
 	if (!MIFARE_OpenUidBackdoor(mfrc, logErrors)) {
 		if (logErrors) {
-			DEBUGOUT("Activating the UID backdoor failed.\r\n");
+			//DEBUGOUT("Activating the UID backdoor failed.\r\n");
 		}
 		return false;
 	}
@@ -2320,8 +2314,8 @@ bool MIFARE_SetUid(MFRC522Ptr_t mfrc, uint8_t *newUid, uint8_t uidSize,
 	status = MIFARE_Write(mfrc, (uint8_t)0, block0_buffer, (uint8_t)16);
 	if (status != STATUS_OK) {
 		if (logErrors) {
-			DEBUGOUT("MIFARE_Write() failed: ");
-			DEBUGOUT(GetStatusCodeName(status));
+			//DEBUGOUT("MIFARE_Write() failed: ");
+			//DEBUGOUT(GetStatusCodeName(status));
 		}
 		return false;
 	}
@@ -2348,8 +2342,8 @@ bool MIFARE_UnbrickUidSector(MFRC522Ptr_t mfrc, bool logErrors) {
 		MIFARE_Write(mfrc, (uint8_t)0, block0_buffer, (uint8_t)16);
 	if (status != STATUS_OK) {
 		if (logErrors) {
-			DEBUGOUT("MIFARE_Write() failed: ");
-			DEBUGOUT(GetStatusCodeName(status));
+			//DEBUGOUT("MIFARE_Write() failed: ");
+			//DEBUGOUT(GetStatusCodeName(status));
 		}
 		return false;
 	}

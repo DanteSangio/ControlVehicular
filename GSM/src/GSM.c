@@ -248,7 +248,7 @@ void EnviarTramaGSM (char* latitud, char* longitud, char* rfid,int velocidad)
 			while(LeerCola(RX_COLA_GSM,&dato,1))
 			{
 				AnalizarTramaGSMenvio(dato);
-				DEBUGOUT("%c", dato);	//Imprimo en la consola
+				//DEBUGOUT("%c", dato);	//Imprimo en la consola
 			}
 
 			xSemaphoreTake(Semaforo_GSM_Closed, 1000/portTICK_RATE_MS);//estaba en 10 seg

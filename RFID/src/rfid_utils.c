@@ -8,8 +8,8 @@
 #include <cr_section_macros.h>
 
 
-#define DEBUGOUT(...) //printf(__VA_ARGS__)
-#define DEBUGSTR(...) //printf(__VA_ARGS__)
+//#define DEBUGOUT(...) //printf(__VA_ARGS__)
+//#define DEBUGSTR(...) //printf(__VA_ARGS__)
 
 
 /****************************************
@@ -51,16 +51,16 @@ static int readCardBlock(MFRC522Ptr_t mfrc522, uint8_t sector,
 	status = (StatusCode)PCD_Authenticate(mfrc522, PICC_CMD_MF_AUTH_KEY_A,
 										  blockAddr, &key, &(mfrc522->uid));
 	if (status != STATUS_OK) {
-		DEBUGOUT("PCD_Authenticate() failed: ");
-		DEBUGOUT(GetStatusCodeName(status));
+		//DEBUGOUT("PCD_Authenticate() failed: ");
+		//DEBUGOUT(GetStatusCodeName(status));
 		return -1;
 	}
 
 	// Read data from the block
 	status = (StatusCode)MIFARE_Read(mfrc522, blockAddr, auxBuffer, &size);
 	if (status != STATUS_OK) {
-		DEBUGOUT("MIFARE_Read() failed: ");
-		DEBUGOUT(GetStatusCodeName(status));
+		//DEBUGOUT("MIFARE_Read() failed: ");
+		//DEBUGOUT(GetStatusCodeName(status));
 		return -2;
 	}
 
@@ -93,16 +93,16 @@ static int writeCardBlock(MFRC522Ptr_t mfrc522, uint8_t sector,
 	status = (StatusCode)PCD_Authenticate(mfrc522, PICC_CMD_MF_AUTH_KEY_A,
 										  blockAddr, &key, &(mfrc522->uid));
 	if (status != STATUS_OK) {
-		DEBUGOUT("PCD_Authenticate() failed: ");
-		DEBUGOUT(GetStatusCodeName(status));
+		//DEBUGOUT("PCD_Authenticate() failed: ");
+		//DEBUGOUT(GetStatusCodeName(status));
 		return -1;
 	}
 
 	// Write data from the block, always write 16 bytes
 	status = (StatusCode)MIFARE_Write(mfrc522, blockAddr, auxBuffer, 16);
 	if (status != STATUS_OK) {
-		DEBUGOUT("MIFARE_Write() failed: ");
-		DEBUGOUT(GetStatusCodeName(status));
+		//DEBUGOUT("MIFARE_Write() failed: ");
+		//DEBUGOUT(GetStatusCodeName(status));
 		return -2;
 	}
 
@@ -142,7 +142,7 @@ void setupRFID(MFRC522Ptr_t* mfrc522) {
 	(*mfrc522)->_resetPowerDownPin.pin = 3;
 
 	PCD_Init(*mfrc522, LPC_SSP1);
-	DEBUGOUT("\nReader 2 ");
+	//DEBUGOUT("\nReader 2 ");
 	
 	// Show details of PCD - MFRC522 Card Reader details
 	PCD_DumpVersionToSerial(*mfrc522); 

@@ -35,7 +35,7 @@ http://www.tavi.co.uk/phobos/fat.html
 
 
 #define SET     1
-#define DEBUGOUT(...) //printf(__VA_ARGS__)
+//#define DEBUGOUT(...) //printf(__VA_ARGS__)
 
 /***************************************************************************************
                            Global Variables
@@ -135,7 +135,7 @@ fileConfig_st* FILE_Open(char* filename,uint8_t fileOperation,uint8_t *fileOpenS
                 if(*fileOpenSts != FAT32_FILE_OPEN_SUCCESSFUL)
                 {
 
-                    DEBUGOUT("FILE_DELETED_OR_NOT_FOUND");
+                    //DEBUGOUT("FILE_DELETED_OR_NOT_FOUND");
                     return  0; /* Set the pointer to NULL indication File not found or Read failed, */
                 }
             }
@@ -145,7 +145,7 @@ fileConfig_st* FILE_Open(char* filename,uint8_t fileOperation,uint8_t *fileOpenS
 
                 if(*fileOpenSts == FAT32_FILE_OPEN_SUCCESSFUL)
                 {
-                    DEBUGOUT("File already existing, appending data..");
+                    //DEBUGOUT("File already existing, appending data..");
 
                     filePtr->appendFileFlag = 1;
                     filePtr->cluster = filePtr->appendStartCluster;
@@ -168,22 +168,22 @@ fileConfig_st* FILE_Open(char* filename,uint8_t fileOperation,uint8_t *fileOpenS
                 {
                     *fileOpenSts = FAT32_FILE_OPEN_SUCCESSFUL;
 
-                    DEBUGOUT("Creating File..");
+                    //DEBUGOUT("Creating File..");
                     filePtr->cluster = getSetFreeCluster (filePtr->fileBuffer,NEXT_FREE, GET, 0);
                     if(filePtr->cluster > totalClusters)
                     {
                         filePtr->cluster = rootCluster;
                     }
-                    DEBUGOUT("searchNextFreeCluster..");
+                    //DEBUGOUT("searchNextFreeCluster..");
                     filePtr->cluster = searchNextFreeCluster(filePtr->fileBuffer,filePtr->cluster);
                     if(filePtr->cluster == 0)
                     {
-                        DEBUGOUT("No free cluster!");
+                        //DEBUGOUT("No free cluster!");
                         *fileOpenSts = FAT32_NO_FREE_CLUSTERS_FOUND;
                         return 0;
                     } 
 
-                    DEBUGOUT("get/Set NextCluster..");   //last cluster of the file, marked END_OF_CLUSTERS
+                    //DEBUGOUT("get/Set NextCluster..");   //last cluster of the file, marked END_OF_CLUSTERS
                     getSetNextCluster(filePtr->fileBuffer,filePtr->cluster, SET, END_OF_CLUSTERS);
 
                     filePtr->firstClusterHigh = (uint16_t) ((filePtr->cluster & 0xffff0000) >> 16 );
@@ -265,7 +265,7 @@ uint8_t FILE_Delete(char *fileName)
 
     if(returnStatus == FAT32_VALID_FILE_NAME)
     {
-        DEBUGOUT("Searching for Opened File");
+        //DEBUGOUT("Searching for Opened File");
         for(i=0;i<C_MaxFilesOpening_U8;i++)
         {
             if(fatMappingTable[i].fileOpenedFlag == TRUE)
@@ -273,7 +273,7 @@ uint8_t FILE_Delete(char *fileName)
                 /* Check the file to be deleted is already opened */
                 if(strcmp(localfileName,fatMappingTable[i].fileName)==0)
                 {
-                    DEBUGOUT("File already Opened");
+                    //DEBUGOUT("File already Opened");
                     break;
                 }
             }
@@ -285,7 +285,7 @@ uint8_t FILE_Delete(char *fileName)
         }
         else
         {
-            DEBUGOUT("Deleting File");
+            //DEBUGOUT("Deleting File");
             deletefile(localfileName);
             returnStatus = FAT32_FILE_DELETED_OR_NOT_FOUND;
         }
@@ -429,7 +429,7 @@ void FILE_PutCh (fileConfig_st *filePtr, char data)
 
                     if(filePtr->cluster == 0)
                     {
-                        DEBUGOUT("No free cluster!");
+                        //DEBUGOUT("No free cluster!");
                         return;
                     }
 
@@ -461,7 +461,7 @@ void FILE_PutCh (fileConfig_st *filePtr, char data)
                 dir->fileSize = filePtr->fileSize;
                 SD_writeSingleBlock (filePtr->fileBuffer,filePtr->appendFileSector);
                 freeMemoryUpdate (filePtr->fileBuffer,REMOVE, extraMemory); //updating free memory count in FSinfo sector;
-                DEBUGOUT("File appended!");
+                //DEBUGOUT("File appended!");
                 return;
             }
 
@@ -506,7 +506,7 @@ void FILE_PutCh (fileConfig_st *filePtr, char data)
 
                             SD_writeSingleBlock (filePtr->fileBuffer,filePtr->firstSector + filePtr->sectorIndex);
                             filePtr->fileCreatedFlag = 1;
-                            DEBUGOUT("File Created!");
+                            //DEBUGOUT("File Created!");
                             freeMemoryUpdate (filePtr->fileBuffer,REMOVE, filePtr->fileSize); //updating free memory count in FSinfo sector
                         }
                     }
@@ -524,13 +524,13 @@ void FILE_PutCh (fileConfig_st *filePtr, char data)
                     }
                     else
                     {
-                        DEBUGOUT("End of Cluster Chain");
+                        //DEBUGOUT("End of Cluster Chain");
                         return;
                     }
                 }
                 if(filePtr->cluster == 0)
                 {
-                    DEBUGOUT("Error in getting cluster");
+                    //DEBUGOUT("Error in getting cluster");
                     return;
                 }
 
@@ -595,7 +595,7 @@ uint8_t FILE_GetList (fileInfo *fileList)
 
         if(dir->name[0] == EMPTY) //indicates end of the file list of the directory
         {
-            DEBUGOUT("File does not exist!");
+            //DEBUGOUT("File does not exist!");
             clusterNumber = 0xffffffff;
             return (FAT32_END_OF_FILE_LIST);
         }
@@ -633,14 +633,14 @@ uint8_t FILE_GetList (fileInfo *fileList)
 
                 if(clusterNumber > 0x0ffffff6)
                 {
-                    DEBUGOUT("End of Cluster");
+                    //DEBUGOUT("End of Cluster");
                     clusterNumber = 0xffffffff;
                     return FAT32_END_OF_FILE_LIST;
                 }
 
                 if(clusterNumber == 0)
                 {
-                    DEBUGOUT("Error in getting cluster");
+                    //DEBUGOUT("Error in getting cluster");
                     clusterNumber = 0xffffffff;;
                     return FAT32_END_OF_FILE_LIST;
                 }
@@ -989,11 +989,11 @@ uint8_t openFile (uint8_t fileOperation, fileConfig_st *filePtr)
 
     if(returnStatus == FAT32_INVALID_FLIE_NAME)
     {
-        DEBUGOUT("Invalid fileName..");
+        //DEBUGOUT("Invalid fileName..");
     }
     else
     {
-        DEBUGOUT("Valid File Name");
+        //DEBUGOUT("Valid File Name");
 
 
         returnStatus = CONTINUE_LOOP;
@@ -1013,7 +1013,7 @@ uint8_t openFile (uint8_t fileOperation, fileConfig_st *filePtr)
 
                     if(dir->name[0] == EMPTY) //indicates end of the file list of the directory
                     {
-                        DEBUGOUT("File does not exist!");
+                        //DEBUGOUT("File does not exist!");
                         returnStatus = FAT32_FILE_DELETED_OR_NOT_FOUND;
                         break;
                     }
@@ -1043,7 +1043,7 @@ uint8_t openFile (uint8_t fileOperation, fileConfig_st *filePtr)
 
                 if((cluster > 0x0ffffff6) || (cluster == 0))
                 {
-                    DEBUGOUT("Error in getting cluster");
+                    //DEBUGOUT("Error in getting cluster");
                     returnStatus = FAT32_NO_FREE_CLUSTERS_FOUND;
                 }
             }
@@ -1126,7 +1126,7 @@ uint8_t deletefile (char *fileName)
 
                 if(dir->name[0] == EMPTY) //indicates end of the file list of the directory
                 {
-                    DEBUGOUT("File does not exist!");
+                    //DEBUGOUT("File does not exist!");
                     return FAT32_FILE_DELETED_OR_NOT_FOUND;
                 }
                 if((dir->name[0] != DELETED) && (dir->attrib != ATTR_LONG_NAME))
@@ -1135,7 +1135,7 @@ uint8_t deletefile (char *fileName)
                         if(dir->name[j] != fileName[j]) break;
                     if(j == 11)
                     {
-                        DEBUGOUT("Deleting..");
+                        //DEBUGOUT("Deleting..");
                         firstCluster = (((unsigned long) dir->firstClusterHI) << 16) | dir->firstClusterLO;
 
                         //mark file as 'deleted' in FAT table
@@ -1156,7 +1156,7 @@ uint8_t deletefile (char *fileName)
                             getSetNextCluster(GlobalBuffer,firstCluster, SET, 0);
                             if(nextCluster > 0x0ffffff6)
                             {
-                                DEBUGOUT("File deleted!");
+                                //DEBUGOUT("File deleted!");
                                 return FAT32_FILE_DELETED_OR_NOT_FOUND;
                             }
                             firstCluster = nextCluster;
@@ -1170,7 +1170,7 @@ uint8_t deletefile (char *fileName)
 
         if((cluster > 0x0ffffff6) || (cluster ==0))
         {
-            DEBUGOUT("Error in getting cluster");
+            //DEBUGOUT("Error in getting cluster");
             return FAT32_FILE_DELETED_OR_NOT_FOUND;
         }
     }

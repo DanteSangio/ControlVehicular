@@ -36,9 +36,9 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Defines */
-#define DEBUGOUT1(...) //printf(__VA_ARGS__)
-#define DEBUGOUT(...)  //printf(__VA_ARGS__)
-#define DEBUGSTR(...) //printf(__VA_ARGS__)
+//#define DEBUGOUT1(...) //printf(__VA_ARGS__)
+//#define DEBUGOUT(...)  printf(__VA_ARGS__)
+//#define DEBUGSTR(...) //printf(__VA_ARGS__)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -121,7 +121,7 @@ void RTC_IRQHandler(void)
 		{
 			xSemaphoreGiveFromISR(Semaforo_Habilitacion10Seg,&Testigo4);
 			j++;
-			if(j==10)
+			if(j>10)
 			{
 				xSemaphoreGiveFromISR(Semaforo_Flag10Seg,&Testigo4);//significa que hay que cambiar pantalla
 				//Flag10sPantalla=OFF;
@@ -132,7 +132,7 @@ void RTC_IRQHandler(void)
 
 
 		i++;
-		if(i==30)
+		if(i>30)
 		{
 			i=0;
 			xSemaphoreGiveFromISR(Semaforo_RTCgsm, &Testigo);	//Devuelve si una de las tareas bloqueadas tiene mayor prioridad que la actual
@@ -223,7 +223,7 @@ static void xTaskRFIDConfig(void *pvParameters)
 
 	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 
-	DEBUGOUT1("PRUEBA RFID..\n");	//Imprimo en la consola
+	//DEBUGOUT1("PRUEBA RFID..\n");	//Imprimo en la consola
 
 	setupRFID(&mfrcInstance);
 
@@ -300,7 +300,7 @@ static void xTaskRTConfig(void *pvParameters)
 /* xTaskUART1Config */
 static void xTaskUART1Config(void *pvParameters)
 {
-	DEBUGOUT("Configurando la UART1..\n");	//Imprimo en la consola
+	//DEBUGOUT("Configurando la UART1..\n");	//Imprimo en la consola
 
 	//Inicializacion de los pines de la UART1
 	Chip_GPIO_SetDir (LPC_GPIO, RXD1, INPUT);
@@ -339,7 +339,7 @@ static void xTaskUART1Config(void *pvParameters)
 /* xTaskUART2Config */
 static void xTaskUART2Config(void *pvParameters)
 {
-	DEBUGOUT("Configurando la UART2..\n");	//Imprimo en la consola
+	//DEBUGOUT("Configurando la UART2..\n");	//Imprimo en la consola
 
 	//Inicializacion de los pines del GSM
 	Chip_GPIO_SetDir (LPC_GPIO, RXD2, INPUT);
@@ -482,6 +482,8 @@ static void vTaskRFID(void *pvParameters)
 		xSemaphoreTake(Semaforo_YaHayTarj, portMAX_DELAY);
 		xSemaphoreGive(Semaforo_YaHayTarj);
 		xSemaphoreTake(Semaforo_SSP, portMAX_DELAY); //semaforo de uso de ssp
+    	Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_DC);//Para que no se resetie la pantalla
+
 		// Look for new cards in RFID
 		if (PICC_IsNewCardPresent(mfrcInstance))
 		{
@@ -494,6 +496,8 @@ static void vTaskRFID(void *pvParameters)
 
 			}
 		}
+
+    	Chip_GPIO_SetPinOutLow(LPC_GPIO, TFT_DC);//Para que no se resetie la pantalla
 		Chip_GPIO_SetPinOutHigh(LPC_GPIO, RFID_SS);
 		xSemaphoreGive(Semaforo_SSP);
 		vTaskDelay( 500 / portTICK_PERIOD_MS );//Muestreo cada medio seg
@@ -590,30 +594,43 @@ static void vTaskTarjetasGSM(void *pvParameters)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* xTaskPulsadores
- * Lectura de los pulsadores mediante una variable global
+ * Lectura de los pulsadores mediante una cola
  * */
 static void xTaskPulsadores(void *pvParameters)
 {
+	static uint8_t ReceivePulsadores=0;
+
+	xSemaphoreTake(Semaforo_Sist_Inic, portMAX_DELAY);// me fijo que este inicializada el resto del sistema
+	xSemaphoreGive(Semaforo_Sist_Inic);
+
 	while (1)
 	{
 
-		if(ReceivePulsadores == 0)
+		if(Chip_GPIO_GetPinState(LPC_GPIO, SW1)==OFF)	//Si se presiona el SW1
 		{
-			if(Chip_GPIO_GetPinState(LPC_GPIO, SW1)==OFF)	//Si se presiona el SW1
-			{
-				ReceivePulsadores++;	//Envio a la cola que se presiono el SW1
-			}
-			if(Chip_GPIO_GetPinState(LPC_GPIO, SW2)==OFF)	//Si se presiona el SW2
-			{
-				ReceivePulsadores=ReceivePulsadores+10;
-			}
-			while(Chip_GPIO_GetPinState(LPC_GPIO, SW2)==OFF || Chip_GPIO_GetPinState(LPC_GPIO, SW1)==OFF)
-			{				vTaskDelay(1000/portTICK_RATE_MS);}
+			ReceivePulsadores++;	//Envio a la cola que se presiono el SW1
 		}
-		vTaskDelay(500/portTICK_RATE_MS);	//Espero medio seg
+		if(Chip_GPIO_GetPinState(LPC_GPIO, SW2)==OFF)	//Si se presiona el SW2
+		{
+			ReceivePulsadores=ReceivePulsadores+10;
+		}
+
+		if(ReceivePulsadores != 0)
+		{
+			xQueueSendToBack(Cola_Pulsadores,&ReceivePulsadores,portMAX_DELAY);// envio a una cola el valor de los pulsadores
+			ReceivePulsadores=0;
+		}
+
+		while(Chip_GPIO_GetPinState(LPC_GPIO, SW2)==OFF || Chip_GPIO_GetPinState(LPC_GPIO, SW1)==OFF)
+		{
+			vTaskDelay(50/portTICK_RATE_MS); // Espero 50 mseg y vuelvo a comprobar si solto
+		}
+
+		vTaskDelay(300/portTICK_RATE_MS);	//Espero medio seg
 	}
 	vTaskDelete(NULL);	//Borra la tarea
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -633,19 +650,19 @@ static void vTaskInicSD(void *pvParameters)
         returnStatus = SD_Init(&sdcardType);
         if(returnStatus == SDCARD_NOT_DETECTED)
         {
-        	DEBUGOUT("\n\r SD card not detected..");
+        	//DEBUGOUT("\n\r SD card not detected..");
         }
         else if(returnStatus == SDCARD_INIT_FAILED)
         {
-        	DEBUGOUT("\n\r Card Initialization failed..");
+        	//DEBUGOUT("\n\r Card Initialization failed..");
         }
         else if(returnStatus == SDCARD_FAT_INVALID)
         {
-        	DEBUGOUT("\n\r Invalid Fat filesystem");
+        	//DEBUGOUT("\n\r Invalid Fat filesystem");
         }
     }while(returnStatus!=0);
 
-    DEBUGOUT("\n\rSD Card Detected!");
+    //DEBUGOUT("\n\rSD Card Detected!");
 
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_DC);
 	xSemaphoreGive(Semaforo_SSP);
@@ -671,9 +688,10 @@ static void xTaskWriteSD(void *pvParameters)
 
     while (1)
 	{
+
+        xSemaphoreTake(Semaforo_RTCsd, portMAX_DELAY);//grabo cada medio seg
     	xSemaphoreTake(Semaforo_Sist_Inic, portMAX_DELAY);// me fijo que este inicializada el resto del sistema
     	xSemaphoreGive(Semaforo_Sist_Inic);
-        xSemaphoreTake(Semaforo_RTCsd, portMAX_DELAY);//grabo cada medio seg
 
         xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);// me fijo que este disponible el canal ssp
     	Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_DC);//Para que no se resetie la pantalla
@@ -716,15 +734,16 @@ static void xTaskWriteSD(void *pvParameters)
  * */
 void vTaskTFT(void *pvParameters)
 {
-	static uint8_t EstadoPantalla=3;
-	static uint8_t FlagEstado=ON;
-	//uint8_t ReceiveRFID=OFF;
+	__DATA(RAM2)	static uint8_t EstadoPantalla=3;
+	__DATA(RAM2)	static uint8_t FlagEstado=ON;
+	uint8_t ReceivePulsadores;
 	uint8_t primeraEntrada=ON;
 	//struct Datos_Nube	ReceiveGPS;
-	uint32_t dia, mes, ano, hora, minutos, aux, velocidad;
+	uint32_t dia, mes, ano, hora, velocidad;
 	char nombre [20];
-	static uint8_t minConductor=0, horaConductor=0;
-	static uint8_t mensaje=0;
+	__DATA(RAM2)	static uint8_t minConductor=0, horaConductor=0;
+	__DATA(RAM2)	static uint8_t mensaje=0;
+	__DATA(RAM2)	static uint32_t	minAnt, minutos;
 	RTC_TIME_T pFullTime;
 	struct Datos_Nube informacion;
 	Tarjetas_RFID informacionRFID;
@@ -752,12 +771,16 @@ void vTaskTFT(void *pvParameters)
 	mes=pFullTime.time[6];
 	ano=pFullTime.time[7];
 
-	aux=minutos;
+	minAnt=minutos;
 
 	while(1)
 	{
-		//xQueueReceive(Cola_Pulsadores, &Receive, 300);
-		//vTaskDelay(50/portTICK_RATE_MS);
+
+		vTaskDelay(50/portTICK_RATE_MS);
+		if(xQueueReceive(Cola_Pulsadores, &ReceivePulsadores, 10/portTICK_RATE_MS) == pdFALSE )
+		{
+			ReceivePulsadores=0;// si no hay nada en la cola pongo en 0 la variable
+		}
 
 		Chip_RTC_GetFullTime(LPC_RTC, &pFullTime);
 		minutos=pFullTime.time[1];
@@ -766,16 +789,6 @@ void vTaskTFT(void *pvParameters)
 		mes=pFullTime.time[6];
 		ano=pFullTime.time[7];
 
-		if(aux!=minutos)
-		{
-			aux=minutos;
-			minConductor++;
-			if(minConductor==60)
-			{
-				minConductor=0;
-				horaConductor++;
-			}
-		}
 
 		switch(EstadoPantalla)
 		{
@@ -785,7 +798,7 @@ void vTaskTFT(void *pvParameters)
 					if(primeraEntrada==ON)
 					{
 						primeraEntrada=OFF;
-						aux=minutos;
+						minAnt=minutos;
 					}
 
 					xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
@@ -793,7 +806,7 @@ void vTaskTFT(void *pvParameters)
 
 					xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 					GUI_Clear();
-					aux=minutos;
+					minAnt=minutos;
 					FlagEstado=OFF;
 					xSemaphoreGive(Semaforo_Reset10Seg);
 					xSemaphoreGive(Semaforo_Habilitacion10Seg);
@@ -827,13 +840,11 @@ void vTaskTFT(void *pvParameters)
 				{
 					EstadoPantalla=1;
 					FlagEstado=ON;
-					ReceivePulsadores = 0;
 				}
 				else if(ReceivePulsadores==10)	//Paso al estado CONFIRMAR SMS
 				{
 					EstadoPantalla=10;
 					FlagEstado=ON;
-					ReceivePulsadores = 0;
 					mensaje = 1; //Debe enviarse el mensaje de emergencia
 				}
 
@@ -843,18 +854,7 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=ON;
 					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
 				}
-				/*
-				if(Flag10sPantalla==OFF)
-				{
-					EstadoPantalla=8;
-					FlagEstado=ON;
-					Flag10sPantalla=ON;
-				}
-				*/
-				else
-				{
-					ReceivePulsadores = 0;
-				}
+
 
 			break;
 
@@ -869,9 +869,7 @@ void vTaskTFT(void *pvParameters)
 					GUI_Clear();
 					xSemaphoreGive(Semaforo_Reset10Seg);//reseteo cuenta
 					xSemaphoreGive(Semaforo_Habilitacion10Seg); //habilito conteo
-//					j=0;
 					FlagEstado=OFF;
-					//Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
@@ -902,7 +900,7 @@ void vTaskTFT(void *pvParameters)
 				{
 					EstadoPantalla=2;
 					FlagEstado=ON;
-					ReceivePulsadores = 0;
+
 				}
 
 
@@ -912,18 +910,7 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=ON;
 					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
 				}
-				/*
-				if(Flag10sPantalla==OFF)
-				{
-					EstadoPantalla=0;
-					FlagEstado=ON;
-					Flag10sPantalla=ON;
-				}*/
 
-				else
-				{
-					ReceivePulsadores = 0;
-				}
 			break;
 
 			case 2:		//SMS CONTACTO
@@ -938,8 +925,6 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=OFF;
 					xSemaphoreGive(Semaforo_Reset10Seg);
 					xSemaphoreGive(Semaforo_Habilitacion10Seg);
-					//j=0;
-					//Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
@@ -968,13 +953,13 @@ void vTaskTFT(void *pvParameters)
 				{
 					EstadoPantalla=5;
 					FlagEstado=ON;
-					ReceivePulsadores = 0;
+
 				}
 				else if(ReceivePulsadores==10)	//Paso al estado CONFIRMAR SMS
 				{
 					EstadoPantalla=10;
 					FlagEstado=ON;
-					ReceivePulsadores = 0;
+
 					mensaje=2; // Mensaje para comunicarse con el conductor
 				}
 
@@ -983,19 +968,6 @@ void vTaskTFT(void *pvParameters)
 					EstadoPantalla=0;
 					FlagEstado=ON;
 					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
-				}
-
-				/*
-				if(Flag10sPantalla==OFF)
-				{
-					EstadoPantalla=0;
-					FlagEstado=ON;
-					Flag10sPantalla=ON;
-				}*/
-
-				else
-				{
-					ReceivePulsadores = 0;
 				}
 
 			break;
@@ -1025,10 +997,6 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_Clear();
 					FlagEstado=OFF;
-					//xSemaphoreGive(Semaforo_Reset10Seg);
-					//xSemaphoreGive(Semaforo_Habilitacion10Seg);
-					//j=0;
-					//Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispDecAt(hora,240,10,2);
 					GUI_DispStringAt(":",264,10);
@@ -1062,8 +1030,6 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=OFF;
 					xSemaphoreGive(Semaforo_Reset10Seg);
 					xSemaphoreGive(Semaforo_Habilitacion10Seg);
-					//j=0;
-					//Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
@@ -1092,15 +1058,13 @@ void vTaskTFT(void *pvParameters)
 				{
 					EstadoPantalla=1;
 					FlagEstado=ON;
-					ReceivePulsadores = 0;
-					//Flag10sPantalla=ON;
+
 				}
 				else if(ReceivePulsadores==10)		//Paso al estado CONFIRMAR SALIDA
 				{
 					EstadoPantalla=9;
 					FlagEstado=ON;
-					ReceivePulsadores = 0;
-					//Flag10sPantalla=ON;
+
 				}
 
 				else if(xSemaphoreTake(Semaforo_Flag10Seg,10 / portTICK_PERIOD_MS) == pdTRUE)
@@ -1108,17 +1072,6 @@ void vTaskTFT(void *pvParameters)
 					EstadoPantalla=0;
 					FlagEstado=ON;
 					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
-				}
-				/*
-				else if(Flag10sPantalla==OFF)
-				{
-					EstadoPantalla=0;
-					FlagEstado=ON;
-					Flag10sPantalla=ON;
-				}*/
-				else
-				{
-					ReceivePulsadores = 0;
 				}
 			break;
 
@@ -1181,7 +1134,6 @@ void vTaskTFT(void *pvParameters)
 
 				vTaskDelay(2000/portTICK_PERIOD_MS);
 				EstadoPantalla=0;
-				//Flag10sPantalla=ON;
 			break;
 
 			case 7:		//PANTALLA PRINCIPAL SIN USUARIO REGISTRADO
@@ -1191,7 +1143,7 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_Clear();
 					FlagEstado=OFF;
-					aux=minutos;
+					//minAnt=minutos;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringAt("/     /",127,10);
 					GUI_DispDecAt(dia,101,10,2);
@@ -1215,7 +1167,6 @@ void vTaskTFT(void *pvParameters)
 				{
 					FlagEstado=ON;
 					EstadoPantalla=0;
-					//Flag10sPantalla=ON;
 					xSemaphoreGive(Semaforo_Reset10Seg);
 					xSemaphoreGive(Semaforo_Habilitacion10Seg);
 					xSemaphoreTake(Semaforo_YaHayTarj, portMAX_DELAY);
@@ -1224,13 +1175,15 @@ void vTaskTFT(void *pvParameters)
 					Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 					vTaskDelay(250/portTICK_PERIOD_MS);
 					Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+					minConductor=0;//Reseteo las horas de trabajo
+					horaConductor=0;
 				}
 				if(xSemaphoreTake(Semaforo_Tarjeta_Incorrecta,10/portTICK_PERIOD_MS)==ON)
 				{
 					EstadoPantalla=4;
 					FlagEstado=ON;
 				}
-				if(aux!=minutos)
+				if(minAnt!=minutos)
 				{
 					FlagEstado=ON;
 				}
@@ -1306,31 +1259,21 @@ void vTaskTFT(void *pvParameters)
 				{
 					EstadoPantalla=1;
 					FlagEstado=ON;
-					ReceivePulsadores = 0;
+
 				}
 				else if(ReceivePulsadores==10)	//Paso al estado CONFIRMAR SMS
 				{
 					EstadoPantalla=10;
 					FlagEstado=ON;
-					ReceivePulsadores = 0;
+
 					mensaje = 1; //Debe enviarse el mensaje de emergencia
 				}
-				/*
-				else if(Flag10sPantalla==OFF)
-				{
-					EstadoPantalla=0;
-					FlagEstado=ON;
-					Flag10sPantalla=ON;
-				}*/
+
 				else if(xSemaphoreTake(Semaforo_Flag10Seg,10 / portTICK_PERIOD_MS) == pdTRUE)
 				{
 					EstadoPantalla=0;
 					FlagEstado=ON;
 					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
-				}
-				else
-				{
-					ReceivePulsadores = 0;
 				}
 			break;
 
@@ -1345,8 +1288,6 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=OFF;
 					xSemaphoreGive(Semaforo_Reset10Seg);
 					xSemaphoreGive(Semaforo_Habilitacion10Seg);
-					//j=0;
-					//Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
@@ -1370,10 +1311,8 @@ void vTaskTFT(void *pvParameters)
 				}
 				if(ReceivePulsadores==11)		//Se presionaron ambos pulsadores
 				{
-					xQueueReset(Cola_Datos_RFID);
 					EstadoPantalla=11;
 					FlagEstado=ON;
-					ReceivePulsadores = 0;
 					xSemaphoreTake(Semaforo_Sist_Inic, portMAX_DELAY);//Indico para que la SD no guarde datos mientras no hay RFID
 				}
 
@@ -1383,17 +1322,7 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=ON;
 					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
 				}
-				/*
-				else if(Flag10sPantalla==OFF)
-				{
-					EstadoPantalla=0;
-					FlagEstado=ON;
-					Flag10sPantalla=ON;
-				}*/
-				else
-				{
-					ReceivePulsadores = 0;
-				}
+
 			break;
 
 			case 10:	//CONFIRMAR SMS
@@ -1407,8 +1336,6 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=OFF;
 					xSemaphoreGive(Semaforo_Reset10Seg);
 					xSemaphoreGive(Semaforo_Habilitacion10Seg);
-					//j=0;
-					//Flag10sPantalla=ON;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringHCenterAt(nombre,100,10);
 					GUI_SetFont(GUI_FONT_24B_ASCII);
@@ -1435,26 +1362,16 @@ void vTaskTFT(void *pvParameters)
 
 					EstadoPantalla=6;
 					FlagEstado=ON;
-					ReceivePulsadores = 0;
+
 				}
-				/*
-				else if(Flag10sPantalla==OFF)
-				{
-					EstadoPantalla=0;
-					FlagEstado=ON;
-					Flag10sPantalla=ON;
-					mensaje=0;
-				}*/
 				else if(xSemaphoreTake(Semaforo_Flag10Seg,10 / portTICK_PERIOD_MS) == pdTRUE)
 				{
 					EstadoPantalla=0;
 					FlagEstado=ON;
 					xSemaphoreTake(Semaforo_Habilitacion10Seg, 10 / portTICK_PERIOD_MS);//Deshabilito el conteo
+					mensaje=0;
 				}
-				else
-				{
-					ReceivePulsadores = 0;
-				}
+
 			break;
 
 			case 11:	//DESLOGUEO CONFIRMADO
@@ -1477,6 +1394,9 @@ void vTaskTFT(void *pvParameters)
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 				xSemaphoreGive(Semaforo_SSP);
 
+				xQueueReset(Cola_Datos_RFID);
+				xSemaphoreGive(Semaforo_YaHayTarj);
+
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 				vTaskDelay(1000/portTICK_PERIOD_MS);
 				Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
@@ -1487,10 +1407,21 @@ void vTaskTFT(void *pvParameters)
 				minConductor=0;
 				horaConductor=0;
 				FlagEstado=ON;
-				xSemaphoreGive(Semaforo_YaHayTarj);
 			break;
 		}
+
+		if(minAnt!=minutos)
+		{
+			minAnt=minutos;
+			minConductor++;
+			if(minConductor==60)
+			{
+				minConductor=0;
+				horaConductor++;
+			}
+		}
 	}
+	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
 
 
@@ -1504,6 +1435,7 @@ int main (void)
 	Chip_GPIO_Init(LPC_GPIO);
 
 	uC_StartUp();
+
 
 	vSemaphoreCreateBinary(Semaforo_RX1);				//Semaforo para indicar que hay algo para leer
 	vSemaphoreCreateBinary(Semaforo_RX2);				//Semaforo para indicar que hay algo para leer
@@ -1539,7 +1471,7 @@ int main (void)
 	Cola_TX1 = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_RX2 = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_TX2 = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
-	Cola_Pulsadores = xQueueCreate(1, sizeof(uint32_t));		//Creamos una cola
+	Cola_Pulsadores = xQueueCreate(4, sizeof(uint8_t));		//Creamos una cola
 	Cola_SD = xQueueCreate(4, sizeof(char) * 100);	//Creamos una cola para mandar una trama completa
 	Cola_Datos_GPS = xQueueCreate(1, sizeof(struct Datos_Nube));
 	Cola_Datos_RFID = xQueueCreate(1, sizeof(Tarjetas_RFID));
@@ -1551,8 +1483,8 @@ int main (void)
 					( ( unsigned short ) 250), NULL, (tskIDLE_PRIORITY + 1UL),
 							(xTaskHandle *) NULL);
 
-	xTaskCreate(xTaskPulsadores, (char *) "vTaskPulsadores",
-			(( unsigned short ) 16), NULL, (tskIDLE_PRIORITY + 2UL),
+	xTaskCreate(xTaskPulsadores, (char *) "xTaskPulsadores",
+			configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
 
