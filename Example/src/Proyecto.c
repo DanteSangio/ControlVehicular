@@ -32,6 +32,7 @@
 #include "Pantalla.h"
 //#include "DIALOG.h"
 //#include "GRAPH.h"
+#include "Acelerometro.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,9 +51,9 @@
 __DATA(RAM2)	MFRC522Ptr_t mfrcInstance;	// RFID structs
 
 //__DATA(RAM2)	int last_balance = 0;
-__DATA(RAM2)	unsigned int last_user_ID;
+//__DATA(RAM2)	unsigned int last_user_ID;
 
-__DATA(RAM2)	uint8_t	ReceivePulsadores;
+//__DATA(RAM2)	uint8_t	ReceivePulsadores;
 //__DATA(RAM2)	uint8_t Flag10sPantalla=OFF;
 
 __DATA(RAM2) 	RINGBUFF_T txring1,txring2, rxring1,rxring2;					//Transmit and receive ring buffers
@@ -81,6 +82,11 @@ __DATA(RAM2)	SemaphoreHandle_t Semaforo_Sist_Inic;
 __DATA(RAM2)	SemaphoreHandle_t Semaforo_Reset10Seg;
 __DATA(RAM2)	SemaphoreHandle_t Semaforo_Flag10Seg;
 __DATA(RAM2)	SemaphoreHandle_t Semaforo_Habilitacion10Seg;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_Muestras_Acelerometro;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_Analisis_Acelerometro;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_Vuelco;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_Choque;
+__DATA(RAM2)	SemaphoreHandle_t Semaforo_Reset30Seg;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,7 +99,9 @@ __DATA(RAM2)	QueueHandle_t Cola_Datos_GPS;
 __DATA(RAM2)	QueueHandle_t Cola_Datos_RFID;
 __DATA(RAM2)	QueueHandle_t Cola_Inicio_Tarjetas;
 __DATA(RAM2)	QueueHandle_t HoraEntrada;
-
+__DATA(RAM2)	QueueHandle_t Cola_PromX;
+__DATA(RAM2)	QueueHandle_t Cola_PromY;
+__DATA(RAM2)	QueueHandle_t Cola_PromZ;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* RTC_IRQHandler */
@@ -113,7 +121,6 @@ void RTC_IRQHandler(void)
 		if(xSemaphoreTakeFromISR(Semaforo_Reset10Seg, &Testigo3) == pdTRUE )
 		{
 			j=0;
-			//xSemaphoreTakeFromISR(Semaforo_Habilitacion10Seg, &Testigo3);
 		}
 
 
@@ -121,18 +128,21 @@ void RTC_IRQHandler(void)
 		{
 			xSemaphoreGiveFromISR(Semaforo_Habilitacion10Seg,&Testigo4);
 			j++;
-			if(j>10)
+			if(j>=10)
 			{
 				xSemaphoreGiveFromISR(Semaforo_Flag10Seg,&Testigo4);//significa que hay que cambiar pantalla
-				//Flag10sPantalla=OFF;
 				j=0;
 			}
 		}
 
-
-
 		i++;
-		if(i>30)
+
+		if(xSemaphoreTakeFromISR(Semaforo_Reset30Seg, &Testigo3) == pdTRUE )
+		{
+			i=0;
+		}
+
+		if(i>=30)
 		{
 			i=0;
 			xSemaphoreGiveFromISR(Semaforo_RTCgsm, &Testigo);	//Devuelve si una de las tareas bloqueadas tiene mayor prioridad que la actual
@@ -680,11 +690,15 @@ static void vTaskInicSD(void *pvParameters)
 static void xTaskWriteSD(void *pvParameters)
 {
     uint8_t returnStatus,i=0;
-    fileConfig_st *srcFilePtr = NULL;
-    char Receive[100];
+    static	fileConfig_st *srcFilePtr = NULL;
+    static	char Receive[100];
 
 	xSemaphoreTake(Semaforo_SD, portMAX_DELAY);// me fijo que este inicializada la SD
-
+	/* PARA ESCRIBIR ARCHIVO */
+    do
+    {
+    	srcFilePtr = FILE_Open("datalog.txt",WRITE,&returnStatus);
+    }while(srcFilePtr == 0);
 
     while (1)
 	{
@@ -696,11 +710,7 @@ static void xTaskWriteSD(void *pvParameters)
         xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);// me fijo que este disponible el canal ssp
     	Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_DC);//Para que no se resetie la pantalla
 
-    	/* PARA ESCRIBIR ARCHIVO */
-        do
-        {
-        	srcFilePtr = FILE_Open("datalog.txt",WRITE,&returnStatus);
-        }while(srcFilePtr == 0);
+		taskENTER_CRITICAL();//Hago que no pueda cambiar de tarea mientras este aca
 
         InfoSd(Receive);//En la funcion se reciben los datos a guardar y se los coloca en una trama
 
@@ -713,9 +723,13 @@ static void xTaskWriteSD(void *pvParameters)
 		}while((Receive[i] != 0));
         FILE_PutCh(srcFilePtr,EOF);
         FILE_Close(srcFilePtr);
+        FILE_Open("datalog.txt",APPEND,&returnStatus);
 
+    	Chip_GPIO_SetPinOutHigh(LPC_GPIO, SD_CS);
+    	Chip_GPIO_SetPinOutLow(LPC_GPIO, TFT_DC);//Para que no se resetie la pantalla
     	xSemaphoreGive(Semaforo_SSP);
-    	Chip_GPIO_SetPinOutLow(LPC_GPIO, TFT_DC);
+
+    	taskEXIT_CRITICAL();
 
         for(i=0;Receive[i] != 0 || i<100;i++)//limpio el vector
         {
@@ -782,6 +796,20 @@ void vTaskTFT(void *pvParameters)
 			ReceivePulsadores=0;// si no hay nada en la cola pongo en 0 la variable
 		}
 
+		if(xSemaphoreTake(Semaforo_Vuelco,10 / portTICK_PERIOD_MS) == pdTRUE)
+		{
+			EstadoPantalla=6;
+			FlagEstado=ON;
+			mensaje=3; // Mensaje por vuelco
+		}
+
+		if(xSemaphoreTake(Semaforo_Choque,10 / portTICK_PERIOD_MS) == pdTRUE)
+		{
+			EstadoPantalla=6;
+			FlagEstado=ON;
+			mensaje=4; // Mensaje por choque
+		}
+
 		Chip_RTC_GetFullTime(LPC_RTC, &pFullTime);
 		minutos=pFullTime.time[1];
 		hora=pFullTime.time[2];
@@ -810,7 +838,6 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=OFF;
 					xSemaphoreGive(Semaforo_Reset10Seg);
 					xSemaphoreGive(Semaforo_Habilitacion10Seg);
-					//				j=0;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringAt("/     /",127,10);
 					GUI_DispDecAt(dia,101,10,2);
@@ -1092,9 +1119,24 @@ void vTaskTFT(void *pvParameters)
 				GUI_DrawHLine(40,0,320);
 				GUI_DrawHLine(45,0,320);
 
-				GUI_SetFont(GUI_FONT_24B_ASCII);
-				GUI_DispStringHCenterAt("ENVIANDO MENSAJE",160,110);
+				if(mensaje == 3)
+				{
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("ENVIANDO MENSAJE",100,110);
+					GUI_DispStringHCenterAt("VUELCO DETECTADO",170,110);
+				}
 
+				else if(mensaje == 4)
+				{
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("ENVIANDO MENSAJE",100,110);
+					GUI_DispStringHCenterAt("CHOQUE DETECTADO",170,110);
+				}
+				else
+				{
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("ENVIANDO MENSAJE",160,110);
+				}
 				GUI_DrawHLine(195,0,320);
 				GUI_DrawHLine(200,0,320);
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
@@ -1105,11 +1147,10 @@ void vTaskTFT(void *pvParameters)
 				xSemaphoreTake(Semaforo_GSM_Enviar,portMAX_DELAY);//Me aseguro de estar enviando solo esta tarea
 				EnviarMensajeGSM(mensaje); //Se pasa como parametro el mensaje PREDEFINIDO a enviar
 				xSemaphoreGive(Semaforo_GSM_Enviar);
-				mensaje=0;
+
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
 				vTaskDelay(1000/portTICK_PERIOD_MS);
 				Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
-
 
 				xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
 				GUI_Clear();
@@ -1123,15 +1164,30 @@ void vTaskTFT(void *pvParameters)
 				GUI_DrawHLine(40,0,320);
 				GUI_DrawHLine(45,0,320);
 
-				GUI_SetFont(GUI_FONT_24B_ASCII);
-				GUI_DispStringHCenterAt("MENSAJE ENVIADO",160,110);
+				if(mensaje == 3)
+				{
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("MENSAJE ENVIADO",160,110);
+					GUI_DispStringHCenterAt("VUELCO DETECTADO",170,110);
+				}
+				else if(mensaje == 4)
+				{
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("ENVIANDO MENSAJE",100,110);
+					GUI_DispStringHCenterAt("CHOQUE DETECTADO",170,110);
+				}
+				else
+				{
+					GUI_SetFont(GUI_FONT_24B_ASCII);
+					GUI_DispStringHCenterAt("MENSAJE ENVIADO",160,110);
+				}
 
 				GUI_DrawHLine(195,0,320);
 				GUI_DrawHLine(200,0,320);
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 				xSemaphoreGive(Semaforo_SSP);
 
-
+				mensaje=0;
 				vTaskDelay(2000/portTICK_PERIOD_MS);
 				EstadoPantalla=0;
 			break;
@@ -1143,7 +1199,6 @@ void vTaskTFT(void *pvParameters)
 
 					GUI_Clear();
 					FlagEstado=OFF;
-					//minAnt=minutos;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringAt("/     /",127,10);
 					GUI_DispDecAt(dia,101,10,2);
@@ -1168,6 +1223,7 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=ON;
 					EstadoPantalla=0;
 					xSemaphoreGive(Semaforo_Reset10Seg);
+					xSemaphoreGive(Semaforo_Reset30Seg);
 					xSemaphoreGive(Semaforo_Habilitacion10Seg);
 					xSemaphoreTake(Semaforo_YaHayTarj, portMAX_DELAY);
 					xSemaphoreGive(Semaforo_Sist_Inic);
@@ -1205,7 +1261,6 @@ void vTaskTFT(void *pvParameters)
 					FlagEstado=OFF;
 					xSemaphoreGive(Semaforo_Reset10Seg);
 					xSemaphoreGive(Semaforo_Habilitacion10Seg);
-					//j=0;
 					GUI_SetFont(GUI_FONT_24B_ASCII);
 					GUI_DispStringAt("/     /",127,10);
 					GUI_DispDecAt(dia,101,10,2);
@@ -1424,7 +1479,161 @@ void vTaskTFT(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea si sale del while
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* xTaskMuestras
+ * Tarea encargada de recolectar los datos del acelerometro
+ */
+static void xTaskMuestras(void *pvParameters)
+{
 
+	signed short int samples[7] = {0,0,0,0,0,0,0}; //cada posicion es de 16 bits, necesario para guardar
+										   //la parte low y high de las muestras de accel
+	static signed int promX = 0,promY = 0,promZ = 0;
+	static signed short int  valxPrevio=0,valx;
+	static uint8_t k;
+	uint8_t rbuf[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	static uint8_t wbuf[2] = {0,0};
+	static	I2C_XFER_T xfer;
+
+	MPU6050_wakeup(&xfer);
+
+	//Lectura de PWR_MGMMT_1 2 (para verificar si se lo saco del sleep y de standby a los ejes)
+	wbuf[0] = MPU6050_RA_PWR_MGMT_1;
+	I2C_XFER_config(&xfer, rbuf, 2, MPU6050_I2C_SLAVE_ADDRESS, 0, wbuf, 1);
+
+	wbuf[0] = MPU6050_RA_ACCEL_XOUT_H;	//Configuracion de la 1era direccion desde la que se leeran los valores de los registros de los sensores
+
+	while(1)
+	{
+		//xSemaphoreTake(Semaforo_Muestras_Acelerometro, portMAX_DELAY );
+
+		for ( k = 0 ; k < 100 ; k ++ )
+		{
+			I2C_XFER_config(&xfer, rbuf, 14, MPU6050_I2C_SLAVE_ADDRESS, 0, wbuf, 1);
+
+			Fill_Samples(samples, rbuf);
+
+			valx = samples[0];
+
+			if(valx != valxPrevio)
+			{
+				promX += samples[0];
+				promY += samples[1];
+				promZ += samples[2];
+				valxPrevio = valx;
+			}
+			else
+			{
+				k--;//evito que sume al contador
+			}
+			vTaskDelay( 5 / 100 / configTICK_RATE_HZ );// delay de 500 useg
+		}
+
+		promX /= 100; promY /= 100; promZ /= 100;
+
+		xQueueOverwrite(Cola_PromX,&promX);
+		xQueueOverwrite(Cola_PromY,&promY);
+		xQueueOverwrite(Cola_PromZ,&promZ);
+
+		promX = promY = promZ = 0;
+
+		xSemaphoreGive(Semaforo_Analisis_Acelerometro );
+		vTaskDelay(5/portTICK_RATE_MS);//delay de 5ms
+	}
+	vTaskDelete(NULL);	//Borra la tarea
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* xTaskAcelerometro
+ * Tarea encargada de procesar los datos recolectados del acelerometro
+ */
+static void xTaskAcelerometro(void *pvParameters)
+{
+	static	signed int 	deltaX,deltaY,deltaZ;
+	static	signed int 	promX,promY,promZ;
+	static	uint16_t	difX,difY,difZ;
+	static signed int promXant = XDefecto, promYant = YDefecto, promZant = ZDefecto;
+
+	while(1)
+	{
+		//xSemaphoreTake(Semaforo_Analisis_Acelerometro , portMAX_DELAY );
+		xQueueReceive(Cola_PromX,&promX,portMAX_DELAY);
+		xQueueReceive(Cola_PromY,&promY,portMAX_DELAY);
+		xQueueReceive(Cola_PromZ,&promZ,portMAX_DELAY);
+
+		//Calculo para ver si hay choque
+		if(promX > promXant)
+		{
+			deltaX = promX - promXant;
+		}
+		else
+		{
+			deltaX = promXant - promX;
+		}
+
+		if(promY > promYant)
+		{
+			deltaY = promY - promYant;
+		}
+		else
+		{
+			deltaY = promYant - promY;
+		}
+
+		if(promZ > promZant)
+		{
+			deltaZ = promZ - promZant;
+		}
+		else
+		{
+			deltaZ = promZant - promZ;
+		}
+
+		//Calculo para ver si hay vuelco
+		if(promX > XDefecto)
+		{
+			difX = promX - XDefecto;
+		}
+		else
+		{
+			difX = XDefecto - promX;
+		}
+		if(promY > YDefecto)
+		{
+			difY = promY - YDefecto;
+		}
+		else
+		{
+			difY = YDefecto - promY;
+		}
+		if(promZ > ZDefecto)
+		{
+			difZ = promZ - ZDefecto;
+		}
+		else
+		{
+			difZ = ZDefecto - promZ;
+		}
+
+		if ( ( deltaX > CHOQUE ) || ( deltaY > CHOQUE ) || ( deltaZ > CHOQUE ) ) //para un choque
+		{
+			xSemaphoreGive(Semaforo_Choque);
+			vTaskDelay(10/portTICK_RATE_MS);//delay de 10ms
+		}
+		if ( ( difX > VUELCO ) || ( difY > VUELCO ) || ( difZ > VUELCO ) ) //para un vuelco
+		{
+			xSemaphoreGive(Semaforo_Vuelco);
+			vTaskDelay(10/portTICK_RATE_MS);//delay de 10ms
+		}
+
+		promXant = promX; promYant = promY; promZant = promZ;
+
+		xSemaphoreGive(Semaforo_Muestras_Acelerometro);
+
+		vTaskDelay(50/portTICK_RATE_MS);//delay de 10ms
+
+	}
+	vTaskDelete(NULL);	//Borra la tarea
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* main */
 int main (void)
@@ -1458,13 +1667,22 @@ int main (void)
 	xSemaphoreTake(Semaforo_SD, portMAX_DELAY);
 	vSemaphoreCreateBinary(Semaforo_Sist_Inic);			//Semaforo de inicializacion de sistema
 	xSemaphoreTake(Semaforo_Sist_Inic, portMAX_DELAY);
-	vSemaphoreCreateBinary(Semaforo_Flag10Seg);			//Semaforo de inicializacion de sistema
-	vSemaphoreCreateBinary(Semaforo_Habilitacion10Seg);			//Semaforo de inicializacion de sistema
-	vSemaphoreCreateBinary(Semaforo_Reset10Seg);			//Semaforo de inicializacion de sistema
+	vSemaphoreCreateBinary(Semaforo_Flag10Seg);			//Semaforo para indicar 10 seg de la pantalla
+	vSemaphoreCreateBinary(Semaforo_Habilitacion10Seg);			//Semaforo para habilitar los 10 seg de la pantalla
+	vSemaphoreCreateBinary(Semaforo_Reset10Seg);			//Semaforo para resetear los 10 seg de la pantalla
 	xSemaphoreTake(Semaforo_Flag10Seg, portMAX_DELAY);
 	xSemaphoreTake(Semaforo_Habilitacion10Seg, portMAX_DELAY);
 	xSemaphoreTake(Semaforo_Reset10Seg, portMAX_DELAY);
+	vSemaphoreCreateBinary(Semaforo_Reset30Seg);			//Semaforo para resetear los 30 seg de la SD y GSM
 
+
+	vSemaphoreCreateBinary(Semaforo_Muestras_Acelerometro);	//Semaforo para indicar que se analizaron las muestras
+	vSemaphoreCreateBinary(Semaforo_Analisis_Acelerometro);	//Semaforo para indicar que se recogieron las muestras
+	xSemaphoreTake(Semaforo_Analisis_Acelerometro , portMAX_DELAY );
+	vSemaphoreCreateBinary(Semaforo_Vuelco);	//Semaforo para indicar que volco
+	xSemaphoreTake(Semaforo_Vuelco , portMAX_DELAY );
+	vSemaphoreCreateBinary(Semaforo_Choque);	//Semaforo para indicar que volco
+	xSemaphoreTake(Semaforo_Choque , portMAX_DELAY );
 
 
 	Cola_RX1 = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
@@ -1477,14 +1695,17 @@ int main (void)
 	Cola_Datos_RFID = xQueueCreate(1, sizeof(Tarjetas_RFID));
 	HoraEntrada = xQueueCreate(1, sizeof(Entrada_RFID));
 	Cola_Inicio_Tarjetas = xQueueCreate(1, sizeof(Tarjetas_RFID*));
+	Cola_PromX = xQueueCreate(1, sizeof(signed int));
+	Cola_PromY = xQueueCreate(1, sizeof(signed int));
+	Cola_PromZ = xQueueCreate(1, sizeof(signed int));
 
 
 	xTaskCreate(vTaskTFT, (char *) "vTaskTFT",
-					( ( unsigned short ) 250), NULL, (tskIDLE_PRIORITY + 1UL),
+					( ( unsigned short ) 250), NULL, (tskIDLE_PRIORITY + 2UL),
 							(xTaskHandle *) NULL);
 
 	xTaskCreate(xTaskPulsadores, (char *) "xTaskPulsadores",
-			configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
+			configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 
 
@@ -1510,11 +1731,11 @@ int main (void)
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskLeerAnillo1, (char *) "vTaskLeerAnillo1",
-				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskLeerAnillo2, (char *) "vTaskLeerAnillo2",
-				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskCargarAnillo1, (char *) "vTaskCargarAnillo1",
@@ -1550,7 +1771,15 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
+	/*
+	xTaskCreate(xTaskAcelerometro, (char *) "xTaskAcelerometro",
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
+				(xTaskHandle *) NULL);
 
+	xTaskCreate(xTaskMuestras, (char *) "xTaskMuestras",
+					configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+					(xTaskHandle *) NULL);
+	*/
 	/* Start the scheduler */
 	vTaskStartScheduler();
 

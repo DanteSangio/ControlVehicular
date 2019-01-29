@@ -130,7 +130,7 @@ void EnviarMensajeGSM (uint8_t	mensaje)
 	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CSCS=\"GSM\"\r", sizeof("AT+CSCS=\"GSM\"\r") - 1);
 	vTaskDelay(500/portTICK_RATE_MS);	//Espero 3s
 
-	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "AT+CMGS=\"+5491137863836\"\r", sizeof("AT+CMGS=\"+5491137863836\"\r") - 1);
+	Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, CONTACTO, sizeof(CONTACTO) - 1);
 	vTaskDelay(500/portTICK_RATE_MS);	//Espero 3s
 
 	if(mensaje == 1)
@@ -140,6 +140,14 @@ void EnviarMensajeGSM (uint8_t	mensaje)
 	else if(mensaje == 2)
 	{
 		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "COMUNICARSE CON EL CONDUCTOR\032", sizeof("COMUNICARSE CON EL CONDUCTOR\032") - 1);
+	}
+	else if(mensaje == 3)
+	{
+		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "VUELCO DETECTADO\032", sizeof("VUELCO DETECTADO\032") - 1);
+	}
+	else if(mensaje == 4)
+	{
+		Chip_UART_SendRB(UART_SELECTION_GSM, &TX_RING_GSM, "CHOQUE DETECTADO\032", sizeof("CHOQUE DETECTADO\032") - 1);
 	}
 }
 

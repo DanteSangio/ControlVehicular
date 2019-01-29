@@ -8,6 +8,8 @@ extern RINGBUFF_T txring1;
 #define APIKEY				"api_key=4IVCTNA39FY9U35C"//apikey donde se encuentran la informacion
 #define CHANNEL2			"648303"//channel donde se encuentran las tarjetas
 #define APIKEY2				"VRMSAZ0CSI5VVHDM"//apikey donde se encuentran las tarjetas
+#define CONTACTO			"AT+CMGS=\"+5491167965258\"\r"
+
 
 void AnalizarTramaGSMenvio (uint8_t dato);
 void EnviarTramaGSM (char* latitud, char* longitud, char* rfid, int velocidad);

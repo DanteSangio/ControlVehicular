@@ -43,6 +43,7 @@
 								<option id="com.crt.advproject.gcc.hdrlib.787120719" name="Library headers" superClass="com.crt.advproject.gcc.hdrlib" value="com.crt.advproject.gcc.hdrlib.codered" valueType="enumerated"/>
 								<option id="com.crt.advproject.gcc.specs.1419498580" name="Specs" superClass="com.crt.advproject.gcc.specs" value="com.crt.advproject.gcc.specs.codered" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.304153274" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/Acelerometro/Inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/PANTALLA/inc/GUI}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/PANTALLA/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ControlVehicular/SD/inc}&quot;"/>
@@ -136,6 +137,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Acelerometro/src"/>
 						<entry excluding="GSM.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Example/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="GPS/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="GSM/src"/>
@@ -255,7 +257,8 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="PANTALLA/src/HW/utnlogo.c|PANTALLA/src/HW/control.c|SD/src|Example/src/GSM.c|GSM/src|GSM/src}|RFID|src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="Acelerometro/src|PANTALLA/src/HW/utnlogo.c|PANTALLA/src/HW/control.c|SD/src|Example/src/GSM.c|GSM/src|GSM/src}|RFID|src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Acelerometro/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="GSM/src"/>
 						<entry excluding="src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="RFID"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="RFID/src"/>

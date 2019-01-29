@@ -15,9 +15,10 @@
 #include "UART.h"
 #include "RFID.h"
 #include "GSM.h"
+#include <cr_section_macros.h>
 
 //extern int last_balance;
-extern unsigned int last_user_ID;
+//extern unsigned int last_user_ID;
 extern MFRC522Ptr_t mfrcInstance;
 extern QueueHandle_t Cola_Datos_RFID, Cola_Inicio_Tarjetas;
 extern SemaphoreHandle_t Semaforo_Tarjeta_Incorrecta;
@@ -26,6 +27,7 @@ void userTapIn()
 {
 	//Tarjetas_RFID Tarj_actual;
 	//uint32_t	ultTarjeta;
+__DATA(RAM2)	static	unsigned int last_user_ID;
 	int last_balance = 0;
 
 	// Convert the uid bytes to an integer, byte[0] is the MSB

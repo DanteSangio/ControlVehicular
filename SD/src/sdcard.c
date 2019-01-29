@@ -441,8 +441,8 @@ void InfoSd(char* Receive)
 	Tarjetas_RFID informacionRFID;
 	char	velocidadCar[5];
 
-	xQueuePeek(Cola_Datos_GPS, &informacion, portMAX_DELAY);
-	xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
+	xQueuePeek(Cola_Datos_GPS, &informacion, 500/portTICK_RATE_MS);
+	xQueuePeek(Cola_Datos_RFID, &informacionRFID, 500/portTICK_RATE_MS);
 
 	strcpy(Receive,informacion.fecha);
 	strcat(Receive," ");

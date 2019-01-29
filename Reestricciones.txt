@@ -1,1 +1,0 @@
-la cantidad de caracteres que puede llevar el usuario es como maximo 20 caracteres

@@ -63,6 +63,13 @@ void uC_StartUp (void)
 	Chip_GPIO_SetDir (LPC_GPIO, GSM_RST, OUTPUT);
 	Chip_IOCON_PinMux (LPC_IOCON, GSM_RST, IOCON_MODE_INACT, IOCON_FUNC0);
 
+	Chip_IOCON_PinMux(LPC_IOCON, AC_SDA, IOCON_MODE_INACT, IOCON_FUNC3);
+	Chip_IOCON_PinMux(LPC_IOCON, AC_SCL, IOCON_MODE_INACT, IOCON_FUNC3);
+	Chip_IOCON_EnableOD(LPC_IOCON, AC_SDA);
+	Chip_IOCON_EnableOD(LPC_IOCON, AC_SCL);
+
+    Chip_I2C_SetClockRate(I2C1, 100000);
+	Chip_I2C_SetMasterEventHandler(I2C1, Chip_I2C_EventHandlerPolling);
 
 	//Set the chipSelectPin as digital output, do not select the slave yet
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, SD_CS);

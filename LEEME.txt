@@ -1,0 +1,2 @@
+la cantidad de caracteres que puede llevar el usuario es como maximo 20 caracteres
+FORMATEAR EN FAT32 TAMAÑO DE UNIDAD 512 BYTES!!
