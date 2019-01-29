@@ -1122,15 +1122,15 @@ void vTaskTFT(void *pvParameters)
 				if(mensaje == 3)
 				{
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringHCenterAt("ENVIANDO MENSAJE",100,110);
-					GUI_DispStringHCenterAt("VUELCO DETECTADO",170,110);
+					GUI_DispStringHCenterAt("ENVIANDO MENSAJE",160,90);
+					GUI_DispStringHCenterAt("VUELCO DETECTADO",160,130);
 				}
 
 				else if(mensaje == 4)
 				{
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringHCenterAt("ENVIANDO MENSAJE",100,110);
-					GUI_DispStringHCenterAt("CHOQUE DETECTADO",170,110);
+					GUI_DispStringHCenterAt("ENVIANDO MENSAJE",160,90);
+					GUI_DispStringHCenterAt("CHOQUE DETECTADO",160,130);
 				}
 				else
 				{
@@ -1507,6 +1507,9 @@ static void xTaskMuestras(void *pvParameters)
 	{
 		//xSemaphoreTake(Semaforo_Muestras_Acelerometro, portMAX_DELAY );
 
+    	xSemaphoreTake(Semaforo_Sist_Inic, portMAX_DELAY);// me fijo que este inicializada el resto del sistema
+    	xSemaphoreGive(Semaforo_Sist_Inic);
+
 		for ( k = 0 ; k < 100 ; k ++ )
 		{
 			I2C_XFER_config(&xfer, rbuf, 14, MPU6050_I2C_SLAVE_ADDRESS, 0, wbuf, 1);
@@ -1771,7 +1774,7 @@ int main (void)
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
-	/*
+
 	xTaskCreate(xTaskAcelerometro, (char *) "xTaskAcelerometro",
 				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
@@ -1779,7 +1782,7 @@ int main (void)
 	xTaskCreate(xTaskMuestras, (char *) "xTaskMuestras",
 					configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 					(xTaskHandle *) NULL);
-	*/
+
 	/* Start the scheduler */
 	vTaskStartScheduler();
 
