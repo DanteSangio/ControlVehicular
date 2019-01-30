@@ -95,5 +95,6 @@ void SSP_EnableChipSelect(uint8_t portCS, uint8_t pinCS );
 void SSP_DisableChipSelect(uint8_t portCS, uint8_t pinCS );
 uint8_t init_SdCard(uint8_t *cardType);
 void InfoSd(char* Receive);
+void	strct (char* original,char* agregado);
 
 #endif

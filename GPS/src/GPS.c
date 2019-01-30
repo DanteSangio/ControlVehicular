@@ -40,12 +40,6 @@ extern RINGBUFF_T txring, rxring;								//Transmit and receive ring buffers
 extern uint8_t rxbuff[UART_RRB_SIZE], txbuff[UART_SRB_SIZE];	//Transmit and receive buffers
 
 
-volatile int HourGPS, MinuteGPS, DayGPS, MonthGPS, YearGPS;		//GPS: Variables que guardan informacion
-volatile int LatGPS, LongGPS;									//GPS: Variables que guardan informacion
-volatile int LatGrados, LatMinutos, LatSeg, LongGrados, LongMinutos, LongSeg;			//GPS: Variables auxiliares
-
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* uC_StartUp */
 void uC_StartUp (void)
@@ -97,6 +91,9 @@ void AnalizarTramaGPS (uint8_t dato)
 	__DATA(RAM2)	static char Long1[14];
 	__DATA(RAM2)	static char Long2[6];
 	__DATA(RAM2)	static struct Datos_Nube valor;
+	__DATA(RAM2)	static 	int HourGPS, MinuteGPS, DayGPS, MonthGPS, YearGPS;		//GPS: Variables que guardan informacion
+	__DATA(RAM2)	static	int LatGPS, LongGPS;									//GPS: Variables que guardan informacion
+	__DATA(RAM2)	static	int LatGrados, LatMinutos, LatSeg, LongGrados, LongMinutos, LongSeg;			//GPS: Variables auxiliares
 	char aux[11];
 	char aux2[11];
 	char aux3[11];
@@ -145,7 +142,14 @@ void AnalizarTramaGPS (uint8_t dato)
 			velocidad[4]='\0';
 			velocidadNum = atoi(velocidad);
 			velocidadNum = velocidadNum * 1.852 / 1000;//Lo paso a kilometros por hora / 1000
-			valor.velocidad = velocidadNum;
+			if(velocidadNum>=5) // solo muestro si es  mayor a 5km/h
+			{
+				valor.velocidad = velocidadNum;
+			}
+			else
+			{
+				valor.velocidad = 0;
+			}
 			EstadoTrama=4;
 		break;
 
@@ -279,8 +283,10 @@ void AnalizarTramaGPS (uint8_t dato)
 			valor.longitud[4]=valor.longitud[3];
 			valor.longitud[3]='.';
 
-			xQueueOverwrite(Cola_Datos_GPS,&valor);
-
+			if(YearGPS>18 && YearGPS<30)
+			{
+				xQueueOverwrite(Cola_Datos_GPS,&valor);
+			}
 			EstadoTrama=6;
 		break;
 

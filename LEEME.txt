@@ -1,2 +1,4 @@
-la cantidad de caracteres que puede llevar el usuario es como maximo 20 caracteres
+La cantidad de caracteres que puede llevar el usuario es como maximo 20 caracteres
+La cantidad de caracteres que puede llevar el nombre del archivo es como maximo 12 caracteres
 FORMATEAR EN FAT32 TAMAÑO DE UNIDAD 512 BYTES!!
+En caso de modificar el archivo en PC borrar el mismo o cambiarle el nombre para que el equipo cree uno nuevo

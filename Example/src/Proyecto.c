@@ -286,7 +286,7 @@ static void xTaskRTConfig(void *pvParameters)
 		aux = atoi (pepe);
 		aux = aux + 2000;
 		FullTime.time[RTC_TIMETYPE_YEAR]= aux;
-		}while(aux < 2015);
+		}while(aux < 2019 && aux > 2030);
 	Chip_RTC_SetFullTime(LPC_RTC, &FullTime);
 	//
 
@@ -717,10 +717,10 @@ static void xTaskWriteSD(void *pvParameters)
         i=0;
 
 
-        do
+        while(Receive[i] != 0)
 		{
 		   FILE_PutCh(srcFilePtr,Receive[i++]);
-		}while((Receive[i] != 0));
+		}
         FILE_PutCh(srcFilePtr,EOF);
         FILE_Close(srcFilePtr);
         FILE_Open("datalog.txt",APPEND,&returnStatus);
@@ -1014,6 +1014,7 @@ void vTaskTFT(void *pvParameters)
 				xSemaphoreTake(Semaforo_GSM_Recibido,portMAX_DELAY);//me aseguro que ya se hayan cargado las tarjetas
 				xSemaphoreGive(Semaforo_GSM_Recibido);
 
+				FlagEstado=ON;
 				EstadoPantalla=7;
 			break;
 
@@ -1145,7 +1146,7 @@ void vTaskTFT(void *pvParameters)
 
 				//Para enviar SMS
 				xSemaphoreTake(Semaforo_GSM_Enviar,portMAX_DELAY);//Me aseguro de estar enviando solo esta tarea
-				EnviarMensajeGSM(mensaje); //Se pasa como parametro el mensaje PREDEFINIDO a enviar
+//				EnviarMensajeGSM(mensaje); //Se pasa como parametro el mensaje PREDEFINIDO a enviar
 				xSemaphoreGive(Semaforo_GSM_Enviar);
 
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
@@ -1167,14 +1168,14 @@ void vTaskTFT(void *pvParameters)
 				if(mensaje == 3)
 				{
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringHCenterAt("MENSAJE ENVIADO",160,110);
-					GUI_DispStringHCenterAt("VUELCO DETECTADO",170,110);
+					GUI_DispStringHCenterAt("MENSAJE ENVIADO",160,90);
+					GUI_DispStringHCenterAt("VUELCO DETECTADO",160,130);
 				}
 				else if(mensaje == 4)
 				{
 					GUI_SetFont(GUI_FONT_24B_ASCII);
-					GUI_DispStringHCenterAt("ENVIANDO MENSAJE",100,110);
-					GUI_DispStringHCenterAt("CHOQUE DETECTADO",170,110);
+					GUI_DispStringHCenterAt("ENVIANDO MENSAJE",160,90);
+					GUI_DispStringHCenterAt("CHOQUE DETECTADO",160,130);
 				}
 				else
 				{
@@ -1620,12 +1621,12 @@ static void xTaskAcelerometro(void *pvParameters)
 		if ( ( deltaX > CHOQUE ) || ( deltaY > CHOQUE ) || ( deltaZ > CHOQUE ) ) //para un choque
 		{
 			xSemaphoreGive(Semaforo_Choque);
-			vTaskDelay(10/portTICK_RATE_MS);//delay de 10ms
+			vTaskDelay(10000/portTICK_RATE_MS);//delay de 10seg
 		}
 		if ( ( difX > VUELCO ) || ( difY > VUELCO ) || ( difZ > VUELCO ) ) //para un vuelco
 		{
 			xSemaphoreGive(Semaforo_Vuelco);
-			vTaskDelay(10/portTICK_RATE_MS);//delay de 10ms
+			vTaskDelay(10000/portTICK_RATE_MS);//delay de 10seg
 		}
 
 		promXant = promX; promYant = promY; promZant = promZ;
@@ -1704,7 +1705,7 @@ int main (void)
 
 
 	xTaskCreate(vTaskTFT, (char *) "vTaskTFT",
-					( ( unsigned short ) 250), NULL, (tskIDLE_PRIORITY + 2UL),
+					( ( unsigned short ) 350), NULL, (tskIDLE_PRIORITY + 2UL),
 							(xTaskHandle *) NULL);
 
 	xTaskCreate(xTaskPulsadores, (char *) "xTaskPulsadores",
@@ -1722,7 +1723,7 @@ int main (void)
 
 
 	xTaskCreate(vTaskRFID, (char *) "vTaskRFID",
-			(( unsigned short ) 150), NULL, (tskIDLE_PRIORITY + 1UL),
+			configMINIMAL_STACK_SIZE*2, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(xTaskRFIDConfig, (char *) "xTaskRFIDConfig",
@@ -1763,7 +1764,7 @@ int main (void)
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskEnviarGSM, (char *) "vTaskEnviarGSM",
-				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2UL),
+				configMINIMAL_STACK_SIZE*2, NULL, (tskIDLE_PRIORITY + 2UL),
 				(xTaskHandle *) NULL);
 
 	xTaskCreate(vTaskAnalizarGPS, (char *) "vTaskAnalizarGPS",

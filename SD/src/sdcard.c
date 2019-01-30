@@ -439,25 +439,50 @@ void InfoSd(char* Receive)
 {
 	struct Datos_Nube informacion;
 	Tarjetas_RFID informacionRFID;
-	char	velocidadCar[5];
+	char	velocidadCar[5],testigo1,testigo2;
 
-	xQueuePeek(Cola_Datos_GPS, &informacion, 500/portTICK_RATE_MS);
-	xQueuePeek(Cola_Datos_RFID, &informacionRFID, 500/portTICK_RATE_MS);
 
-	strcpy(Receive,informacion.fecha);
-	strcat(Receive," ");
-	strcat(Receive,informacion.hora);
-	strcat(Receive,",");
-	strcat(Receive,informacion.latitud);
-	strcat(Receive,",");
-	strcat(Receive,informacion.longitud);
-	strcat(Receive,",");
-	itoa (informacion.velocidad,velocidadCar,10);
-	strcat(Receive,velocidadCar);
-	strcat(Receive,",");
-	strcat(Receive,informacionRFID.tarjeta);
-	strcat(Receive,",");
-	strcat(Receive,informacionRFID.nombre);
-	strcat(Receive,".\r\n");
+
+	testigo1 = xQueuePeek(Cola_Datos_GPS, &informacion, 500/portTICK_RATE_MS);
+	testigo2 = xQueuePeek(Cola_Datos_RFID, &informacionRFID, 500/portTICK_RATE_MS);
+
+	if (testigo1 == pdTRUE && testigo2 == pdTRUE)// en el caso de que no pueda leer alguna cola que no guarde nada
+	{
+		strcpy(Receive,informacion.fecha);
+		strct(Receive," ");
+		strct(Receive,informacion.hora);
+		strct(Receive,",");
+		strct(Receive,informacion.latitud);
+		strct(Receive,",");
+		strct(Receive,informacion.longitud);
+		strct(Receive,",");
+		itoa (informacion.velocidad,velocidadCar,10);
+		strct(Receive,velocidadCar);
+		strct(Receive,",");
+		strct(Receive,informacionRFID.tarjeta);
+		strct(Receive,",");
+		strct(Receive,informacionRFID.nombre);
+		strct(Receive,".\r\n");
+	}
+	else
+	{
+		Receive[0] = 0;
+	}
 }
 
+void	strct (char* original,char* agregado)
+{
+	uint8_t	i=0,j=0;
+
+	while(original[i]!= 0)
+	{
+		i++;
+	}
+	while(agregado[j]!= 0)
+	{
+		original[i] = agregado[j];
+		i++;
+		j++;
+	}
+	original[i]=0;//indico el fin de la cadena
+}
