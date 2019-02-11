@@ -58,6 +58,19 @@
 
 #define F_CS		PORT(0),PIN(28)
 
+typedef enum enumLeds
+{
+	TODO_APAGADO,
+	TODO_PRENDIDO,
+	ROJO_APAGADO,
+	ROJO_PRENDIDO,
+	VERDE_APAGADO,
+	VERDE_PRENDIDO,
+	ROJO_TITILANDO,
+	VERDE_TITILANDO,
+	TODO_TITILANDO,
+} eLeds ;
+
 struct Datos_Nube
 {
 	char  	latitud[12],longitud[12];

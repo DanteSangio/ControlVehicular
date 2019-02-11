@@ -46,6 +46,10 @@ void uC_StartUp (void)
 {
 	//DEBUGOUT("Configurando pines I/O..\n");	//Imprimo en la consola
 
+	Chip_GPIO_SetDir (LPC_GPIO, LED_VERDE, OUTPUT);
+	Chip_IOCON_PinMux (LPC_IOCON, LED_VERDE, IOCON_MODE_INACT, IOCON_FUNC0);
+	Chip_GPIO_SetDir (LPC_GPIO, LED_ROJO, OUTPUT);
+	Chip_IOCON_PinMux (LPC_IOCON, LED_ROJO, IOCON_MODE_INACT, IOCON_FUNC0);
 	Chip_GPIO_SetDir (LPC_GPIO, LED_STICK, OUTPUT);
 	Chip_IOCON_PinMux (LPC_IOCON, LED_STICK, IOCON_MODE_INACT, IOCON_FUNC0);
 	Chip_GPIO_SetDir (LPC_GPIO, BUZZER, OUTPUT);
@@ -70,6 +74,8 @@ void uC_StartUp (void)
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, SD_CS);
 
 	//Salidas apagadas
+	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_VERDE);
+	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_ROJO);
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_STICK);
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
 	Chip_GPIO_SetPinOutLow(LPC_GPIO, GSM_RST);

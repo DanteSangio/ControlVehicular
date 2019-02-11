@@ -94,6 +94,7 @@ __DATA(RAM2)	SemaphoreHandle_t Semaforo_Reset30Seg;
 __DATA(RAM2)	QueueHandle_t Cola_RX1,Cola_RX2;
 __DATA(RAM2)	QueueHandle_t Cola_TX1,Cola_TX2;
 __DATA(RAM2)	QueueHandle_t Cola_Pulsadores;
+__DATA(RAM2)	QueueHandle_t Cola_Leds;
 __DATA(RAM2)	QueueHandle_t Cola_SD;
 __DATA(RAM2)	QueueHandle_t Cola_Datos_GPS;
 __DATA(RAM2)	QueueHandle_t Cola_Datos_RFID;
@@ -102,6 +103,8 @@ __DATA(RAM2)	QueueHandle_t HoraEntrada;
 __DATA(RAM2)	QueueHandle_t Cola_PromX;
 __DATA(RAM2)	QueueHandle_t Cola_PromY;
 __DATA(RAM2)	QueueHandle_t Cola_PromZ;
+
+eLeds Leds;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* RTC_IRQHandler */
@@ -641,6 +644,62 @@ static void xTaskPulsadores(void *pvParameters)
 	vTaskDelete(NULL);	//Borra la tarea
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* xTaskLeds
+ * Accion sobre los leds
+ * */
+static void xTaskLeds(void *pvParameters)
+{
+	Leds = ROJO_TITILANDO;
+	xQueueSendToBack(Cola_Leds, &Leds, portMAX_DELAY);
+
+	while (1)
+	{
+		xQueueReceive(Cola_Leds, &Leds, 0);
+
+		switch ( Leds )
+		{
+			case TODO_APAGADO:
+				Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_ROJO);
+				Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_VERDE);
+				break;
+
+			case TODO_PRENDIDO:
+				Chip_GPIO_SetPinOutHigh(LPC_GPIO, LED_ROJO);
+				Chip_GPIO_SetPinOutHigh(LPC_GPIO, LED_VERDE);
+				break;
+
+			case ROJO_PRENDIDO:
+				Chip_GPIO_SetPinOutHigh(LPC_GPIO, LED_ROJO);
+				Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_VERDE);
+				break;
+
+			case VERDE_PRENDIDO:
+				Chip_GPIO_SetPinOutHigh(LPC_GPIO, LED_VERDE);
+				Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_ROJO);
+				break;
+
+			case ROJO_TITILANDO:
+				Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_VERDE);
+				Chip_GPIO_SetPinToggle(LPC_GPIO, LED_ROJO);
+				break;
+
+			case VERDE_TITILANDO:
+				Chip_GPIO_SetPinOutLow(LPC_GPIO, LED_ROJO);
+				Chip_GPIO_SetPinToggle(LPC_GPIO, LED_VERDE);
+				break;
+
+			case TODO_TITILANDO:
+				Chip_GPIO_SetPinToggle(LPC_GPIO, LED_ROJO);
+				Chip_GPIO_SetPinToggle(LPC_GPIO, LED_VERDE);
+				break;
+		}
+
+		vTaskDelay(500/portTICK_RATE_MS);
+
+	}
+	vTaskDelete(NULL);	//Borra la tarea
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -829,6 +888,9 @@ void vTaskTFT(void *pvParameters)
 						minAnt=minutos;
 					}
 
+					Leds = VERDE_PRENDIDO;
+					xQueueSendToBack(Cola_Leds, &Leds, portMAX_DELAY);
+
 					xQueuePeek(Cola_Datos_RFID, &informacionRFID, portMAX_DELAY);
 					strcpy(nombre,informacionRFID.nombre);
 
@@ -1014,6 +1076,9 @@ void vTaskTFT(void *pvParameters)
 				xSemaphoreTake(Semaforo_GSM_Recibido,portMAX_DELAY);//me aseguro que ya se hayan cargado las tarjetas
 				xSemaphoreGive(Semaforo_GSM_Recibido);
 
+				Leds = VERDE_TITILANDO;
+				xQueueSendToBack(Cola_Leds, &Leds, portMAX_DELAY);
+
 				FlagEstado=ON;
 				EstadoPantalla=7;
 			break;
@@ -1146,7 +1211,7 @@ void vTaskTFT(void *pvParameters)
 
 				//Para enviar SMS
 				xSemaphoreTake(Semaforo_GSM_Enviar,portMAX_DELAY);//Me aseguro de estar enviando solo esta tarea
-//				EnviarMensajeGSM(mensaje); //Se pasa como parametro el mensaje PREDEFINIDO a enviar
+				EnviarMensajeGSM(mensaje); //Se pasa como parametro el mensaje PREDEFINIDO a enviar
 				xSemaphoreGive(Semaforo_GSM_Enviar);
 
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
@@ -1218,6 +1283,9 @@ void vTaskTFT(void *pvParameters)
 					GUI_DispStringAt(".",158,170);
 					Chip_GPIO_SetPinOutHigh(LPC_GPIO, TFT_CS);
 					xSemaphoreGive(Semaforo_SSP);
+
+					Leds = VERDE_TITILANDO;
+					xQueueSendToBack(Cola_Leds, &Leds, portMAX_DELAY);
 				}
 				if(uxQueueMessagesWaiting(Cola_Datos_RFID)!=0)
 				{
@@ -1367,6 +1435,9 @@ void vTaskTFT(void *pvParameters)
 				}
 				if(ReceivePulsadores==11)		//Se presionaron ambos pulsadores
 				{
+					Leds = VERDE_TITILANDO;
+					xQueueSendToBack(Cola_Leds, &Leds, portMAX_DELAY);
+
 					EstadoPantalla=11;
 					FlagEstado=ON;
 					xSemaphoreTake(Semaforo_Sist_Inic, portMAX_DELAY);//Indico para que la SD no guarde datos mientras no hay RFID
@@ -1649,7 +1720,6 @@ int main (void)
 
 	uC_StartUp();
 
-
 	vSemaphoreCreateBinary(Semaforo_RX1);				//Semaforo para indicar que hay algo para leer
 	vSemaphoreCreateBinary(Semaforo_RX2);				//Semaforo para indicar que hay algo para leer
 	vSemaphoreCreateBinary(Semaforo_RFID);				//Semaforo de inicializacion de rfid
@@ -1688,12 +1758,12 @@ int main (void)
 	vSemaphoreCreateBinary(Semaforo_Choque);	//Semaforo para indicar que volco
 	xSemaphoreTake(Semaforo_Choque , portMAX_DELAY );
 
-
 	Cola_RX1 = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_TX1 = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_RX2 = xQueueCreate(UART_RRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_TX2 = xQueueCreate(UART_SRB_SIZE, sizeof(uint8_t));	//Creamos una cola
 	Cola_Pulsadores = xQueueCreate(4, sizeof(uint8_t));		//Creamos una cola
+	Cola_Leds = xQueueCreate(1, sizeof(eLeds));		//Creamos una cola
 	Cola_SD = xQueueCreate(4, sizeof(char) * 100);	//Creamos una cola para mandar una trama completa
 	Cola_Datos_GPS = xQueueCreate(1, sizeof(struct Datos_Nube));
 	Cola_Datos_RFID = xQueueCreate(1, sizeof(Tarjetas_RFID));
@@ -1712,6 +1782,9 @@ int main (void)
 			configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 				(xTaskHandle *) NULL);
 
+	xTaskCreate(xTaskLeds, (char *) "xTaskLeds",
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+					(xTaskHandle *) NULL);
 
 	xTaskCreate(xTaskWriteSD, (char *) "xTaskWriteSD",
 					configMINIMAL_STACK_SIZE * 2, NULL, (tskIDLE_PRIORITY + 2UL),
