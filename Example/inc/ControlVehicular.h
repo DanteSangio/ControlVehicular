@@ -58,6 +58,8 @@
 
 #define F_CS		PORT(0),PIN(28)
 
+#define VELOCIDADMAXIMA	80
+
 typedef enum enumLeds
 {
 	TODO_APAGADO,

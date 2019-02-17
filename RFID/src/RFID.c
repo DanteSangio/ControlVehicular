@@ -19,11 +19,11 @@
 
 //extern int last_balance;
 //extern unsigned int last_user_ID;
-extern MFRC522Ptr_t mfrcInstance;
+//extern MFRC522Ptr_t mfrcInstance;
 extern QueueHandle_t Cola_Datos_RFID, Cola_Inicio_Tarjetas;
 extern SemaphoreHandle_t Semaforo_Tarjeta_Incorrecta;
 
-void userTapIn()
+void userTapIn(MFRC522Ptr_t mfrcInstance)
 {
 	//Tarjetas_RFID Tarj_actual;
 	//uint32_t	ultTarjeta;

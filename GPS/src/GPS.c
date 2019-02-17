@@ -106,7 +106,7 @@ void AnalizarTramaGPS (uint8_t dato)
 
 
 	char	velocidad[10];
-	int		velocidadNum;
+	double		velocidadNum;
 
 	int Auxnum;
 	bool flagFecha=OFF;

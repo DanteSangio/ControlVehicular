@@ -48,7 +48,6 @@
 //static volatile bool fAlarmTimeMatched;
 //static volatile bool On0, On1;
 
-__DATA(RAM2)	MFRC522Ptr_t mfrcInstance;	// RFID structs
 
 //__DATA(RAM2)	int last_balance = 0;
 //__DATA(RAM2)	unsigned int last_user_ID;
@@ -103,6 +102,8 @@ __DATA(RAM2)	QueueHandle_t HoraEntrada;
 __DATA(RAM2)	QueueHandle_t Cola_PromX;
 __DATA(RAM2)	QueueHandle_t Cola_PromY;
 __DATA(RAM2)	QueueHandle_t Cola_PromZ;
+__DATA(RAM2)	QueueHandle_t Cola_Inicio_Lector;
+
 
 eLeds Leds;
 
@@ -232,6 +233,8 @@ void UART2_IRQHandler(void)
 static void xTaskRFIDConfig(void *pvParameters)
 {
 
+	__DATA(RAM2)	static	MFRC522Ptr_t mfrcInstance;	// RFID structs
+
 	//vTaskDelay(5000/portTICK_RATE_MS);
 
 	xSemaphoreTake(Semaforo_SSP, portMAX_DELAY);
@@ -239,6 +242,7 @@ static void xTaskRFIDConfig(void *pvParameters)
 	//DEBUGOUT1("PRUEBA RFID..\n");	//Imprimo en la consola
 
 	setupRFID(&mfrcInstance);
+	xQueueOverwrite(Cola_Inicio_Lector,&mfrcInstance);
 
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, RFID_SS);
 
@@ -488,8 +492,12 @@ static void vTaskLeerAnillo2(void *pvParameters)
 static void vTaskRFID(void *pvParameters)
 {
 
+	__DATA(RAM2)	static	MFRC522Ptr_t mfrcInstance;	// RFID structs
+
 	xSemaphoreTake(Semaforo_GSM_Recibido,portMAX_DELAY);//me aseguro que ya se hayan cargado las tarjetas
 	xSemaphoreGive(Semaforo_GSM_Recibido);
+	xQueueReceive(Cola_Inicio_Lector,&mfrcInstance,portMAX_DELAY);
+
 	while (1)
 	{
 		xSemaphoreTake(Semaforo_YaHayTarj, portMAX_DELAY);
@@ -504,7 +512,7 @@ static void vTaskRFID(void *pvParameters)
 			if (PICC_ReadCardSerial(mfrcInstance))
 			{
 				//int status = writeCardBalance(mfrcInstance, 100000); // used to recharge the card
-				userTapIn();
+				userTapIn(mfrcInstance);
 				Chip_GPIO_SetPinOutHigh(LPC_GPIO, RFID_SS);
 
 			}
@@ -567,6 +575,15 @@ static void vTaskEnviarGSM(void *pvParameters)
 		xSemaphoreTake(Semaforo_GSM_Enviar,portMAX_DELAY);//Me aseguro de estar enviando solo esta tarea
 		EnviarTramaGSM(informacion.latitud,informacion.longitud, informacionRFID.tarjeta, informacion.velocidad);
 		xSemaphoreGive(Semaforo_GSM_Enviar);
+
+		if(informacion.velocidad > VELOCIDADMAXIMA)
+		{
+			Chip_GPIO_SetPinOutHigh(LPC_GPIO, BUZZER);
+		}
+		else
+		{
+			Chip_GPIO_SetPinOutLow(LPC_GPIO, BUZZER);
+		}
 	}
 	vTaskDelete(NULL);	//Borra la tarea
 }
@@ -1772,6 +1789,8 @@ int main (void)
 	Cola_PromX = xQueueCreate(1, sizeof(signed int));
 	Cola_PromY = xQueueCreate(1, sizeof(signed int));
 	Cola_PromZ = xQueueCreate(1, sizeof(signed int));
+	Cola_Inicio_Lector = xQueueCreate(1, sizeof(MFRC522Ptr_t));
+
 
 
 	xTaskCreate(vTaskTFT, (char *) "vTaskTFT",
